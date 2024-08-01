@@ -30,3 +30,25 @@
 *.exe
 *.out
 *.app
+
+# Notes
+notes.txt
+asionotes.txt
+socketproblems.txt
+
+# Examples
+ex_asynchronous.cpp
+example_client.cpp
+example_server.cpp
+
+# CMake
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Executables
+LocalChat
+
+# Misc
+.DS_Store
