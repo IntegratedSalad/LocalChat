@@ -35,6 +35,7 @@
 notes.txt
 asionotes.txt
 socketproblems.txt
+design.txt
 
 # Examples
 ex_asynchronous.cpp
@@ -47,8 +48,13 @@ CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
 
+# Google test
+lib/
+_deps/
+
 # Executables
 LocalChat
+bin/
 
 # Misc
 .DS_Store
