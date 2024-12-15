@@ -162,6 +162,20 @@ depend:
 .PHONY : depend
 
 # Convenience name for target.
+src/CMakeFiles/BVService_Bonjour.dir/rule:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/BVService_Bonjour.dir/rule
+.PHONY : src/CMakeFiles/BVService_Bonjour.dir/rule
+
+# Convenience name for target.
+BVService_Bonjour: src/CMakeFiles/BVService_Bonjour.dir/rule
+.PHONY : BVService_Bonjour
+
+# fast build rule for target.
+BVService_Bonjour/fast:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/BVService_Bonjour.dir/build.make src/CMakeFiles/BVService_Bonjour.dir/build
+.PHONY : BVService_Bonjour/fast
+
+# Convenience name for target.
 src/CMakeFiles/LocalChat.dir/rule:
 	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 src/CMakeFiles/LocalChat.dir/rule
 .PHONY : src/CMakeFiles/LocalChat.dir/rule
@@ -174,6 +188,30 @@ LocalChat: src/CMakeFiles/LocalChat.dir/rule
 LocalChat/fast:
 	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/LocalChat.dir/build.make src/CMakeFiles/LocalChat.dir/build
 .PHONY : LocalChat/fast
+
+BVService_Bonjour.o: BVService_Bonjour.cpp.o
+.PHONY : BVService_Bonjour.o
+
+# target to build an object file
+BVService_Bonjour.cpp.o:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/BVService_Bonjour.dir/build.make src/CMakeFiles/BVService_Bonjour.dir/BVService_Bonjour.cpp.o
+.PHONY : BVService_Bonjour.cpp.o
+
+BVService_Bonjour.i: BVService_Bonjour.cpp.i
+.PHONY : BVService_Bonjour.i
+
+# target to preprocess a source file
+BVService_Bonjour.cpp.i:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/BVService_Bonjour.dir/build.make src/CMakeFiles/BVService_Bonjour.dir/BVService_Bonjour.cpp.i
+.PHONY : BVService_Bonjour.cpp.i
+
+BVService_Bonjour.s: BVService_Bonjour.cpp.s
+.PHONY : BVService_Bonjour.s
+
+# target to generate assembly for a file
+BVService_Bonjour.cpp.s:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f src/CMakeFiles/BVService_Bonjour.dir/build.make src/CMakeFiles/BVService_Bonjour.dir/BVService_Bonjour.cpp.s
+.PHONY : BVService_Bonjour.cpp.s
 
 main.o: main.cpp.o
 .PHONY : main.o
@@ -211,7 +249,11 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
+	@echo "... BVService_Bonjour"
 	@echo "... LocalChat"
+	@echo "... BVService_Bonjour.o"
+	@echo "... BVService_Bonjour.i"
+	@echo "... BVService_Bonjour.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

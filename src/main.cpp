@@ -4,7 +4,10 @@
 #include "dns_sd.h"
 #include "BVService_Bonjour.hpp"
 
-int main(int argc, char** argv) {
+void countToTen(boost::asio::steady_timer* t, boost::asio::io_context* ioc, int* count, int ms);
+void askForInput(void);
+int main(int argc, char** argv)
+{
     boost::asio::io_context ioContext;
 
     /* Put this in a test */
@@ -32,12 +35,10 @@ int main(int argc, char** argv) {
         and schedule another, arbitrary task providing a function that counts to ten using
         a timer.
      */
-
-    boost::asio::deadline_timer deadlinetimer{ioContext, };
-
+    std::cout << std::endl;
     if (status == BVStatus::BVSTATUS_OK)
     {
-        try 
+        try
         {
             std::cout << "Running io context..." << std::endl;
             ioContext.run();
@@ -49,8 +50,6 @@ int main(int argc, char** argv) {
     {
         std::cerr << "Registration failed" << std::endl;
     }
-
-
 
     return 0;
 }

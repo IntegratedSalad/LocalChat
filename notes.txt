@@ -1,0 +1,81 @@
+Mamy biblioteke asio ktora pozwala na asynchroniczne I/O w kontekscie networkingu (wysylanie pakietow, odbieranie), czyli wykonywanie
+tych czynnosci bez czekania na odpowiedz.
+Czyli moge wykonywac funkcje okreslone w API?
+Glowne pytanie: Czy moge uzyc funkcji zdefiniowanych w dns_sd.h asynchronicznie, przy pomocy asio?
+Wydaje mi sie, ze jezeli te funkcje w API zawieraja operacje blokujace to tak - bo asio daje mi mozliwosc stworzenia kontekstu/petli AI/O, ktora z definicji nie bedzie blokowac.
+Wazne:
+dns_sd to jest API do DNS-SD tylko - czyli do service discovery.
+
+DNSServiceResolve() pozwala na rozwiazanie service name ktora zostala odkryta za pomoca DNSServiceBrowse.
+Ta funkcja zawiera pointer do ciagu znakow *hosttarget, ktory zapewne jest zmienna, do ktorej zostaje zapisany hostname +:
+"This name can be passed to functions like gethostbyname() to identify the host's IP address."
+ip::basic_resolver::resolve (4 of 12 overloads)-> resolves, czyli tlumaczy z nazwy do endpoint (IP address)
+Moze musimy zrobic Browse() za pomoca mDNS a pozniej, jak dostaniemy nazwe hosta, uzyc basic_resolver::resolve aby znalezc ip takiego urzadzenia
+
+mDNS podstawy:
+Kiedy client mDNS ma jakis hostname i potrzebuje miec ip tego hosta, wysyla pakiet IP multicastowy (do wszystkich zainteresowanych), aby ten, kto ma taka nazwe, wyslal swoj adres IP. Ten host wysyla znow pakiet multicastowy IP do wszystkich zainteresowanych hostow ze swoim adresem IP. mDNS resolvuje .local domenowe nazwy na lokalne adresy IP.
+
+Registering a service:
+dns-sd -R <Name> <Type> <Domain> <Port> Optional<Text>
+Where:
+
+<Name>: Name string
+<Type>: E.g. _http._tcp
+		It is a SRV RR with format: _Service._Proto.Name
+		"_Service" part can be concatenation of name + host
+<Domain>: Should be local for our purposes
+<Port>:   Chosen port. (50001 for unused)
+
+a wiec przyklad:
+dns-sd -R bupsiobup _bupsiobuphost._tcp local 50001
+gdzie _bupsiobuphost chyba powinno byc nazwa serwisu, wiec powinno byc localchat__host czy cos takiego.
+Wtedy jest to jedna usluga ale ktora bedzie rozroznialna poprzez rozne nazwy.
+
+TODO:
+Wziac RaspberryPi i na nim zarejestrowac usluge o takiej samej nazwie (localchat_host) i sprobowac zrobic lookup oraz -G (get addresss information for hostname) i zobaczyc czy ma inny adres. [V]
+
+Co chcemy aby ta aplikacja robila:
+
+1. Dodany zostaje lokalny host (np moj laptop),
+   1.a Konkretniej -> zostaje dodana usluga pod okreslona nazwa (to moze byc np nazwa hosta + uslugi).
+2. Zostaje uruchomione szukanie serwisow pod danym typie (localchathost)
+3. Wyslany zostaje pakiet IP do kazdego hosta w sieci lokalnej, albo z nazwa domeny lokalnej .local albo od razu IP,
+4. Kiedy uzytkownik chce napisac wiadomosc (zaczac czat) zostaje wyslana wiadomosc, czy chce. Tutaj takze jest uruchomiona funkcjonalnosc mDNS, gdzie tworzy sie zapytanie kto z taka nazwa (targetową, osoby do ktorej chcemy wyslac wiadomosc) ma taki a taki lokalny adres IP. 
+
+Wazne:
+RR -> Resource Record
+SRV -> Service
+mDNS jest scisle uzywany po to, aby wziac nazwe hosta i otrzymac adres IP w malych sieciach (lokalnych). Poza tym, multicast odnosi sie do tego, ze wysylamy wiadomosc broadcast, ze dany host jest dostepny do komunikacji (poprzez LAN, czyli lokalnie). Jego domyslna funkcjonalnoscia NIE jest Service Discovery:
+"mDNS and LLMNR both do >name resolution<, but mDNS is also used for service discovery when paired with something called DNS-SD".
+Ale dns_sd.h zawiera funkcje DNSServiceResolve, ktory implementuje zasadnicza funkcjonalnosc mDNS - mamy jakis hostname i teraz chcemy IP. Tyle ze tu sie pojawia cos takiego jak txt record.
+Czym jest TXT record?
+Czym jest SRV record?:
+
+>>>"A client discovers the list of available instances for a given service type by querying the DNS PTR[18] record of that service type's name; the server returns zero or more names of the form <Service>.<Domain>, each corresponding to a SRV/TXT record pair."<<<
+"The SRV record resolves to the domain name providing the instance, while the TXT record can contain service-specific configuration parameters".
+
+Most important RFC Docs:
+6763 -> DNS Based Service Discovery
+2782 -> A DNS RR for specifying the location of services
+6763, section 11 -> Discovery of Browsing and Registration Domains (Domain Enumeration)
+
+avahi:
+How to resolve:
+host name: service name + .local (domain)
+example:
+avahi-resolve-host-name bupsiobup.local
+
+How to set up an example:
+
+on macOS:
+dns-sd -R <Name> <Type> <Domain> <Port>, where type should be _tcp, domain "local"
+check: dns-sd -B _[<Servicename>]._tcp local -> we should see service type at instance (host) name.
+on Ubuntu:
+avahi-resolve-host-name [<HostName>].local -> we should see IP of the host that enables this service
+avahi-publish-service <name> <type> <port> -> registers a service
+avahi-browse _[<Servicename>]._tcp -> shows every hostname with that service >type< (not name)
+on macOS after publishing service:
+dns-sd -L [ServiceName] _localchathost local -> gives instance name (host) and port
+Now we have host name that publishes a service that we just looked up, now we can resolve:
+dns-sd -G v4 [hostname].local -> yields local address of the hostname
+

@@ -1,0 +1,58 @@
+## Intro
+Because what I will write here will be used for BonVoyage, a graphical client for sharing files, we should
+design an interface that takes out some of the core functionality of DNS-SD.
+##
+
+## Classes
+
+## Class 'BVService'
+Description:
+This class embeds the DNS-SD Service Registration functionality:
+    1. Service Registration (and handlin the response from daemon),
+    2. ?Discovery of Browsing and Registration Domains (Domain Enumeration),
+       Although we will for now, use only .local (and should only use local?)
+    3. Record handling (optionally)?
+    4. Service deregistration and deallocation of resources (DNSServiceRef).
+       Question: does DNSServiceRef for DNSServiceRegister has to be deallocated
+       after reading the reply from the daemon?
+
+Other:
+Service has a fixed, constant type: _localchathost._tcp. Name is the host name providing this service.
+##
+
+## Class 'BVDiscovery'
+Description:
+This class embeds the DNS-SD Service Discovery functionality:
+    1. Discovery of instances (hosts) of localchathost service.
+    2. Resolving a service name.
+##
+
+## Class 'BVActor'
+Description:
+An actor, an instance that acts like a user would.
+It has service, it can discover other services.
+It should be independent of the implementation (Avahi/Bonjour)
+
+!Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
+Czy nie da sie zrobic jakiegos systemu ktory by byl abstrakcją tego? Czy to jest potrzebne?
+Poniewaz teraz BVActor musi wyszukac, czy istnieje juz nazwa hosta o podanym serwisie. Jezeli istnieje, to nie rejestruj jeszcze raz.
+W zasadzie taka abstrakcja wymagana bylaby, w momencie gdybym chcial rozszerzyc funkcjonalnosc mDNSResponder albo funkcji, ktore 
+wymagaja kontaktu z demonem byloby bardzo duzo.
+
+Byc moze najpierw zrobmy te funkcjonalnosc w BVDiscovery, gdzie BVActor zarzadza wywolywaniem tych dwoch funkcjonalnosci.
+To ma swoj koszt - musimy rozroznic znow pomiedzy Bonjour i Avahi.
+Chyba, ze najlepiej zrobic BVActor ktory dziala niezaleznie od implementacji. Jednakze, najlatwiej bedzie zrobic prototyp, gdzie bedzie klasa
+BVActor_Bonjour i BVActor_Avahi
+
+Record handling?
+
+## GUI library:
+FTLK
+
+And on top of that, we have to take into consideration the fact that mDNSResponder is a Windows and macOS
+solution only - there will be avahi on Linux.
+
+Logging functionality?
+
+## How BV operates?
+

@@ -1,0 +1,7 @@
+I've temporarily resolved the issue.
+The issue was, that whenever I was running the compiled program using CMake, I had an error: Service (daemon) not responding.
+Upon fixing my issues with lldb debugger on VSCode I captured what was coming on stderr.
+Issue was with what it didn't find a socket in "/var/run/mdnsd" however there was a socket "mDNSResponder".
+The temporary solution is to create a symbolic link "sudo ln -s" to point "/var/run/mdnsd" to "/var/run/mDNSResponder".
+I think that I've compiled the old version and need download and compile the most recent version to hopefully get software, that
+seeks the correct path to the socket. 

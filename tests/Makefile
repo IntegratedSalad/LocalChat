@@ -132,14 +132,14 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/dev/Documents/GitHub/LocalChat/CMakeFiles /Users/dev/Documents/GitHub/LocalChat//CMakeFiles/progress.marks
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
+	cd /Users/dev/Documents/GitHub/LocalChat && $(CMAKE_COMMAND) -E cmake_progress_start /Users/dev/Documents/GitHub/LocalChat/CMakeFiles /Users/dev/Documents/GitHub/LocalChat/tests//CMakeFiles/progress.marks
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/dev/Documents/GitHub/LocalChat/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 clean
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/clean
 .PHONY : clean
 
 # The main clean target
@@ -148,109 +148,56 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 preinstall
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /Users/dev/Documents/GitHub/LocalChat && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-#=============================================================================
-# Target rules for targets named BVService_Bonjour
+# Convenience name for target.
+tests/CMakeFiles/dns_sd_test_Registration.dir/rule:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 tests/CMakeFiles/dns_sd_test_Registration.dir/rule
+.PHONY : tests/CMakeFiles/dns_sd_test_Registration.dir/rule
 
-# Build rule for target.
-BVService_Bonjour: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 BVService_Bonjour
-.PHONY : BVService_Bonjour
-
-# fast build rule for target.
-BVService_Bonjour/fast:
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/BVService_Bonjour.dir/build.make src/CMakeFiles/BVService_Bonjour.dir/build
-.PHONY : BVService_Bonjour/fast
-
-#=============================================================================
-# Target rules for targets named LocalChat
-
-# Build rule for target.
-LocalChat: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 LocalChat
-.PHONY : LocalChat
-
-# fast build rule for target.
-LocalChat/fast:
-	$(MAKE) $(MAKESILENT) -f src/CMakeFiles/LocalChat.dir/build.make src/CMakeFiles/LocalChat.dir/build
-.PHONY : LocalChat/fast
-
-#=============================================================================
-# Target rules for targets named dns_sd_test_Registration
-
-# Build rule for target.
-dns_sd_test_Registration: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 dns_sd_test_Registration
+# Convenience name for target.
+dns_sd_test_Registration: tests/CMakeFiles/dns_sd_test_Registration.dir/rule
 .PHONY : dns_sd_test_Registration
 
 # fast build rule for target.
 dns_sd_test_Registration/fast:
-	$(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dns_sd_test_Registration.dir/build.make tests/CMakeFiles/dns_sd_test_Registration.dir/build
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dns_sd_test_Registration.dir/build.make tests/CMakeFiles/dns_sd_test_Registration.dir/build
 .PHONY : dns_sd_test_Registration/fast
 
-#=============================================================================
-# Target rules for targets named gmock
+dns_sd_test_Registration.o: dns_sd_test_Registration.cpp.o
+.PHONY : dns_sd_test_Registration.o
 
-# Build rule for target.
-gmock: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gmock
-.PHONY : gmock
+# target to build an object file
+dns_sd_test_Registration.cpp.o:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dns_sd_test_Registration.dir/build.make tests/CMakeFiles/dns_sd_test_Registration.dir/dns_sd_test_Registration.cpp.o
+.PHONY : dns_sd_test_Registration.cpp.o
 
-# fast build rule for target.
-gmock/fast:
-	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock.dir/build
-.PHONY : gmock/fast
+dns_sd_test_Registration.i: dns_sd_test_Registration.cpp.i
+.PHONY : dns_sd_test_Registration.i
 
-#=============================================================================
-# Target rules for targets named gmock_main
+# target to preprocess a source file
+dns_sd_test_Registration.cpp.i:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dns_sd_test_Registration.dir/build.make tests/CMakeFiles/dns_sd_test_Registration.dir/dns_sd_test_Registration.cpp.i
+.PHONY : dns_sd_test_Registration.cpp.i
 
-# Build rule for target.
-gmock_main: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gmock_main
-.PHONY : gmock_main
+dns_sd_test_Registration.s: dns_sd_test_Registration.cpp.s
+.PHONY : dns_sd_test_Registration.s
 
-# fast build rule for target.
-gmock_main/fast:
-	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build.make _deps/googletest-build/googlemock/CMakeFiles/gmock_main.dir/build
-.PHONY : gmock_main/fast
-
-#=============================================================================
-# Target rules for targets named gtest_main
-
-# Build rule for target.
-gtest_main: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest_main
-.PHONY : gtest_main
-
-# fast build rule for target.
-gtest_main/fast:
-	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest_main.dir/build
-.PHONY : gtest_main/fast
-
-#=============================================================================
-# Target rules for targets named gtest
-
-# Build rule for target.
-gtest: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest
-.PHONY : gtest
-
-# fast build rule for target.
-gtest/fast:
-	$(MAKE) $(MAKESILENT) -f _deps/googletest-build/googletest/CMakeFiles/gtest.dir/build.make _deps/googletest-build/googletest/CMakeFiles/gtest.dir/build
-.PHONY : gtest/fast
+# target to generate assembly for a file
+dns_sd_test_Registration.cpp.s:
+	cd /Users/dev/Documents/GitHub/LocalChat && $(MAKE) $(MAKESILENT) -f tests/CMakeFiles/dns_sd_test_Registration.dir/build.make tests/CMakeFiles/dns_sd_test_Registration.dir/dns_sd_test_Registration.cpp.s
+.PHONY : dns_sd_test_Registration.cpp.s
 
 # Help Target
 help:
@@ -264,13 +211,10 @@ help:
 	@echo "... install/strip"
 	@echo "... list_install_components"
 	@echo "... rebuild_cache"
-	@echo "... BVService_Bonjour"
-	@echo "... LocalChat"
 	@echo "... dns_sd_test_Registration"
-	@echo "... gmock"
-	@echo "... gmock_main"
-	@echo "... gtest"
-	@echo "... gtest_main"
+	@echo "... dns_sd_test_Registration.o"
+	@echo "... dns_sd_test_Registration.i"
+	@echo "... dns_sd_test_Registration.s"
 .PHONY : help
 
 
@@ -282,6 +226,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /Users/dev/Documents/GitHub/LocalChat && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

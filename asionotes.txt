@@ -1,0 +1,12 @@
+Jak wywolywac funkcje w petli asynchronicznej?
+Submituje sie taski (funkcje):
+"To submit functions to the io_context, use the dispatch, post or defer free functions"
+
+1. dispatch function:
+Dispatch will call the function rightaway if the dispatch-caller was called from io_service itself, but queue it othwerise.
+
+2. Post
+Post will not call the function directly, ever, but postpone the call.
+
+It is very worth noting, that running io_context doesn't execute the callbacks asynchronously. 
+

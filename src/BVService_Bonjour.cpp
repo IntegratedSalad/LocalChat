@@ -1,6 +1,7 @@
 #include "BVService_Bonjour.hpp"
 
-std::atomic<bool> shouldProcess = true; // TODO: should this be atomic?
+bool shouldProcess = true; // TODO: should this be atomic?
+bool replyError = false;
 extern "C"
 {
 #include "stdio.h"
@@ -15,6 +16,7 @@ void C_RegisterReply(
 ) {
     if (errorCode == kDNSServiceErr_NoError) {
         printf("--- Registered %s, as %s, in %s!", name, regtype, domain);
+        replyError = true;
     } else {
         fprintf(stderr, "An error occurred while trying to register %s", name);
     }
@@ -40,8 +42,7 @@ BVStatus BVService_Bonjour::Register(boost::asio::io_context& ioContext)
 
     if (error != kDNSServiceErr_NoError) {
         std::cerr << "Encountered an error: " << error << std::endl;
-        status = BVStatus::BVSTATUS_NOK;
-        return status;
+        return BVStatus::BVSTATUS_NOK;
     }
 
     // Check results with daemon
@@ -53,9 +54,7 @@ BVStatus BVService_Bonjour::Register(boost::asio::io_context& ioContext)
         periodically (for set time).
         When the timer expires, the completion handler (the functor/callback passed) is called
         once.
-     */
-    
-    /*
+        
         Schedule a timer to be run 
      */
     timer.async_wait([&timer, &ioContext, this](const boost::system::error_code& /*e*/)
@@ -71,7 +70,6 @@ BVStatus BVService_Bonjour::Register(boost::asio::io_context& ioContext)
 BVStatus BVService_Bonjour::ProcessDNSServiceResults(
     boost::asio::steady_timer* timer, boost::asio::io_context* ioContext)
 {
-    std::cout << "Executing DNSServiceProcessResult..." << std::endl;
     DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef);
     if (error != kDNSServiceErr_NoError) {
         std::cerr << "Encountered an error in DNSServiceProcessResult: " << error << std::endl;
@@ -80,7 +78,8 @@ BVStatus BVService_Bonjour::ProcessDNSServiceResults(
 
     if (!shouldProcess)
     {
-        return BVStatus::BVSTATUS_OK;
+        if (replyError) return BVStatus::BVSTATUS_NOK;
+        else return BVStatus::BVSTATUS_OK;
     }
 
     // Schedule this again
@@ -90,5 +89,5 @@ BVStatus BVService_Bonjour::ProcessDNSServiceResults(
         this->ProcessDNSServiceResults(timer, ioContext);
     });
 
-    return BVStatus::BVSTATUS_OK;
+    return BVStatus::BVSTATUS_OK; 
 }

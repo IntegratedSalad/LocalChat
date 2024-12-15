@@ -32,10 +32,10 @@
 *.app
 
 # Notes
-notes.txt
-asionotes.txt
-socketproblems.txt
-design.txt
+# notes.txt
+# asionotes.txt
+# socketproblems.txt
+# design.txt
 
 # Examples
 ex_asynchronous.cpp

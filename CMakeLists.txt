@@ -16,3 +16,6 @@ find_library(DNS_SD_LIBRARY NAMES dns_sd PATHS /usr/local/lib)
 
 add_subdirectory(src)
 add_subdirectory(tests)
+
+# We can compile different targets - only BVService_Bonjour, BVService (for BonVoyage main app and for LocalChat) or we can export these classes
+# onto a separate git repository. Then, we could use it as a submodule for LC and BV.
