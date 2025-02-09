@@ -6,6 +6,7 @@
 
 void countToTen(boost::asio::steady_timer* t, boost::asio::io_context* ioc, int* count, int ms);
 void askForInput(void);
+void init(void);
 int main(int argc, char** argv)
 {
     boost::asio::io_context ioContext;
@@ -17,11 +18,13 @@ int main(int argc, char** argv)
     if (err)
     {
         std::cerr << "DNSServiceGetProperty failed " << (long int)err << std::endl;
+        return -1;
     } else
     {
         std::cout << "Currently running daemon (system service) is version " 
                   << v / 10000 << "." << v / 100 % 100 << "." << v % 100 << std::endl;
     }
+    /* */
 
     std::string hostname = boost::asio::ip::host_name();  // Use an appropriate host name or retrieve it
     std::string domain = "local";
@@ -52,6 +55,11 @@ int main(int argc, char** argv)
     }
 
     return 0;
+}
+
+void init(void)
+{
+
 }
 
 /*

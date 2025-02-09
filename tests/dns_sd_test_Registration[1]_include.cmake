@@ -1,0 +1,5 @@
+if(EXISTS "/Users/dev/Documents/GitHub/LocalChat/tests/dns_sd_test_Registration[1]_tests.cmake")
+  include("/Users/dev/Documents/GitHub/LocalChat/tests/dns_sd_test_Registration[1]_tests.cmake")
+else()
+  add_test(dns_sd_test_Registration_NOT_BUILT dns_sd_test_Registration_NOT_BUILT)
+endif()

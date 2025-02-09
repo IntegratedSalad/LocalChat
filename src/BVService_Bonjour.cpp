@@ -12,13 +12,13 @@ void C_RegisterReply(
     const char *name,
     const char *regtype,
     const char *domain,
-    void *context // maybe pass the pointer to shouldProcess here?
-) {
+    void *context) // maybe pass the pointer to shouldProcess here?
+{
     if (errorCode == kDNSServiceErr_NoError) {
         printf("--- Registered %s, as %s, in %s!", name, regtype, domain);
-        replyError = true;
     } else {
         fprintf(stderr, "An error occurred while trying to register %s", name);
+        replyError = true;
     }
     shouldProcess = false;
 }

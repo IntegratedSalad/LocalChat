@@ -1,14 +1,15 @@
-## Intro
+# Design
 Because what I will write here will be used for BonVoyage, a graphical client for sharing files, we should
 design an interface that takes out some of the core functionality of DNS-SD.
-##
 
+BV - BonVoyage, suite name
+LocalChat is an application providing simple messaging utility over mDNS.
+FileSharing is an application providing simple file exchaning utility over mDNS.
 ## Classes
-
 ## Class 'BVService'
 Description:
 This class embeds the DNS-SD Service Registration functionality:
-    1. Service Registration (and handlin the response from daemon),
+    1. Service Registration (and handling the response from daemon),
     2. ?Discovery of Browsing and Registration Domains (Domain Enumeration),
        Although we will for now, use only .local (and should only use local?)
     3. Record handling (optionally)?
@@ -18,8 +19,6 @@ This class embeds the DNS-SD Service Registration functionality:
 
 Other:
 Service has a fixed, constant type: _localchathost._tcp. Name is the host name providing this service.
-##
-
 ## Class 'BVDiscovery'
 Description:
 This class embeds the DNS-SD Service Discovery functionality:
@@ -54,5 +53,33 @@ solution only - there will be avahi on Linux.
 
 Logging functionality?
 
-## How BV operates?
+## How BV operates
+## LocalChat
+# Application Overview
+LocalChat serves as a messaging utility over local network (LAN).
+It utilizes mDNS and DNS-SD networking protocols in order to connect OS agnostic hosts in the same network, 
+without setting up a DNS server, or utilizing any other external server, that would exchange messages,
+manage sessions and provide other utilities, required from this type of entity.
+LocalChat uses FLTK to provide a GUI for a user; a panel with available hosts within the network,
+text field, and other widgets.
 
+# LocalChat flow
+1. Initialization of BVService_Bonjour (for now class that supports only Bonjour)
+2. Registration of service (TODO: provide complete service name) (_localchat._tcp.local?),
+   where .local is mandatory, because mDNS exclusively resolves hostnames ending with the .local top-level domain[^1].
+   [^1]: [Wikipedia on mDNS](https://en.wikipedia.org/wiki/Multicast_DNS#Protocol_overview)
+   1. If service was already registered, do not register it twice. (TODO: Should this application work in background?)
+      meaning, if someone writes a message to a user, where their application was closed, (but not the service)
+      should they receive the messages?
+3. Initialization of interface after successful registration.
+
+# Threading
+## Boost threadpool
+Boost threadpool allows for the automatic thread management.
+## Threads needed
+First should take care of registration and announce if it was succesful or not.
+It has to register the service with hostname, and wait for the daemon to reply.
+
+Second thread handles GUI.
+
+Third thread handles communication over TCP.
