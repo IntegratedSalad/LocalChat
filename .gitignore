@@ -47,6 +47,9 @@ build/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
+Makefile
+src/Makefile
+tests/Makefile
 
 # Google test
 lib/

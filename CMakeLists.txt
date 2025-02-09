@@ -14,8 +14,19 @@ find_package(Boost)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 find_library(DNS_SD_LIBRARY NAMES dns_sd PATHS /usr/local/lib)
 
-add_subdirectory(src)
 add_subdirectory(tests)
+
+include_directories(${CMAKE_SOURCE_DIR}/include)
+add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp)
+
+if(Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIRS})
+	target_link_libraries(LocalChat ${Boost_LIBRARIES})
+	target_link_libraries(LocalChat ${DNS_SD_LIBRARY})
+endif()
+
+add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.cpp)
+target_link_libraries(LocalChat BVService_Bonjour)
 
 # We can compile different targets - only BVService_Bonjour, BVService (for BonVoyage main app and for LocalChat) or we can export these classes
 # onto a separate git repository. Then, we could use it as a submodule for LC and BV.
