@@ -24,3 +24,5 @@ otool -L LocalChat -> list object files
 **We don't need to compile *anything* from mDNSPosix.**
 **mDNSResponder daemon, and mDNSResponderHelper are installed system-wide.**
 **And, we don't have to link it with the libdns_sd.dylib, only *libSystem.B.dylib***
+**libSystem.B.dylib has symbols found in dns_sd.h**
+When we look at otool -L /usr/bin/dns-sd, we can see that it has only one shared library - *libSystem.B.dylib*.
