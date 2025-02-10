@@ -1,6 +1,4 @@
-Mamy biblioteke asio ktora pozwala na asynchroniczne I/O w kontekscie networkingu (wysylanie pakietow, odbieranie), czyli wykonywanie
-tych czynnosci bez czekania na odpowiedz.
-Czyli moge wykonywac funkcje okreslone w API?
+ASIO udostepnia ioContext, który wywołuje callbacki, w momencie, gdy system operacyjny uzna, ze mozna wywolac jedna z operacji I/O.jak czytanie, pisanie do roznych obiektow (w tym sockety).
 Glowne pytanie: Czy moge uzyc funkcji zdefiniowanych w dns_sd.h asynchronicznie, przy pomocy asio?
 Wydaje mi sie, ze jezeli te funkcje w API zawieraja operacje blokujace to tak - bo asio daje mi mozliwosc stworzenia kontekstu/petli AI/O, ktora z definicji nie bedzie blokowac.
 Wazne:
