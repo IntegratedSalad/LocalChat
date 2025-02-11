@@ -71,7 +71,6 @@ text field, and other widgets.
    1. If service was already registered, do not register it twice. (TODO: Should this application work in background?)
       meaning, if someone writes a message to a user, where their application was closed, (but not the service)
       should they receive the messages?
-3. Initialization of interface after successful registration.
 
 # Threading
 ## Boost threadpool

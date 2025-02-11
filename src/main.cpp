@@ -1,13 +1,10 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <thread>
+#include <future>
 #include "dns_sd.h"
 #include "BVService_Bonjour.hpp"
 
-void countToTen(boost::asio::steady_timer* t, boost::asio::io_context* ioc, int* count, int ms);
-void askForInput(void);
-void init(void);
-std::atomic<BVStatus> registerStatus = BVStatus::BVSTATUS_NOK; // this should be available to all threads
 int main(int argc, char** argv)
 {
     boost::asio::io_context ioContext;
@@ -30,42 +27,35 @@ int main(int argc, char** argv)
     std::string hostname = boost::asio::ip::host_name();  // Use an appropriate host name or retrieve it
     std::string domain = "local";
 
-    boost::asio::thread_pool tp{3};
-
+    /* 
+        Let's keep registration procedure synchronous, at least for now.
+        It really is a crucial step in order for the application to function.
+    */
     BVService_Bonjour BV_Bonjour{hostname, domain, PORT};
-    BVStatus status = BV_Bonjour.Register(ioContext); // we probably need a future
-
-    /*
-        Let's try to register the service, wait for the daemon to reply
-        and schedule another, arbitrary task providing a function that counts to ten using
-        a timer.
-     */
-    std::cout << std::endl;
+    BVStatus status = BV_Bonjour.Register(); // blocks
     if (status == BVStatus::BVSTATUS_OK)
     {
-        try
-        {
-            std::cout << "Running io context..." << std::endl;
-            ioContext.run();
-        } catch (const std::exception& ex)
-        {
-            std::cout << ex.what() << std::endl;
-        }
+        std::cout << "Setup successful" << std::endl;
     } else
     {
-        std::cerr << "Registration failed" << std::endl;
+        std::cerr << "Setup failed" << std::endl;
+        std::exit(-1);
     }
+
+    boost::asio::thread_pool tp{3};
 
     return 0;
 }
 
-void registerService(void)
-{
-    BVService_Bonjour BV_Bonjour{hostname, domain, PORT};
-    BVStatus status = BV_Bonjour.Register(ioContext);
-    
-
-}
+// BVStatus registerService(std::string& hostname, 
+//                          std::string& domain,
+//                          const int port)
+// {
+//     BVStatus status;
+//     BVService_Bonjour BV_Bonjour{hostname, domain, port};
+//     status = BV_Bonjour.Register(ioContext);
+//     return status;
+// }
 
 /*
     TODO:

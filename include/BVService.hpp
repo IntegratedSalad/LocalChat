@@ -22,7 +22,7 @@ private:
     int port;
     bool isRegistered = false;
 
-    virtual BVStatus Register(boost::asio::io_context& ioContext) = 0;
+    virtual BVStatus Register(void) = 0;
 public:
     BVService(std::string _hostname, std::string _domain, int _port)
     {

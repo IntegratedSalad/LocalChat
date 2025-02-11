@@ -11,7 +11,7 @@ private:
         Do we need an abstraction to process result?
         Or will this be needlessly complex.     
     */
-    BVStatus ProcessDNSServiceResults(boost::asio::steady_timer* timer, boost::asio::io_context* ioContext);
+    BVStatus ProcessDNSServiceResults(void);
 
 public:
     BVService_Bonjour(std::string& _hostname,  std::string& _domain, int _port) 
@@ -19,7 +19,7 @@ public:
     {
     }
 
-    BVStatus Register(boost::asio::io_context& ioContext);
+    BVStatus Register();
 
     ~BVService_Bonjour()
     {
