@@ -13,6 +13,7 @@ launchctl dumpstate -> view information about running daemons, agents and XPC se
 launchctl dumpstate | grep -iE ".*mdns" -> view information about mdns daemon
 ls -lah /var/run -> list all daemons
 otool -L LocalChat -> list object files
+nm -g .dylib -> list symbols within shared lib
 
 ## Useful dirs
 /usr/bin -> binaries
@@ -26,3 +27,6 @@ otool -L LocalChat -> list object files
 **And, we don't have to link it with the libdns_sd.dylib, only *libSystem.B.dylib***
 **libSystem.B.dylib has symbols found in dns_sd.h**
 When we look at otool -L /usr/bin/dns-sd, we can see that it has only one shared library - *libSystem.B.dylib*.
+When linked to libdns_sd.dylib, it somehow conflicted communication with the daemon.
+Now I know, why including dns_sd.h works - symbols are found in libSystem.B.dylib, which is automatically linked to
+my binary.

@@ -10,7 +10,7 @@ set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 cmake_print_variables(Boost_INCLUDE_DIRS)
 find_package(Boost)
-
+find_package(Threads REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_subdirectory(tests)

@@ -46,7 +46,7 @@ BVActor_Bonjour i BVActor_Avahi
 Record handling?
 
 ## GUI library:
-FTLK
+FTLK or raygui
 
 And on top of that, we have to take into consideration the fact that mDNSResponder is a Windows and macOS
 solution only - there will be avahi on Linux.
@@ -75,7 +75,7 @@ text field, and other widgets.
 
 # Threading
 ## Boost threadpool
-Boost threadpool allows for the automatic thread management.
+boost::threadpool allows for the automatic thread management.
 ## Threads needed
 First should take care of registration and announce if it was succesful or not.
 It has to register the service with hostname, and wait for the daemon to reply.

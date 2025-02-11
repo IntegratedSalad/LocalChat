@@ -7,6 +7,7 @@
 void countToTen(boost::asio::steady_timer* t, boost::asio::io_context* ioc, int* count, int ms);
 void askForInput(void);
 void init(void);
+std::atomic<BVStatus> registerStatus = BVStatus::BVSTATUS_NOK; // this should be available to all threads
 int main(int argc, char** argv)
 {
     boost::asio::io_context ioContext;
@@ -28,10 +29,11 @@ int main(int argc, char** argv)
 
     std::string hostname = boost::asio::ip::host_name();  // Use an appropriate host name or retrieve it
     std::string domain = "local";
-    int port = 50001;
 
-    BVService_Bonjour BV_Bonjour{hostname, domain, port};
-    BVStatus status = BV_Bonjour.Register(ioContext);
+    boost::asio::thread_pool tp{3};
+
+    BVService_Bonjour BV_Bonjour{hostname, domain, PORT};
+    BVStatus status = BV_Bonjour.Register(ioContext); // we probably need a future
 
     /*
         Let's try to register the service, wait for the daemon to reply
@@ -57,8 +59,11 @@ int main(int argc, char** argv)
     return 0;
 }
 
-void init(void)
+void registerService(void)
 {
+    BVService_Bonjour BV_Bonjour{hostname, domain, PORT};
+    BVStatus status = BV_Bonjour.Register(ioContext);
+    
 
 }
 
