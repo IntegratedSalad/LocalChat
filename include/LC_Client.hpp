@@ -4,6 +4,7 @@
 
 /*
     LC_Client functions as a console application of LocalChat.
+    Define as a function object, because it should be run in a different thread?
 */
 class LC_Client
 {

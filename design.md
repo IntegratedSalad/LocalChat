@@ -23,14 +23,17 @@ Service has a fixed, constant type: _localchathost._tcp. Name is the host name p
 Description:
 This class embeds the DNS-SD Service Discovery functionality:
     1. Discovery of instances (hosts) of localchathost service.
-    2. Resolving a service name.
-##
+    2. Resolving a host name of a service (to IPv4).
+
+How to interface with asio? Discovery is an asynchronous task.
+This is a good idea, BVDiscovery can be a function object.
 
 ## Class 'BVActor'
 Description:
 An actor, an instance that acts like a user would.
 It has service, it can discover other services.
 It should be independent of the implementation (Avahi/Bonjour)
+BVActor can run all threads and define mutexes and resources for BVXX functionality.
 
 !Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
 Czy nie da sie zrobic jakiegos systemu ktory by byl abstrakcją tego? Czy to jest potrzebne?
@@ -47,9 +50,6 @@ Record handling?
 
 ## GUI library:
 FTLK or raygui
-
-And on top of that, we have to take into consideration the fact that mDNSResponder is a Windows and macOS
-solution only - there will be avahi on Linux.
 
 Logging functionality?
 
@@ -71,6 +71,14 @@ text field, and other widgets.
    1. If service was already registered, do not register it twice. (TODO: Should this application work in background?)
       meaning, if someone writes a message to a user, where their application was closed, (but not the service)
       should they receive the messages?
+3. UI initialization. This can mean a CLI or GUI aplication. (TODO: Build for different targets?)
+4. Main Program Loop:
+   1. Accept user input AND
+   2. Discovery for localchat services periodically (timer) AND
+   3. Notify user when someone is available to chat AND (Thread handling this will block until specific ?message? comes)
+   4. Output messages sent to user (callback upon receiving data on socket)
+   Main problem is, that discovery for localchat services etc. needs to call callbacks/completion handlers upon
+   finished task.
 
 # Threading
 ## Boost threadpool

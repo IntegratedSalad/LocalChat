@@ -4,6 +4,7 @@
 #include <future>
 #include "dns_sd.h"
 #include "BVService_Bonjour.hpp"
+#include "BVDiscovery_Bonjour.hpp"
 
 int main(int argc, char** argv)
 {
@@ -43,6 +44,8 @@ int main(int argc, char** argv)
     }
 
     boost::asio::thread_pool tp{3};
+
+    // Create a discovery object, that periodically performs DNS-SD functionality.
 
     return 0;
 }

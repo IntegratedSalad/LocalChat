@@ -19,7 +19,7 @@ public:
     {
     }
 
-    BVStatus Register();
+    BVStatus Register() override;
 
     ~BVService_Bonjour()
     {
