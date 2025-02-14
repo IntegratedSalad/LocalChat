@@ -45,12 +45,12 @@ BVStatus BVService_Bonjour::Register()
     // This will probably timeout, if waits for too long
     // If it doesn't timeout, we will have to run this in a separate thread
     // and wait for couple of seconds.
-    status = this->ProcessDNSServiceResults(); // this blocks until it receives the reply from the daemon
+    status = this->ProcessDNSServiceRegisterResult(); // this blocks until it receives the reply from the daemon
 
     return status;
 }
 
-BVStatus BVService_Bonjour::ProcessDNSServiceResults()
+BVStatus BVService_Bonjour::ProcessDNSServiceRegisterResult()
 {
     DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef);
     if (error != kDNSServiceErr_NoError) {

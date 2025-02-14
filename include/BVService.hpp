@@ -1,17 +1,10 @@
 #pragma once
 #include <iostream>
 #include <boost/asio.hpp>
+#include "BV.hpp"
 
 #define SERVICETYPE_STR "_localchathost._tcp"
 #define PORT            50001
-
-typedef enum class BVStatus
-{
-    BVSTATUS_OK,
-    BVSTATUS_NOK,
-    BV_STATUS_IN_PROGRESS
-
-} BVStatus;
 
 class BVService
 {

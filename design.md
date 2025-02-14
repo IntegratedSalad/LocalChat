@@ -27,13 +27,22 @@ This class embeds the DNS-SD Service Discovery functionality:
 
 How to interface with asio? Discovery is an asynchronous task.
 This is a good idea, BVDiscovery can be a function object.
+Does BVDiscovery need its own io_context? Or does it need just a reference
+to io_context from main?
 
 ## Class 'BVActor'
 Description:
 An actor, an instance that acts like a user would.
-It has service, it can discover other services.
 It should be independent of the implementation (Avahi/Bonjour)
-BVActor can run all threads and define mutexes and resources for BVXX functionality.
+But why Actor? Actor implies, there are multiple of them, each interacting.
+This doesn't need this.
+
+BV?? can run all threads and define mutexes and resources for BVXX functionality.
+Maybe BVApp?
+
+## Class 'BVApp'
+
+
 
 !Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
 Czy nie da sie zrobic jakiegos systemu ktory by byl abstrakcją tego? Czy to jest potrzebne?

@@ -11,7 +11,7 @@ private:
         Do we need an abstraction to process result?
         Or will this be needlessly complex.     
     */
-    BVStatus ProcessDNSServiceResults(void);
+    BVStatus ProcessDNSServiceRegisterResult(void);
 
 public:
     BVService_Bonjour(std::string& _hostname,  std::string& _domain, int _port) 
