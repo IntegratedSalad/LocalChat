@@ -25,26 +25,53 @@ void C_ServiceBrowseReply(
 }
 }
 
-BVDiscovery_Bonjour::BVDiscovery_Bonjour(DNSServiceRef ref, std::mutex& _mutex) : dnsRef(ref), rwListMutex(_mutex)
+BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _mutex,
+                                         boost::asio::io_context& _ioContext) 
+    : service_p(_service_p), rwListMutex(_mutex), ioContext(_ioContext), discoveryTimer(_ioContext)
 {
-    this->discoveryList_p = std::make_unique<std::list<BVServiceBrowseInstance>>();
+    this->discoveryList_p = std::make_shared<std::list<BVServiceBrowseInstance>>();
 }
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
 }
 
-BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
-{
+void BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
+{   
+    DNSServiceRef sref = this->service_p->GetDNSRef(); // sref is different!!!
+    DNSServiceErrorType error = DNSServiceBrowse(&sref,
+                                                 0,
+                                                 0,
+                                                 this->service_p->GetRegType().c_str(),
+                                                 this->service_p->GetDomain().c_str(),
+                                                 C_ServiceBrowseReply,
+                                                 NULL);
 
+    if (!(error == kDNSServiceErr_NoError))
+    {
+        this->status = BVStatus::BVSTATUS_NOK;
+        return;
+    }
+
+    std::cout << "Scheduling the timer..." << std::endl;
+
+    this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
+    this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
+    {
+        this->ProcessDNSServiceBrowseResult();
+    });
 }
 
-void BVDiscovery_Bonjour::Discover(void)
-{
-}
-    
 void BVDiscovery_Bonjour::run()
 {
+    this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
+    this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
+    {
+        this->ProcessDNSServiceBrowseResult();
+    });
+
+    this->ioContext.run();
+
     // Define a timer (5s)
     // Schedule this timer over and over while performing Discovery
     // In the callback, pass ProcessDNSServiceBrowseResult

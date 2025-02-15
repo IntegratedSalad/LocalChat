@@ -14,8 +14,6 @@ private:
     std::string domain;
     int port;
     bool isRegistered = false;
-
-    virtual BVStatus Register(void) = 0;
 public:
     BVService(std::string _hostname, std::string _domain, int _port)
     {
@@ -26,35 +24,39 @@ public:
         this->port = static_cast<int>(htons(portH));
     }
 
-    std::string GetHostname(void)
+    virtual ~BVService() = default;
+
+    virtual BVStatus Register(void) = 0;
+
+    std::string GetHostname(void) const
     {
         return this->hostname;
     }
 
-    std::string GetDomain(void)
+    std::string GetDomain(void) const
     {
         return this->domain;
     }
 
-    int GetPort(void)
+    int GetPort(void) const
     {
         return this->port;
     }
 
     /* Gets service type */
-    std::string GetRegType(void)
+    std::string GetRegType(void) const
     {
         return this->regtype;
     }
 
-    bool GetRegistered(void)
+    bool GetIsRegistered(void) const
     {
         return this->isRegistered;
     }
 
-    ~BVService()
+    void SetIsRegistered(const bool _isRegistered)
     {
-        
+        this->isRegistered = _isRegistered;
     }
 };
 

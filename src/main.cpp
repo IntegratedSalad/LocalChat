@@ -32,8 +32,8 @@ int main(int argc, char** argv)
         Let's keep registration procedure synchronous, at least for now.
         It really is a crucial step in order for the application to function.
     */
-    BVService_Bonjour BV_Bonjour{hostname, domain, PORT};
-    BVStatus status = BV_Bonjour.Register(); // blocks
+    BVService_Bonjour service{hostname, domain, PORT};
+    BVStatus status = service.Register(); // blocks
     if (status == BVStatus::BVSTATUS_OK)
     {
         std::cout << "Setup successful" << std::endl;
@@ -42,10 +42,26 @@ int main(int argc, char** argv)
         std::cerr << "Setup failed" << std::endl;
         std::exit(-1);
     }
+    
+    std::mutex rwListMutex;
+    std::shared_ptr<const BVService_Bonjour> service_p = std::make_shared<const BVService_Bonjour>(service);
 
     boost::asio::thread_pool tp{3};
+    BVDiscovery_Bonjour discovery{service_p, rwListMutex, ioContext};
+
+    boost::asio::post(tp, [&discovery](){
+        discovery();
+    });
+
+    tp.join();
+
+    // for(;;)
+    // {
+
+    // }
 
     // Create a discovery object, that periodically performs DNS-SD functionality.
+    // When dnsRef is deallocated, service is no longer discoverable
 
     return 0;
 }

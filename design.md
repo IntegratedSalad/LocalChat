@@ -8,7 +8,8 @@ FileSharing is an application providing simple file exchaning utility over mDNS.
 ## Classes
 ## Class 'BVService'
 Description:
-This class embeds the DNS-SD Service Registration functionality:
+This class embeds the DNS-SD Service Registration functionality and
+holds instance's service basic information:
     1. Service Registration (and handling the response from daemon),
     2. ?Discovery of Browsing and Registration Domains (Domain Enumeration),
        Although we will for now, use only .local (and should only use local?)
@@ -16,6 +17,7 @@ This class embeds the DNS-SD Service Registration functionality:
     4. Service deregistration and deallocation of resources (DNSServiceRef).
        Question: does DNSServiceRef for DNSServiceRegister has to be deallocated
        after reading the reply from the daemon?
+
 
 Other:
 Service has a fixed, constant type: _localchathost._tcp. Name is the host name providing this service.

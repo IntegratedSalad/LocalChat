@@ -46,7 +46,10 @@ BVStatus BVService_Bonjour::Register()
     // If it doesn't timeout, we will have to run this in a separate thread
     // and wait for couple of seconds.
     status = this->ProcessDNSServiceRegisterResult(); // this blocks until it receives the reply from the daemon
-
+    if (status == BVStatus::BVSTATUS_OK)
+    {
+        this->SetIsRegistered(true);
+    }
     return status;
 }
 

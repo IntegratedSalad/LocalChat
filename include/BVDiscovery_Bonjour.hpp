@@ -1,11 +1,11 @@
 #pragma once
 #include "BV.hpp"
 #include "BVDiscovery.hpp"
+#include "BVService_Bonjour.hpp"
 #include "dns_sd.h"
 #include <mutex>
 #include <memory>
 #include <list>
-#include <boost/asio.hpp>
 
 /*
     This class will utilize an array of records.
@@ -22,21 +22,22 @@
 class BVDiscovery_Bonjour : public BVDiscovery
 {
 private:
-    DNSServiceRef dnsRef;
+    std::shared_ptr<const BVService_Bonjour> service_p;
     std::mutex& rwListMutex;
-    std::unique_ptr<std::list<BVServiceBrowseInstance>> discoveryList_p; // probably we will have to
+    std::shared_ptr<std::list<BVServiceBrowseInstance>> discoveryList_p; // probably we will have to
     // allocate the memory for this list outside BVDiscovery_Bonjour, because this is another thread,
     // so passing a pointer to memory to another thread might point to not the same thing in this other thread.
 
-    boost::asio::io_context ioContext;
+    boost::asio::io_context& ioContext;
+    boost::asio::steady_timer discoveryTimer;
+    void ProcessDNSServiceBrowseResult(void);
 
-    void Discover();
-    BVStatus ProcessDNSServiceBrowseResult();
+    BVStatus status = BVStatus::BV_STATUS_IN_PROGRESS;
 
 public:
-    BVDiscovery_Bonjour(DNSServiceRef ref, std::mutex& _mutex);
+    BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _mutex,
+                        boost::asio::io_context& _ioContext);
     ~BVDiscovery_Bonjour();
-    
-    void run() override;
 
+    void run() override;
 };

@@ -2,8 +2,9 @@
 #include "BVService.hpp"
 #include "dns_sd.h"
 #include <atomic>
+#include <iostream>
 
-class BVService_Bonjour : private BVService
+class BVService_Bonjour : public BVService
 {
 private:
     DNSServiceRef dnsRef;
@@ -18,11 +19,16 @@ public:
     : BVService(_hostname,  _domain, _port)
     {
     }
-
-    BVStatus Register() override;
-
+    
     ~BVService_Bonjour()
     {
         DNSServiceRefDeallocate(this->dnsRef);
+    }
+
+    BVStatus Register() override;
+
+    DNSServiceRef GetDNSRef(void) const
+    {
+        return this->dnsRef;
     }
 };
