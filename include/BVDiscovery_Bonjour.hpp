@@ -23,6 +23,7 @@ class BVDiscovery_Bonjour : public BVDiscovery
 {
 private:
     std::shared_ptr<const BVService_Bonjour> service_p;
+    DNSServiceRef dnsRef;
     std::mutex& rwListMutex;
     std::shared_ptr<std::list<BVServiceBrowseInstance>> discoveryList_p; // probably we will have to
     // allocate the memory for this list outside BVDiscovery_Bonjour, because this is another thread,
@@ -30,9 +31,12 @@ private:
 
     boost::asio::io_context& ioContext;
     boost::asio::steady_timer discoveryTimer;
-    void ProcessDNSServiceBrowseResult(void);
+    void StartBrowsing(void);
+
+    BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list
 
     BVStatus status = BVStatus::BV_STATUS_IN_PROGRESS;
+    bool isBrowsingActive = false;
 
 public:
     BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _mutex,

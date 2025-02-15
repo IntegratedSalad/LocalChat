@@ -17,7 +17,7 @@ private:
 public:
     BVService(std::string _hostname, std::string _domain, int _port)
     {
-        this->hostname = boost::asio::ip::host_name();
+        this->hostname = _hostname;
         // TODO foolproof that.
         this->domain = _domain;
         uint16_t portH = static_cast<uint16_t>(_port);

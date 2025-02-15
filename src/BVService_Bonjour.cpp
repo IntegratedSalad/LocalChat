@@ -53,6 +53,9 @@ BVStatus BVService_Bonjour::Register()
     return status;
 }
 
+// Couldn't this method be abstracted? Or made an interface
+// if few more functions will have the same body
+// and be used in Service Discovery and Service Registration functionality
 BVStatus BVService_Bonjour::ProcessDNSServiceRegisterResult()
 {
     DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef);
