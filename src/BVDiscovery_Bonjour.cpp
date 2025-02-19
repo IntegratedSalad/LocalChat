@@ -43,6 +43,7 @@ void C_ServiceBrowseReply(
                 memcpy(buff + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, replyDomain, strlen(replyDomain));
             }
             // char* context_ca = (char*)context;
+            buff[N_BYTES_TOTAL-1] = '\0'; // null terminate the str buffer
             memcpy(context, buff, N_BYTES_TOTAL);
             printf("%s", (char*)context);
             // context_ca[N_BYTES_TOTAL-1] = '\0';
