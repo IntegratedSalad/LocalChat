@@ -7,6 +7,11 @@
 #include <memory>
 #include <list>
 
+#define N_BYTES_SERVNAME_MAX 24
+#define N_BYTES_REGTYPE_MAX  24
+#define N_BYTES_REPLDOMN_MAX 16
+#define N_BYTES_TOTAL        (N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX + N_BYTES_REPLDOMN_MAX)
+
 /*
     This class will utilize an array of records.
     Access R/W has to be synchronized by a mutex!
@@ -26,8 +31,10 @@ private:
     DNSServiceRef dnsRef;
     std::mutex& rwListMutex;
     std::shared_ptr<std::list<BVServiceBrowseInstance>> discoveryList_p; // probably we will have to
-    // allocate the memory for this list outside BVDiscovery_Bonjour, because this is another thread,
+    // allocate the memory for this list outside BVDiscovery_Bonjour in the main thread, because this is another thread,
     // so passing a pointer to memory to another thread might point to not the same thing in this other thread.
+
+    BVServiceBrowseInstance browseInstance; 
 
     boost::asio::io_context& ioContext;
     boost::asio::steady_timer discoveryTimer;
@@ -37,6 +44,8 @@ private:
 
     BVStatus status = BVStatus::BV_STATUS_IN_PROGRESS;
     bool isBrowsingActive = false;
+
+    char discoveryResult_carr[N_BYTES_TOTAL] = {0};
 
 public:
     BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _mutex,

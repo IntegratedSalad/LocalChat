@@ -42,7 +42,7 @@ BVStatus BVService_Bonjour::Register()
         return BVStatus::BVSTATUS_NOK;
     }
 
-    // This will probably timeout, if waits for too long
+    // This will probably timeout, if it waits for too long
     // If it doesn't timeout, we will have to run this in a separate thread
     // and wait for couple of seconds.
     status = this->ProcessDNSServiceRegisterResult(); // this blocks until it receives the reply from the daemon
