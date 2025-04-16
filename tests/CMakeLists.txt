@@ -12,19 +12,34 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-enable_testing()
+# enable_testing()
+
+add_library(linked_list STATIC ${CMAKE_SOURCE_DIR}/src/linked_list.c ${CMAKE_SOURCE_DIR}/include/linked_list.h)
 
 add_executable(
   dns_sd_test_Registration
   dns_sd_test_Registration.cpp
 )
+
 target_link_libraries(
   dns_sd_test_Registration
   GTest::gtest_main
 )
 
+add_executable(
+  linked_list_test_Basic
+  linked_list_test_Basic.cpp
+)
+
+target_link_libraries(
+  linked_list_test_Basic
+  GTest::gtest_main
+  linked_list
+)
+
 include(GoogleTest)
 gtest_discover_tests(dns_sd_test_Registration)
+gtest_discover_tests(linked_list_test_Basic)
 
 # TODO: Run all tests, either link every object to a single executable and run
 #       or write script that executes all tests

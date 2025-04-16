@@ -24,6 +24,8 @@ if(Boost_FOUND)
 	target_link_libraries(LocalChat ${Boost_LIBRARIES})
 endif()
 
+enable_testing()
+
 add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.cpp)
 add_library(BVDiscovery_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Bonjour.cpp)
 target_link_libraries(LocalChat BVService_Bonjour)

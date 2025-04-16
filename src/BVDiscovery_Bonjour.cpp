@@ -1,10 +1,13 @@
 #include "BVDiscovery_Bonjour.hpp"
 
-// How to return the value serviceName?
-// Maybe pass something to context?
-
 // TODO: Get reply for service discovery and registration to other file
-//       and test it (simulate reply from the deamon)
+//       and test it (simulate reply from the daemon)
+
+// This global variable can be removed.
+// One solution is to allocate LinkedList
+// and pass it into C_ServiceBrowseReply' context pointer.
+// Then, ProcessDNSServiceBrowseResult can use it to append discovery results to the queue
+unsigned int current_service_num = 0;
 extern "C"
 {
 #include <stdio.h>
@@ -25,30 +28,32 @@ void C_ServiceBrowseReply(
         printf("Found %s.%s in %s!\n", serviceName, regtype, replyDomain);
         if (context != NULL)
         {
-            char buff[N_BYTES_TOTAL];
-            for (int i = 0; i < N_BYTES_TOTAL; i++) 
+            char buff[N_BYTES_SERVICE_STR_TOTAL];
+            const size_t servLen = strlen(serviceName);
+            const size_t regLen = strlen(regtype);
+            const size_t replDmnLen = strlen(replyDomain);
+            for (int i = 0; i < N_BYTES_SERVICE_STR_TOTAL; i++)
             {
                 buff[i] = 'X';
             }
-            if (strlen(serviceName) < N_BYTES_SERVNAME_MAX)
+            if (servLen < N_BYTES_SERVNAME_MAX)
             {
-                memcpy(buff, serviceName, strlen(serviceName));
+                memcpy(buff, serviceName, servLen);
             }
-            if (strlen(regtype) < N_BYTES_REGTYPE_MAX)
+            if (regLen < N_BYTES_REGTYPE_MAX)
             {
-                memcpy(buff + N_BYTES_SERVNAME_MAX, regtype, strlen(regtype));
+                memcpy(buff + N_BYTES_SERVNAME_MAX, regtype, regLen);
             }
-            if (strlen(replyDomain) < N_BYTES_REPLDOMN_MAX)
+            if (replDmnLen < N_BYTES_REPLDOMN_MAX)
             {
-                memcpy(buff + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, replyDomain, strlen(replyDomain));
+                memcpy(buff + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, replyDomain, replDmnLen);
             }
-            // char* context_ca = (char*)context;
-            buff[N_BYTES_TOTAL-1] = '\0'; // null terminate the str buffer
-            memcpy(context, buff, N_BYTES_TOTAL);
+            buff[N_BYTES_SERVICE_STR_TOTAL-1] = '\0';
+            memcpy(context, buff, N_BYTES_SERVICE_STR_TOTAL);
             printf("%s", (char*)context);
-            // context_ca[N_BYTES_TOTAL-1] = '\0';
-        }
+            current_service_num++;
 
+        }
         // void* context should be a queue or a function pointer?
         // void* context should be a dynamically/statically allocated char array (64 bytes will suffice i think)
         // Then, because DNSServiceProcessResult will block until the daemon replies,
@@ -117,9 +122,9 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     // See if there's something in the array
 
     std::cout << "c array: ";
-    std::string discoveryResultstr(this->discoveryResult_carr);
-    discoveryResultstr.erase(std::remove(discoveryResultstr.begin(), discoveryResultstr.end(), 'X'), discoveryResultstr.end());
-    std::cout << discoveryResultstr << std::endl;
+    // std::string discoveryResultstr(this->discoveryResult_carr);
+    // discoveryResultstr.erase(std::remove(discoveryResultstr.begin(), discoveryResultstr.end(), 'X'), discoveryResultstr.end());
+    // std::cout << discoveryResultstr << std::endl;
 
     this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
     this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)

@@ -18,7 +18,6 @@ holds instance's service basic information:
        Question: does DNSServiceRef for DNSServiceRegister has to be deallocated
        after reading the reply from the daemon?
 
-
 Other:
 Service has a fixed, constant type: _localchathost._tcp. Name is the host name providing this service.
 ## Class 'BVDiscovery'
@@ -30,7 +29,19 @@ This class embeds the DNS-SD Service Discovery functionality:
 How to interface with asio? Discovery is an asynchronous task.
 This is a good idea, BVDiscovery can be a function object.
 Does BVDiscovery need its own io_context? Or does it need just a reference
-to io_context from main?
+to io_context from main? BVDiscovery utilizes external io_context.
+How will discovery results from BVDiscovery be used?
+Should they be stored in queue for consumption?
+Who will consume them?
+One reason is that what comes from BVDiscovery should be consumed and stored somewhere else.
+Maybe one class that stores that information. Session?
+Then UI, and component that will send messages/files can acquire const pointer to this BVSession.
+Then, if new discovery results come, they will be put on queue and the consumer
+can update its data with new results (check if they're in fact new).
+Session always tries to read the queue.
+BVSession can contain every information that is tied to a session.
+How many bytes were transmitted?
+How much hosts were discovered etc.
 
 ## Class 'BVActor'
 Description:
