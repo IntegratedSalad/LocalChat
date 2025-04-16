@@ -20,7 +20,7 @@ typedef struct LinkedList_str
 
 /* Linked List functions */
 LinkedList_str* LinkedList_str_Constructor(LinkedListElement_str* head_p);
-void LinkedList_str_Destructor(LinkedList_str* list_p);
+void LinkedList_str_Destructor(LinkedList_str** list_p);
 void LinkedList_str_AddElement(LinkedList_str* ll_p,
                                LinkedListElement_str* ll_element_p);
 void LinkedList_str_RemoveElement(LinkedList_str* ll_p,

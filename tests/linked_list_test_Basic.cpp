@@ -7,7 +7,7 @@ TEST(LinkedListTest, InitEmptyDeinitEmpty)
 
     ASSERT_NE(ll_p, nullptr);
 
-    LinkedList_str_Destructor(ll_p);
+    LinkedList_str_Destructor(&ll_p);
 
     ASSERT_EQ(ll_p, nullptr);
 }

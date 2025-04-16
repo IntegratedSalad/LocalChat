@@ -16,12 +16,14 @@ LinkedList_str* LinkedList_str_Constructor(LinkedListElement_str* head_p)
 }
 
 /* This DOES NOT deallocate each and every element. */
-void LinkedList_str_Destructor(LinkedList_str* list_p)
+void LinkedList_str_Destructor(LinkedList_str** list_p)
 {
-    free(list_p->head_p);
-    list_p->head_p = NULL;
-    free(list_p);
-    list_p = NULL;
+    if (list_p == NULL || *list_p == NULL) return;
+
+    free((*list_p)->head_p);
+    (*list_p)->head_p = NULL;
+    free(*list_p);
+    *list_p = NULL;
 }
 
 LinkedListElement_str* LinkedList_str_FindTail(const LinkedList_str* ll_p)
