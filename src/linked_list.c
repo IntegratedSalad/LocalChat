@@ -7,13 +7,19 @@ LinkedList_str* LinkedList_str_Constructor(LinkedListElement_str* head_p)
 {
     LinkedList_str* ll_p = NULL;
     ll_p = malloc(sizeof(LinkedList_str));
-    ll_p->head_p = head_p;
+    memset(ll_p, 0, sizeof(LinkedList_str));
+    if (head_p != NULL)
+    {
+        ll_p->head_p = head_p;
+    }
     return ll_p;
 }
 
 /* This DOES NOT deallocate each and every element. */
 void LinkedList_str_Destructor(LinkedList_str* list_p)
 {
+    free(list_p->head_p);
+    list_p->head_p = NULL;
     free(list_p);
     list_p = NULL;
 }
@@ -80,6 +86,7 @@ LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE
     LinkedListElement_str* ll_element_p = NULL;
     ll_element_p = malloc(sizeof(LinkedListElement_str));
     memcpy(ll_element_p->data, data, MAX_DATA_SIZE);
+    return ll_element_p;
 }
 
 void LinkedListElement_str_Destructor(LinkedListElement_str* ll_element_p)
