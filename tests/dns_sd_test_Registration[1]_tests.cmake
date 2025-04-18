@@ -1,7 +1,0 @@
-add_test([=[DnsSdRegistration.CheckDaemonVersion]=]  /Users/dev/Documents/GitHub/LocalChat/tests/dns_sd_test_Registration [==[--gtest_filter=DnsSdRegistration.CheckDaemonVersion]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[DnsSdRegistration.CheckDaemonVersion]=]  PROPERTIES WORKING_DIRECTORY /Users/dev/Documents/GitHub/LocalChat/tests SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-add_test([=[DnsSdRegistration.RegistrationSuccess]=]  /Users/dev/Documents/GitHub/LocalChat/tests/dns_sd_test_Registration [==[--gtest_filter=DnsSdRegistration.RegistrationSuccess]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[DnsSdRegistration.RegistrationSuccess]=]  PROPERTIES WORKING_DIRECTORY /Users/dev/Documents/GitHub/LocalChat/tests SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-add_test([=[DnsSdRegistration.RegistrationFailure]=]  /Users/dev/Documents/GitHub/LocalChat/tests/dns_sd_test_Registration [==[--gtest_filter=DnsSdRegistration.RegistrationFailure]==] --gtest_also_run_disabled_tests)
-set_tests_properties([=[DnsSdRegistration.RegistrationFailure]=]  PROPERTIES WORKING_DIRECTORY /Users/dev/Documents/GitHub/LocalChat/tests SKIP_REGULAR_EXPRESSION [==[\[  SKIPPED \]]==])
-set(  dns_sd_test_Registration_TESTS DnsSdRegistration.CheckDaemonVersion DnsSdRegistration.RegistrationSuccess DnsSdRegistration.RegistrationFailure)

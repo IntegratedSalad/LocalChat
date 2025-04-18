@@ -43,6 +43,12 @@ LinkedListElement_str* LinkedList_str_FindTail(const LinkedList_str* ll_p)
 void LinkedList_str_AddElement(LinkedList_str* ll_p,
                                LinkedListElement_str* ll_element_p)
 {
+    if (ll_p->head_p == NULL)
+    {
+        ll_p->head_p = ll_element_p;
+        return;
+    }
+
     LinkedListElement_str* tail_p = LinkedList_str_FindTail(ll_p);
     if (tail_p != NULL)
     {
@@ -50,21 +56,27 @@ void LinkedList_str_AddElement(LinkedList_str* ll_p,
     }
 }
 
-void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
+void LinkedList_str_RemoveElement(LinkedList_str* ll_p, // provide address of the pointer
                                   LinkedListElement_str* ll_element_p)
 {
     LinkedListElement_str* head_p = ll_p->head_p;
     if (head_p == NULL) return;
+
+    if (ll_element_p == head_p) // element_p is at head_p
+    {
+        ll_p->head_p->next_p = ll_element_p->next_p;
+        LinkedListElement_str_Destructor(&ll_p->head_p);
+        return;
+    }
 
     LinkedListElement_str* prev_p = head_p;
     for (; (head_p != NULL) || head_p == ll_element_p; head_p = head_p->next_p)
     {
         prev_p = head_p;
     }
-    if (head_p == NULL) return;
 
-    free(head_p);
     prev_p->next_p = NULL;
+    LinkedListElement_str_Destructor(&prev_p);
 }
 
 void LinkedList_str_ClearList(LinkedList_str* ll_p)
@@ -76,9 +88,9 @@ void LinkedList_str_ClearList(LinkedList_str* ll_p)
     for (; head_p->next_p != NULL; head_p = head_p->next_p) // it will end on one before the end
     {
         prev_p = head_p;
-        LinkedListElement_str_Destructor(head_p);
+        LinkedListElement_str_Destructor(&head_p);
     }
-    LinkedListElement_str_Destructor(prev_p);
+    LinkedListElement_str_Destructor(&prev_p);
 }
 
 LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE],
@@ -87,12 +99,15 @@ LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE
     // Every linked list element has to be put on heap.
     LinkedListElement_str* ll_element_p = NULL;
     ll_element_p = malloc(sizeof(LinkedListElement_str));
-    memcpy(ll_element_p->data, data, MAX_DATA_SIZE);
+    if (data != NULL)
+    {
+        memcpy(ll_element_p->data, data, MAX_DATA_SIZE);
+    }
     return ll_element_p;
 }
 
-void LinkedListElement_str_Destructor(LinkedListElement_str* ll_element_p)
+void LinkedListElement_str_Destructor(LinkedListElement_str** ll_element_p)
 {
-    free(ll_element_p);
-    ll_element_p = NULL;
+    free(*ll_element_p);
+    *ll_element_p = NULL;
 }
