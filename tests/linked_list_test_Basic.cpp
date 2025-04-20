@@ -5,6 +5,8 @@
 #define MAX_NUM_ELEMENTS 255
 #define INDEX_TO_DELETE  38
 
+const char* TEST_DATA_STR = "ASDFGHJ";
+
 /*
     Purpose:
     Test if the allocation and deallocation works
@@ -63,11 +65,11 @@ TEST(LinkedListTestBasic, AddElementAtHeadRemoveElementAtHead)
 
 TEST(LinkedListTestBasic, AddElementAtHeadCheckData)
 {
-    char buff[TEST_DATA_SIZE] = {"ASDFGHJ"};
+    char buff[MAX_DATA_SIZE] = {0};
+    strncpy(buff, TEST_DATA_STR, sizeof(buff));
 
     LinkedList_str* ll_p = LinkedList_str_Constructor(NULL);
-    LinkedListElement_str* ll_element_p = LinkedListElement_str_Constructor(NULL, NULL);
-    memcpy(ll_element_p->data, buff, TEST_DATA_SIZE);
+    LinkedListElement_str* ll_element_p = LinkedListElement_str_Constructor(buff, NULL);
 
     LinkedList_str_AddElement(ll_p, ll_element_p);
 
@@ -115,14 +117,14 @@ TEST(LinkedListTestBasic, AddMultipleElementsClearList)
 
 TEST(LinkedListTestBasic, AddMultipleElementsCheckData)
 {
-    char buff[TEST_DATA_SIZE] = {"ASDFGHJ"};
+    char buff[MAX_DATA_SIZE] = {0};
+    strncpy(buff, TEST_DATA_STR, sizeof(buff));
 
     LinkedList_str* ll_p = LinkedList_str_Constructor(NULL);
 
     for (int i = 0; i < MAX_NUM_ELEMENTS; i++)
     {
-        LinkedListElement_str* ll_element_p = LinkedListElement_str_Constructor(NULL, NULL);
-        memcpy(ll_element_p->data, buff, TEST_DATA_SIZE);
+        LinkedListElement_str* ll_element_p = LinkedListElement_str_Constructor(buff, NULL);
         LinkedList_str_AddElement(ll_p, ll_element_p);
     }
 
@@ -130,7 +132,7 @@ TEST(LinkedListTestBasic, AddMultipleElementsCheckData)
 
     for (LinkedListElement_str* lle_p = ll_p->head_p; lle_p != NULL; lle_p = lle_p->next_p)
     {
-        bool isEqual = strncmp(buff, lle_p->data, TEST_DATA_SIZE);
+        bool isEqual = strncmp(buff, lle_p->data, TEST_DATA_SIZE) == 0;
         ASSERT_NE(lle_p, nullptr);
         ASSERT_TRUE(isEqual);
     }

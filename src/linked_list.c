@@ -112,7 +112,7 @@ LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE
     ll_element_p = malloc(sizeof(LinkedListElement_str));
     if (data != NULL)
     {
-        memcpy(ll_element_p->data, data, MAX_DATA_SIZE);
+        strncpy(ll_element_p->data, data, MAX_DATA_SIZE);
     } else
     {
         memset(ll_element_p->data, 0, MAX_DATA_SIZE);

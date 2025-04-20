@@ -3,7 +3,6 @@ project(my_project)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(SANITIZE_FLAGS "-fsanitize=address" "-fno-omit-frame-pointer" "-g" "-O1")
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
