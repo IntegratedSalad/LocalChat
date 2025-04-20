@@ -63,6 +63,7 @@ void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
     if (ll_element_p == head_p && head_p->next_p == NULL) // element_p is at head_p and there's only one element
     {
         ll_p->head_p->next_p = NULL;
+        ll_p->head_p = NULL;
         LinkedListElement_str_Destructor(&ll_p->head_p);
         return;
     } else if (ll_element_p == head_p && head_p->next_p != NULL) // element_p is at head_p and there's more elements
@@ -72,10 +73,21 @@ void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
         ll_p->head_p = next_p_copy;
     } else
     {
+        LinkedListElement_str* prev_p = head_p;
         for (; (head_p != NULL) || (head_p == ll_element_p); head_p = head_p->next_p)
         {
-            
+            if (head_p == ll_element_p && head_p->next_p != NULL) // element_p is somewhere between elements
+            {
+                prev_p->next_p = head_p->next_p;
+                // we don't have to set head_p->next_p = NULL, memory is freed and this pointer won't be accessible
+                // for any UAF vulnerabilities.
+                LinkedListElement_str_Destructor(&head_p);
+                break;
+            }
+            prev_p = head_p;
         }
+
+        // element_p may be at the end
     }
 }
 

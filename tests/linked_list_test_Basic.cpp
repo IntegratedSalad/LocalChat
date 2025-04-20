@@ -3,6 +3,7 @@
 
 #define TEST_DATA_SIZE   8
 #define MAX_NUM_ELEMENTS 255
+#define INDEX_TO_DELETE  38
 
 /*
     Purpose:
@@ -31,6 +32,8 @@ TEST(LinkedListTestBasic, InitEmptyElementDeinitEmptyElement)
     ASSERT_EQ(ll_element_p, nullptr);
 }
 
+// TEST(LinkedListTestBasic, InitNonEmptyElementDeinitNonEmptyElement)
+
 /* 
     Purpose:
     Test if adding and removing element works
@@ -40,7 +43,7 @@ TEST(LinkedListTestBasic, InitEmptyElementDeinitEmptyElement)
     ll_element_p is a local variable, which doesn't have to be set NULL in this case.
     Setting ll_p->head_p to NULL prevents UAF vulnerability.
 */
-TEST(LinkedListTestBasic, AddElementRemoveElement)
+TEST(LinkedListTestBasic, AddElementAtHeadRemoveElementAtHead)
 {
     LinkedList_str* ll_p = LinkedList_str_Constructor(NULL);
     LinkedListElement_str* ll_element_p = LinkedListElement_str_Constructor(NULL, NULL);
@@ -135,7 +138,52 @@ TEST(LinkedListTestBasic, AddMultipleElementsCheckData)
 
 TEST(LinkedListTestBasic, AddMultipleElementsRemoveElementInMiddle)
 {
-    
+    char buff[TEST_DATA_SIZE] = {"ASDFGHJ"};
+
+    LinkedList_str* ll_p = LinkedList_str_Constructor(NULL);
+
+    for (int i = 0; i < MAX_NUM_ELEMENTS; i++)
+    {
+        LinkedListElement_str* ll_element_p = LinkedListElement_str_Constructor(NULL, NULL);
+        memcpy(ll_element_p->data, buff, TEST_DATA_SIZE);
+        LinkedList_str_AddElement(ll_p, ll_element_p);
+    }
+
+    int idx = 0;
+    const LinkedListElement_str* prev_p;
+    const LinkedListElement_str* next_p;
+    for (LinkedListElement_str* lle_p = ll_p->head_p; lle_p != NULL; lle_p = lle_p->next_p)
+    {
+        if (idx == INDEX_TO_DELETE)
+        {
+            next_p = lle_p->next_p;
+            LinkedList_str_RemoveElement(ll_p, lle_p);
+            break;
+        } else 
+        {
+            idx++;
+            prev_p = lle_p;
+        }
+    }
+
+    int idxToFollow = 0;
+    const LinkedListElement_str* new_prev_p;
+    const LinkedListElement_str* new_next_p;
+    for (LinkedListElement_str* lle_p = ll_p->head_p; lle_p != NULL; lle_p = lle_p->next_p)
+    {   
+        if (idxToFollow == idx - 1)
+        {
+            new_prev_p = lle_p;
+            new_next_p = lle_p->next_p;
+            break;
+        } else
+        {
+            idxToFollow++;
+        }
+    }
+
+    ASSERT_EQ(prev_p, new_prev_p);
+    ASSERT_EQ(next_p, new_next_p);
 }
 
 TEST(LinkedListTestBasic, AddMultipleElementsRemoveElementAtHead)
