@@ -33,3 +33,6 @@ target_link_libraries(LocalChat BVDiscovery_Bonjour)
 
 # We can compile different targets - only BVService_Bonjour, BVService (for BonVoyage main app and for LocalChat) or we can export these classes
 # onto a separate git repository. Then, we could use it as a submodule for LC and BV.
+
+# We also should build DEBUG and PROD targets.
+# DEBUG target has always memory sanitizer attached to the process, for memory leak checks etc.

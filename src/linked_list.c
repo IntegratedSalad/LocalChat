@@ -20,8 +20,6 @@ void LinkedList_str_Destructor(LinkedList_str** list_p)
 {
     if (list_p == NULL || *list_p == NULL) return;
 
-    free((*list_p)->head_p);
-    (*list_p)->head_p = NULL;
     free(*list_p);
     *list_p = NULL;
 }
@@ -56,27 +54,29 @@ void LinkedList_str_AddElement(LinkedList_str* ll_p,
     }
 }
 
-void LinkedList_str_RemoveElement(LinkedList_str* ll_p, // provide address of the pointer
+void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
                                   LinkedListElement_str* ll_element_p)
 {
     LinkedListElement_str* head_p = ll_p->head_p;
     if (head_p == NULL) return;
 
-    if (ll_element_p == head_p) // element_p is at head_p
+    if (ll_element_p == head_p && head_p->next_p == NULL) // element_p is at head_p and there's only one element
     {
-        ll_p->head_p->next_p = ll_element_p->next_p;
+        ll_p->head_p->next_p = NULL;
         LinkedListElement_str_Destructor(&ll_p->head_p);
         return;
-    }
-
-    LinkedListElement_str* prev_p = head_p;
-    for (; (head_p != NULL) || head_p == ll_element_p; head_p = head_p->next_p)
+    } else if (ll_element_p == head_p && head_p->next_p != NULL) // element_p is at head_p and there's more elements
     {
-        prev_p = head_p;
+        LinkedListElement_str* next_p_copy = ll_p->head_p->next_p;
+        LinkedListElement_str_Destructor(&ll_p->head_p);
+        ll_p->head_p = next_p_copy;
+    } else
+    {
+        for (; (head_p != NULL) || (head_p == ll_element_p); head_p = head_p->next_p)
+        {
+            
+        }
     }
-
-    prev_p->next_p = NULL;
-    LinkedListElement_str_Destructor(&prev_p);
 }
 
 void LinkedList_str_ClearList(LinkedList_str* ll_p)
@@ -85,12 +85,13 @@ void LinkedList_str_ClearList(LinkedList_str* ll_p)
     if (head_p == NULL) return;
 
     LinkedListElement_str* prev_p = head_p;
-    for (; head_p->next_p != NULL; head_p = head_p->next_p) // it will end on one before the end
-    {
-        prev_p = head_p;
-        LinkedListElement_str_Destructor(&head_p);
-    }
-    LinkedListElement_str_Destructor(&prev_p);
+    LinkedListElement_str* next_p;
+
+    do {
+        next_p = prev_p->next_p;
+        LinkedList_str_RemoveElement(ll_p, prev_p);
+        prev_p = next_p;
+    } while (prev_p != NULL);
 }
 
 LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE],
@@ -102,6 +103,9 @@ LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE
     if (data != NULL)
     {
         memcpy(ll_element_p->data, data, MAX_DATA_SIZE);
+    } else
+    {
+        memset(ll_element_p->data, 0, MAX_DATA_SIZE);
     }
     return ll_element_p;
 }
