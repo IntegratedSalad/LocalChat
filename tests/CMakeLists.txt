@@ -3,6 +3,7 @@ project(my_project)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# set(SANITIZE_FLAGS "-fsanitize=address" "-fno-omit-frame-pointer" "-g" "-O1")
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
@@ -38,6 +39,16 @@ target_link_libraries(
   GTest::gtest_main
   linked_list
 )
+
+option(USE_ASAN "Enable AddressSanitizer" OFF)
+
+if(USE_ASAN)
+    set(SANITIZE_FLAGS "-fsanitize=address" "-fno-omit-frame-pointer" "-g" "-O1")
+    target_compile_options(linked_list PRIVATE ${SANITIZE_FLAGS})
+    target_link_options(linked_list PRIVATE ${SANITIZE_FLAGS})
+    target_compile_options(linked_list_test_Basic PRIVATE ${SANITIZE_FLAGS})
+    target_link_options(linked_list_test_Basic PRIVATE ${SANITIZE_FLAGS})
+endif()
 
 include(GoogleTest)
 gtest_discover_tests(dns_sd_test_Registration)

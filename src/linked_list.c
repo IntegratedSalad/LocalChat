@@ -62,8 +62,6 @@ void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
 
     if (ll_element_p == head_p && head_p->next_p == NULL) // element_p is at head_p and there's only one element
     {
-        ll_p->head_p->next_p = NULL;
-        ll_p->head_p = NULL;
         LinkedListElement_str_Destructor(&ll_p->head_p);
         return;
     } else if (ll_element_p == head_p && head_p->next_p != NULL) // element_p is at head_p and there's more elements
@@ -119,6 +117,8 @@ LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE
     {
         memset(ll_element_p->data, 0, MAX_DATA_SIZE);
     }
+
+    ll_element_p->next_p = next;
     return ll_element_p;
 }
 
