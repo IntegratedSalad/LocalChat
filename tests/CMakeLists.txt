@@ -15,7 +15,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 
 # enable_testing()
-
 add_library(linked_list STATIC ${CMAKE_SOURCE_DIR}/src/linked_list.c ${CMAKE_SOURCE_DIR}/include/linked_list.h)
 
 add_executable(
@@ -38,6 +37,8 @@ target_link_libraries(
   GTest::gtest_main
   linked_list
 )
+
+# cmake -S . -B build -DUSE_ASAN=ON -> enable ASan
 
 option(USE_ASAN "Enable AddressSanitizer" OFF)
 

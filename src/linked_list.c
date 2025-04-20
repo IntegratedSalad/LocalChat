@@ -34,7 +34,6 @@ LinkedListElement_str* LinkedList_str_FindTail(const LinkedList_str* ll_p)
     {
         prev_p = head_p;
     }
-    // prev_p->next == NULL!
     return prev_p;
 }
 
@@ -74,7 +73,7 @@ void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
         LinkedListElement_str* prev_p = head_p;
         for (; (head_p != NULL) || (head_p == ll_element_p); head_p = head_p->next_p)
         {
-            if (head_p == ll_element_p && head_p->next_p != NULL) // element_p is somewhere between elements
+            if (head_p == ll_element_p) // element_p is somewhere between elements but not at the end
             {
                 prev_p->next_p = head_p->next_p;
                 // we don't have to set head_p->next_p = NULL, memory is freed and this pointer won't be accessible
@@ -84,8 +83,6 @@ void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
             }
             prev_p = head_p;
         }
-
-        // element_p may be at the end
     }
 }
 
