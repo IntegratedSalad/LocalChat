@@ -60,7 +60,7 @@ BVStatus BVService_Bonjour::ProcessDNSServiceRegisterResult()
 {
     DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef);
     if (error != kDNSServiceErr_NoError) {
-        std::cerr << "Encountered an error in DNSServiceProcessResult: " << error << std::endl;
+        std::cerr << "[DNSServiceBrowseResult] Encountered an error in DNSServiceProcessResult: " << error << std::endl;
         return BVStatus::BVSTATUS_NOK;
     }
     if (replyError) return BVStatus::BVSTATUS_NOK;

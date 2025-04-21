@@ -261,7 +261,7 @@ TEST(LinkedListTestBasic, AddMultipleElementsRemoveElementAtTail)
     {
         if (idx == MAX_NUM_ELEMENTS - 1) // find last element
         {
-            elem_p = lle_p;
+            elem_p = lle_p; // previous tail
             break;
         } else
         {

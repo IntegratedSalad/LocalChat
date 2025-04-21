@@ -6,6 +6,7 @@
 #include <mutex>
 #include <memory>
 #include <list>
+#include "linked_list.h"
 
 #define N_BYTES_SERVNAME_MAX      24
 #define N_BYTES_REGTYPE_MAX       24
@@ -49,8 +50,10 @@ private:
     // maybe linked list? because now I need to know the current_service_num
     // but it will require allocating it on the heap.
     // But - current_service_num will be used only to create queue.
-    char discoveryResult_carr[N_SERVICES_MAX][N_BYTES_SERVICE_STR_TOTAL];
-    unsigned int current_service_num = 0;
+    // char discoveryResult_carr[N_SERVICES_MAX][N_BYTES_SERVICE_STR_TOTAL];
+    // unsigned int current_service_num = 0;
+
+    LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon response
 
 public:
     BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _mutex,

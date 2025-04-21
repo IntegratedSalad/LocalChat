@@ -16,6 +16,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_subdirectory(tests)
 
+add_library(linked_list STATIC ${CMAKE_SOURCE_DIR}/src/linked_list.c ${CMAKE_SOURCE_DIR}/include/linked_list.h)
+
 include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
@@ -30,6 +32,7 @@ add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.c
 add_library(BVDiscovery_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Bonjour.cpp)
 target_link_libraries(LocalChat BVService_Bonjour)
 target_link_libraries(LocalChat BVDiscovery_Bonjour)
+target_link_libraries(LocalChat linked_list)
 
 # We can compile different targets - only BVService_Bonjour, BVService (for BonVoyage main app and for LocalChat) or we can export these classes
 # onto a separate git repository. Then, we could use it as a submodule for LC and BV.

@@ -28,6 +28,7 @@ void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
                                   LinkedListElement_str* ll_element_p);
 void LinkedList_str_ClearList(LinkedList_str* ll_p);
 LinkedListElement_str* LinkedList_str_FindTail(const LinkedList_str* ll_p);
+// IsEmpty
 
 /* LinkedListElement functions */
 LinkedListElement_str* LinkedListElement_str_Constructor(char data[MAX_DATA_SIZE],
