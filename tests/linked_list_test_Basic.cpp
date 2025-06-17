@@ -140,6 +140,9 @@ TEST(LinkedListTestBasic, AddMultipleElementsCheckData)
     LinkedList_str_Destructor(&ll_p);
 }
 
+// Add multiple different elements, check data
+// (check if list appends elements to the end)
+
 TEST(LinkedListTestBasic, AddMultipleElementsRemoveElementInMiddle)
 {
     char buff[TEST_DATA_SIZE] = {"ASDFGHJ"};

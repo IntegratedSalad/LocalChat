@@ -129,6 +129,8 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 
     LinkedListElement_str* head_copy_p = this->c_ll_p->head_p;
 
+    // TODO: copy this data into queue.
+
     this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
     this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
     {
