@@ -8,7 +8,7 @@ LocalChat:
 
 ## Useful commands
 sudo launchctl load /System/Library/LaunchDaemons/com.apple.mDNSResponder.plist -> launch daemon
-sudo launchctl list -> list PIDs of daemons, agents and XPC services 
+sudo launchctl list -> list PIDs of daemons, agents and XPC services
 launchctl dumpstate -> view information about running daemons, agents and XPC services
 launchctl dumpstate | grep -iE ".*mdns" -> view information about mdns daemon
 ls -lah /var/run -> list all daemons
@@ -28,5 +28,7 @@ nm -g .dylib -> list symbols within shared lib
 **libSystem.B.dylib has symbols found in dns_sd.h**
 When we look at otool -L /usr/bin/dns-sd, we can see that it has only one shared library - *libSystem.B.dylib*.
 When linked to libdns_sd.dylib, it somehow conflicted communication with the daemon.
-Now I know, why including dns_sd.h works - symbols are found in libSystem.B.dylib, which is automatically linked to
-my binary.
+Now I know, why including dns_sd.h works - symbols are found in libSystem.B.dylib, which is automatically linked to my binary.
+
+# One DNS Service being found multiple times when Browsing for it.
+Try to register another service after the initial has been found, and see if it appears repeated.

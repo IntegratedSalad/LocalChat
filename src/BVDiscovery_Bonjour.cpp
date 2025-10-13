@@ -3,11 +3,7 @@
 // TODO: Get reply for service discovery and registration to other file
 //       and test it (simulate reply from the daemon)
 
-// This global variable can be removed.
-// One solution is to allocate LinkedList
-// and pass it into C_ServiceBrowseReply' context pointer.
-// Then, ProcessDNSServiceBrowseResult can use it to append discovery results to the queue
-unsigned int current_service_num = 0;
+// This function should be put in a separate file. It is C API on top of mDNS.
 extern "C"
 {
 #include <stdio.h>
@@ -34,7 +30,7 @@ void C_ServiceBrowseReply(
             const size_t replDmnLen = strlen(replyDomain);
             for (int i = 0; i < N_BYTES_SERVICE_STR_TOTAL; i++)
             {
-                buff[i] = 'X';
+                buff[i] = ' ';
             }
             if (servLen < N_BYTES_SERVNAME_MAX)
             {
@@ -49,20 +45,10 @@ void C_ServiceBrowseReply(
                 memcpy(buff + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, replyDomain, replDmnLen);
             }
             buff[N_BYTES_SERVICE_STR_TOTAL-1] = '\0';
-            /* Add element to linked list */
             LinkedList_str* ll_p = (LinkedList_str*)context;
             LinkedListElement_str* lle_p = LinkedListElement_str_Constructor(buff, NULL);
             LinkedList_str_AddElement(ll_p, lle_p);
         }
-        // void* context should be a queue or a function pointer?
-        // void* context should be a dynamically/statically allocated char array (64 bytes will suffice i think)
-        // Then, because DNSServiceProcessResult will block until the daemon replies,
-        // and it replies only when there are new services being registered into the network,
-        // we add the queue, so discovery acts as a producer of the discovery queue.
-        // I think that whenever there are multiple of instance entries,
-        // daemon replies over and over until theres no new instance.
-        // We have to make an array of char*.
-
     } else
     {
         fprintf(stderr, "An error occurred while receiving browse reply.");
@@ -70,26 +56,28 @@ void C_ServiceBrowseReply(
 }
 }
 
-BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _mutex,
-                                         boost::asio::io_context& _ioContext) 
-    : service_p(_service_p), rwListMutex(_mutex), ioContext(_ioContext), discoveryTimer(_ioContext)
+BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _queueMutex,
+                                         boost::asio::io_context& _ioContext, std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue)
+    : service_p(_service_p), queueMutex(_queueMutex), discoveryQueue_p(_discoveryQueue), ioContext(_ioContext), discoveryTimer(_ioContext)
 {
-    this->discoveryList_p = std::make_shared<std::list<BVServiceBrowseInstance>>();
     this->dnsRef = nullptr;
-
-    // C list alloc
     this->c_ll_p = LinkedList_str_Constructor(NULL);
 }
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
-    // C list dealloc
     LinkedList_str_Destructor(&this->c_ll_p);
+    // When dnsRef is deallocated, service is no longer discoverable
+    DNSServiceRefDeallocate(this->dnsRef);
 }
 
 void BVDiscovery_Bonjour::StartBrowsing(void)
-{   
-    // TODO: Pass something, to which when the daemon replies, we can pass data (context)
+{
+    /*
+        DNSServiceBrowse is needed to be called exactly once.
+        Browsing goes indefinitely, until the DNSServiceRef is passed to
+        DNSServiceRefDeallocate.
+    */
     if (!this->isBrowsingActive)
     {
         std::cout << "Browsing for: ";
@@ -114,23 +102,24 @@ void BVDiscovery_Bonjour::StartBrowsing(void)
     }
 }
 
+// StopBrowsing?
+
 BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 {
-    DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef);
+    // DNSServiceProcessResult will block until there are no new services discovered.
+    DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef); // blocks
     if (error != kDNSServiceErr_NoError) {
         std::cerr << "[ProcessDNSServiceBrowseResult] Encountered an error in DNSServiceBrowseResult: " << error << std::endl;
         return BVStatus::BVSTATUS_NOK; // setup a flag maybe?
     }
 
     std::cout << "timer scheduled" << std::endl;
+    this->PushBrowsedServicesToQueue();
 
-    // Process the queue... ( do not block if empty )
-    // See if there's something in the array
+    // Clear list after appending to queue.
+    LinkedList_str_ClearList(this->c_ll_p);
 
-    LinkedListElement_str* head_copy_p = this->c_ll_p->head_p;
-
-    // TODO: copy this data into queue.
-
+    // if active
     this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
     this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
     {
@@ -162,5 +151,22 @@ void BVDiscovery_Bonjour::run()
     // it will call DNSServiceBrowse, and somehow write back
     // the reply from the daemon - it will be a service name
     // with a regtype and domain
+}
 
+void BVDiscovery_Bonjour::PushBrowsedServicesToQueue(void)
+{
+    std::lock_guard<std::mutex> lock(this->queueMutex);
+    for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
+        lle_p != NULL;)
+    {
+        BVServiceBrowseInstance bI; // put on heap? No, STL containers have elements allocated on heap.
+        std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
+        std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
+        std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
+        bI.regType = regType;
+        bI.replyDomain = replyDomain;
+        bI.serviceName = serviceName;
+        this->discoveryQueue_p->push(bI);
+        lle_p = lle_p->next_p;
+    }
 }

@@ -90,7 +90,8 @@
 			"span": "cpp",
 			"stack": "cpp",
 			"unordered_set": "cpp",
-			"*.ipp": "cpp"
+			"*.ipp": "cpp",
+			"queue": "cpp"
 		}
 	}
 }

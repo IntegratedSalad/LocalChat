@@ -6,6 +6,7 @@
 #include "BVService_Bonjour.hpp"
 #include "BVDiscovery_Bonjour.hpp"
 
+std::mutex queueMutex;
 int main(int argc, char** argv)
 {
     boost::asio::io_context ioContext;
@@ -20,7 +21,7 @@ int main(int argc, char** argv)
         return -1;
     } else
     {
-        std::cout << "Currently running daemon (system service) is version " 
+        std::cout << "Currently running daemon is version "
                   << v / 10000 << "." << v / 100 % 100 << "." << v % 100 << std::endl;
     }
     /* */
@@ -28,7 +29,7 @@ int main(int argc, char** argv)
     std::string hostname = boost::asio::ip::host_name();  // Use an appropriate host name or retrieve it
     std::string domain = "local";
 
-    /* 
+    /*
         Let's keep registration procedure synchronous, at least for now.
         It really is a crucial step in order for the application to function.
     */
@@ -42,26 +43,23 @@ int main(int argc, char** argv)
         std::cerr << "Setup failed" << std::endl;
         std::exit(-1);
     }
-    
-    std::mutex rwListMutex;
-    std::shared_ptr<const BVService_Bonjour> service_p = std::make_shared<const BVService_Bonjour>(service);
+
+    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
+        std::make_shared<std::queue<BVServiceBrowseInstance>>();
+    std::shared_ptr<const BVService_Bonjour> service_p =
+        std::make_shared<const BVService_Bonjour>(service);
 
     boost::asio::thread_pool tp{3};
-    BVDiscovery_Bonjour discovery{service_p, rwListMutex, ioContext};
+    // Create a discovery object, that periodically performs DNS-SD functionality.
+    BVDiscovery_Bonjour discovery{service_p, queueMutex, ioContext, discoveryQueue_p};
 
+    // maybe we need to pass queueMutex as reference lambda capture
     boost::asio::post(tp, [&discovery](){
         discovery();
     });
 
     tp.join();
 
-    // for(;;)
-    // {
-
-    // }
-
-    // Create a discovery object, that periodically performs DNS-SD functionality.
-    // When dnsRef is deallocated, service is no longer discoverable
 
     return 0;
 }

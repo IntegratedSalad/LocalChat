@@ -4,7 +4,11 @@ design an interface that takes out some of the core functionality of DNS-SD.
 
 BV - BonVoyage, suite name
 LocalChat is an application providing simple messaging utility over mDNS.
-FileSharing is an application providing simple file exchaning utility over mDNS.
+FileSharing is an application providing simple file exchanging utility over mDNS.
+
+There should be also a CLI tool offering the same functionality.
+But maybe just focus on the GUI application.
+First step is to allow sharing messages. ?And maybe encryption of these messages?
 ## Classes
 ## Class 'BVService'
 Description:
@@ -54,13 +58,10 @@ BV?? can run all threads and define mutexes and resources for BVXX functionality
 Maybe BVApp?
 
 ## Class 'BVApp'
-
-
-
 !Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
 Czy nie da sie zrobic jakiegos systemu ktory by byl abstrakcją tego? Czy to jest potrzebne?
 Poniewaz teraz BVActor musi wyszukac, czy istnieje juz nazwa hosta o podanym serwisie. Jezeli istnieje, to nie rejestruj jeszcze raz.
-W zasadzie taka abstrakcja wymagana bylaby, w momencie gdybym chcial rozszerzyc funkcjonalnosc mDNSResponder albo funkcji, ktore 
+W zasadzie taka abstrakcja wymagana bylaby, w momencie gdybym chcial rozszerzyc funkcjonalnosc mDNSResponder albo funkcji, ktore
 wymagaja kontaktu z demonem byloby bardzo duzo.
 
 Byc moze najpierw zrobmy te funkcjonalnosc w BVDiscovery, gdzie BVActor zarzadza wywolywaniem tych dwoch funkcjonalnosci.
@@ -73,13 +74,19 @@ Record handling?
 ## GUI library:
 FTLK or raygui
 
-Logging functionality?
+## Logging
+Build with maybe different logging levels.
+
+## Testing
+Functional tests.
+"Live tests" -> after the application finished (code is delivered) build for
+testing/debug and look at the logs if everything is ok.
 
 ## How BV operates
 ## LocalChat
 # Application Overview
 LocalChat serves as a messaging utility over local network (LAN).
-It utilizes mDNS and DNS-SD networking protocols in order to connect OS agnostic hosts in the same network, 
+It utilizes mDNS and DNS-SD networking protocols in order to connect OS agnostic hosts in the same network,
 without setting up a DNS server, or utilizing any other external server, that would exchange messages,
 manage sessions and provide other utilities, required from this type of entity.
 LocalChat uses FLTK to provide a GUI for a user; a panel with available hosts within the network,
