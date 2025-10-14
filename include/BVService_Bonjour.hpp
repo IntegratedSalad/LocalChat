@@ -3,6 +3,7 @@
 #include "dns_sd.h"
 #include <atomic>
 #include <iostream>
+#include <algorithm>
 
 class BVService_Bonjour : public BVService
 {

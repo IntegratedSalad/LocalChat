@@ -9,22 +9,33 @@ FileSharing is an application providing simple file exchanging utility over mDNS
 There should be also a CLI tool offering the same functionality.
 But maybe just focus on the GUI application.
 First step is to allow sharing messages. ?And maybe encryption of these messages?
-## Classes
-## Class 'BVService'
+
+MAKE A CLEAR DISTINCTION BETWEEN DNS-SD AND MDNS!
+Make sure that we are using hostname to IP resolution WITH mDNS, not any local DNS server.
+
+## Classes (Components)
+## Component 'BVService'
 Description:
 This class embeds the DNS-SD Service Registration functionality and
 holds instance's service basic information:
     1. Service Registration (and handling the response from daemon),
     2. ?Discovery of Browsing and Registration Domains (Domain Enumeration),
        Although we will for now, use only .local (and should only use local?)
-    3. Record handling (optionally)?
+    3. Record handling (optionally)? <- I think we have to manage this!
     4. Service deregistration and deallocation of resources (DNSServiceRef).
        Question: does DNSServiceRef for DNSServiceRegister has to be deallocated
        after reading the reply from the daemon?
 
-Other:
-Service has a fixed, constant type: _localchathost._tcp. Name is the host name providing this service.
-## Class 'BVDiscovery'
+Parameters:
+1. RegType: "The service type followed by the protocol, separated by a dot (e.g. "_ftp._tcp")."
+1. Service Name: "specifies the service name to be registered."
+2. Reply Domain: Always .local
+Service has a fixed, constant type: **_localchathost._tcp**. Name is the host name providing this service.
+
+Question: How to make sure that the service with the specific hostname is not registered twice?
+Is it done on the mDNS level?
+
+## Component 'BVDiscovery'
 Description:
 This class embeds the DNS-SD Service Discovery functionality:
     1. Discovery of instances (hosts) of localchathost service.
@@ -57,7 +68,7 @@ This doesn't need this.
 BV?? can run all threads and define mutexes and resources for BVXX functionality.
 Maybe BVApp?
 
-## Class 'BVApp'
+## Component 'BVApp'
 !Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
 Czy nie da sie zrobic jakiegos systemu ktory by byl abstrakcją tego? Czy to jest potrzebne?
 Poniewaz teraz BVActor musi wyszukac, czy istnieje juz nazwa hosta o podanym serwisie. Jezeli istnieje, to nie rejestruj jeszcze raz.
@@ -68,6 +79,44 @@ Byc moze najpierw zrobmy te funkcjonalnosc w BVDiscovery, gdzie BVActor zarzadza
 To ma swoj koszt - musimy rozroznic znow pomiedzy Bonjour i Avahi.
 Chyba, ze najlepiej zrobic BVActor ktory dziala niezaleznie od implementacji. Jednakze, najlatwiej bedzie zrobic prototyp, gdzie bedzie klasa
 BVActor_Bonjour i BVActor_Avahi
+
+## Component 'BVTCPConnection'
+Establishes a TCP connection between two hosts.
+Main question: when is it established?
+I send someone a message - TCP socket is created.
+When the TCP connection is to be made - DNS resolution is made.
+
+What exactly does 'Resolve' in mDNS mean:
+**Resolve a service name discovered via DNSServiceBrowse() to a target host name, port number, and txt record.**
+
+Am I doing this correct passing host name as service name?
+Yes, if it is not passed, the name of the host is chosen.
+
+Okay, little confusion:
+DNSSD Resolution:
+ * Resolve a service name discovered via DNSServiceBrowse() to a target host name, port number, and
+ * txt record.
+
+If we already passed host name as the name of the service:
+""_Service" part can be concatenation of name + host"
+then why resolve the service name to target host name?
+Port number is understandable.
+It seems that we already have the information needed and we do not need to resolve.
+And next: why is there
+gethostbyname
+function mentioned?
+Okay - Resolution doesn't mean resolve the hostname to IP address. It means:
+Resolve a service name to target host name, port number and txt record
+DNS-SD part is doing it's thing. It is not strictly mDNS functionality, but
+mDNS and DNS-SD are paired to provide this functionality of connecting hosts.
+passing a hostname on .local domain should result in mDNS query.
+
+So:
+We register a service name characterized by hostname and registered type on the .local domain.
+DNS-SD resolves a service name onto target host name port number and txt record.
+This target host name on the .local domain can be resolved by mDNS onto an IP address.
+Wikipedia:
+"By default, mDNS exclusively resolves hostnames ending with the .local top-level domain"
 
 Record handling?
 
@@ -99,7 +148,7 @@ text field, and other widgets.
    [^1]: [Wikipedia on mDNS](https://en.wikipedia.org/wiki/Multicast_DNS#Protocol_overview)
    1. If service was already registered, do not register it twice. (TODO: Should this application work in background?)
       meaning, if someone writes a message to a user, where their application was closed, (but not the service)
-      should they receive the messages?
+      should they receive the messages? -> Closing the application means closing the service.
 3. UI initialization. This can mean a CLI or GUI aplication. (TODO: Build for different targets?)
 4. Main Program Loop:
    1. Accept user input AND
@@ -108,6 +157,10 @@ text field, and other widgets.
    4. Output messages sent to user (callback upon receiving data on socket)
    Main problem is, that discovery for localchat services etc. needs to call callbacks/completion handlers upon
    finished task.
+
+# Constants
+How many hosts can one user discover max?
+128?
 
 # Threading
 ## Boost threadpool

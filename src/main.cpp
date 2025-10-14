@@ -46,6 +46,8 @@ int main(int argc, char** argv)
 
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
         std::make_shared<std::queue<BVServiceBrowseInstance>>();
+
+    // TODO: change this to the structure holding data to current service (host)
     std::shared_ptr<const BVService_Bonjour> service_p =
         std::make_shared<const BVService_Bonjour>(service);
 
@@ -53,29 +55,10 @@ int main(int argc, char** argv)
     // Create a discovery object, that periodically performs DNS-SD functionality.
     BVDiscovery_Bonjour discovery{service_p, queueMutex, ioContext, discoveryQueue_p};
 
-    // maybe we need to pass queueMutex as reference lambda capture
     boost::asio::post(tp, [&discovery](){
         discovery();
     });
 
     tp.join();
-
-
     return 0;
 }
-
-// BVStatus registerService(std::string& hostname, 
-//                          std::string& domain,
-//                          const int port)
-// {
-//     BVStatus status;
-//     BVService_Bonjour BV_Bonjour{hostname, domain, port};
-//     status = BV_Bonjour.Register(ioContext);
-//     return status;
-// }
-
-/*
-    TODO:
-    Setup tests and playground
-
-*/

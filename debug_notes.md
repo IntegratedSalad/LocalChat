@@ -32,3 +32,11 @@ Now I know, why including dns_sd.h works - symbols are found in libSystem.B.dyli
 
 # One DNS Service being found multiple times when Browsing for it.
 Try to register another service after the initial has been found, and see if it appears repeated.
+No, it appears once.
+But - after I terminate the app on the other machine, it still calls DNSServiceProcessResult.
+One thing is that we can see if something was already pushed.
+Either we deal with this in BVDiscovery component or in App.
+For example - BVApp consumes queue and makes Service List that graphical/TCP components utilize.
+When consuming queue and updating list there should be a check if next queue element is in list already.
+
+# How to announce that a service has disconnected?

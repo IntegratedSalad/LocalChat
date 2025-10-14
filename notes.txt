@@ -12,6 +12,7 @@ Moze musimy zrobic Browse() za pomoca mDNS a pozniej, jak dostaniemy nazwe hosta
 
 mDNS podstawy:
 Kiedy client mDNS ma jakis hostname i potrzebuje miec ip tego hosta, wysyla pakiet IP multicastowy (do wszystkich zainteresowanych), aby ten, kto ma taka nazwe, wyslal swoj adres IP. Ten host wysyla znow pakiet multicastowy IP do wszystkich zainteresowanych hostow ze swoim adresem IP. mDNS resolvuje .local domenowe nazwy na lokalne adresy IP.
+Jest to implementacja zero-conf napisana przez Apple.
 
 Registering a service:
 dns-sd -R <Name> <Type> <Domain> <Port> Optional<Text>
@@ -26,8 +27,6 @@ Where:
 
 a wiec przyklad:
 dns-sd -R bupsiobup _bupsiobuphost._tcp local 50001
-gdzie _bupsiobuphost chyba powinno byc nazwa serwisu, wiec powinno byc localchat__host czy cos takiego.
-Wtedy jest to jedna usluga ale ktora bedzie rozroznialna poprzez rozne nazwy.
 
 TODO:
 Wziac RaspberryPi i na nim zarejestrowac usluge o takiej samej nazwie (localchat_host) i sprobowac zrobic lookup oraz -G (get addresss information for hostname) i zobaczyc czy ma inny adres. [V]
@@ -54,6 +53,7 @@ Czym jest SRV record?:
 
 Most important RFC Docs:
 6763 -> DNS Based Service Discovery
+6762 -> mDNS
 2782 -> A DNS RR for specifying the location of services
 6763, section 11 -> Discovery of Browsing and Registration Domains (Domain Enumeration)
 

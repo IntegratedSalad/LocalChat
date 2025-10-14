@@ -163,6 +163,11 @@ void BVDiscovery_Bonjour::PushBrowsedServicesToQueue(void)
         std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
         std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
         std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
+
+        regType.erase(std::remove(regType.begin(), regType.end(), ' '), regType.end());
+        replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), ' '), replyDomain.end());
+        serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), ' '), serviceName.end());
+
         bI.regType = regType;
         bI.replyDomain = replyDomain;
         bI.serviceName = serviceName;

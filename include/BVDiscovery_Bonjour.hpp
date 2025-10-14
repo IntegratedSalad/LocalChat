@@ -15,8 +15,8 @@
 #define N_SERVICES_MAX            32
 
 /*
-    This class will utilize a LL of records and copy it to the global queue
-    R/W access has to be synchronized by a mutex.
+ *   This class is a Bonjour implementation of BV Discovery Component.
+ *   It utilizes a LL of records that is copied to the shared queue.
  */
 
 /* Excerpt from dns_sd.h
@@ -30,8 +30,9 @@ class BVDiscovery_Bonjour : public BVDiscovery
 {
 private:
     // TODO: is this really necessary to hold a shared pointer to service_p and not just a structure of needed params?
+    // BVService_Bonjour component is alive in the main thread...
     std::shared_ptr<const BVService_Bonjour> service_p;
-    DNSServiceRef dnsRef;
+    DNSServiceRef dnsRef; // TODO: shouldn't this be in BVDiscovery? DNSServiceRef should be allocated no matter the implementation
     std::mutex& queueMutex; // queue?
 
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
