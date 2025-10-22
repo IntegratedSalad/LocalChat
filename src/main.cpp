@@ -48,10 +48,12 @@ int main(int argc, char** argv)
         std::make_shared<std::queue<BVServiceBrowseInstance>>();
 
     // TODO: change this to the structure holding data to current service (host)
+    // Not necessarily. This object can be used to distinguish host service from others.
+    // But BVDiscovery_Bonjour doesn't need the entire class
     std::shared_ptr<const BVService_Bonjour> service_p =
         std::make_shared<const BVService_Bonjour>(service);
 
-    boost::asio::thread_pool tp{3};
+    boost::asio::thread_pool tp{2};
     // Create a discovery object, that periodically performs DNS-SD functionality.
     BVDiscovery_Bonjour discovery{service_p, queueMutex, ioContext, discoveryQueue_p};
 

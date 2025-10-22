@@ -1,6 +1,11 @@
-# Design
+### Design
 Because what I will write here will be used for BonVoyage, a graphical client for sharing files, we should
 design an interface that takes out some of the core functionality of DNS-SD.
+
+BVXXX_Bonjour is defined as an implementation of BV suite utilizing the mDNSResponder - Bonjour software
+implemented by Apple
+
+**Avahi implementation is not planned**
 
 BV - BonVoyage, suite name
 LocalChat is an application providing simple messaging utility over mDNS.
@@ -28,9 +33,12 @@ holds instance's service basic information:
 
 Parameters:
 1. RegType: "The service type followed by the protocol, separated by a dot (e.g. "_ftp._tcp")."
-1. Service Name: "specifies the service name to be registered."
-2. Reply Domain: Always .local
+2. Service Name: "specifies the service name to be registered."
+3. Reply Domain: Always .local
 Service has a fixed, constant type: **_localchathost._tcp**. Name is the host name providing this service.
+Should this class be overall used for services, not just for registration?
+We create an instance of it for the service that is registered by the host.
+Next we will be resolving the discovered services.
 
 Question: How to make sure that the service with the specific hostname is not registered twice?
 Is it done on the mDNS level?
@@ -58,15 +66,10 @@ BVSession can contain every information that is tied to a session.
 How many bytes were transmitted?
 How much hosts were discovered etc.
 
-## Class 'BVActor'
+## Component 'BVActor'
 Description:
 An actor, an instance that acts like a user would.
-It should be independent of the implementation (Avahi/Bonjour)
-But why Actor? Actor implies, there are multiple of them, each interacting.
-This doesn't need this.
-
-BV?? can run all threads and define mutexes and resources for BVXX functionality.
-Maybe BVApp?
+Actor will be sending messages, keeping message history etc.
 
 ## Component 'BVApp'
 !Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
@@ -85,7 +88,11 @@ Establishes a TCP connection between two hosts.
 Main question: when is it established?
 I send someone a message - TCP socket is created.
 When the TCP connection is to be made - DNS resolution is made.
+Remember to disallow to interact with service registered on the same machine.
+How to announce that client disconnects? This should be a multicast/broadcast message
+so that BVApps can update their UI.
 
+# Resolution
 What exactly does 'Resolve' in mDNS mean:
 **Resolve a service name discovered via DNSServiceBrowse() to a target host name, port number, and txt record.**
 
@@ -96,7 +103,6 @@ Okay, little confusion:
 DNSSD Resolution:
  * Resolve a service name discovered via DNSServiceBrowse() to a target host name, port number, and
  * txt record.
-
 If we already passed host name as the name of the service:
 ""_Service" part can be concatenation of name + host"
 then why resolve the service name to target host name?
@@ -118,10 +124,26 @@ This target host name on the .local domain can be resolved by mDNS onto an IP ad
 Wikipedia:
 "By default, mDNS exclusively resolves hostnames ending with the .local top-level domain"
 
+# Connection Type
+P2P? There isn't really any server to be expected. Maybe when it comes to
+
+# Session Structure
+What data a session has?
+
+## Sockets
+Maybe two sockets. One for accepting connection and other for receiving/sending data.
+Does a client need a passive socket (acceptor)?
+
+# Async
+Does async apart from that it doesn't block means that the boost asio creates a thread
+that handles the operation execution? Yes.
+Target functionality is to have a bunch of people messaging/trying to send files simultaneously.
+
 Record handling?
 
 ## GUI library:
 FTLK or raygui
+wxWidgets
 
 ## Logging
 Build with maybe different logging levels.
@@ -172,3 +194,10 @@ It has to register the service with hostname, and wait for the daemon to reply.
 Second thread handles GUI.
 
 Third thread handles communication over TCP.
+
+### Implementation roadmap
+
+We have to start simple.
+One other client that registers its service and communication with them, while continuously browsing.
+No avahi support is planned for now.
+Test on macOS first.

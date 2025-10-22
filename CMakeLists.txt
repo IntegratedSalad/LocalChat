@@ -12,6 +12,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 cmake_print_variables(Boost_INCLUDE_DIRS)
 find_package(Boost)
 find_package(Threads REQUIRED)
+find_package(wxWidgets REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 add_subdirectory(tests)
@@ -33,6 +34,7 @@ add_library(BVDiscovery_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Bonjo
 target_link_libraries(LocalChat BVService_Bonjour)
 target_link_libraries(LocalChat BVDiscovery_Bonjour)
 target_link_libraries(LocalChat linked_list)
+target_link_libraries(LocalChat wxWidgets::wxWidgets)
 
 # We can compile different targets - only BVService_Bonjour, BVService (for BonVoyage main app and for LocalChat) or we can export these classes
 # onto a separate git repository. Then, we could use it as a submodule for LC and BV.

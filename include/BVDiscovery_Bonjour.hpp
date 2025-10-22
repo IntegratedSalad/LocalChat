@@ -33,16 +33,16 @@ private:
     // BVService_Bonjour component is alive in the main thread...
     std::shared_ptr<const BVService_Bonjour> service_p;
     DNSServiceRef dnsRef; // TODO: shouldn't this be in BVDiscovery? DNSServiceRef should be allocated no matter the implementation
-    std::mutex& queueMutex; // queue?
+    std::mutex& queueMutex;
 
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
     boost::asio::io_context& ioContext;
     boost::asio::steady_timer discoveryTimer;
     void StartBrowsing(void);
-    BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list
+    BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list. TODO: This method should also be in the BVDiscovery parent class.
     void PushBrowsedServicesToQueue(void);
 
-    BVStatus status = BVStatus::BV_STATUS_IN_PROGRESS;
+    BVStatus status = BVStatus::BV_STATUS_IN_PROGRESS; // TODO: This parameter should be in BVDiscovery parent class.
     bool isBrowsingActive = false;
     LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
 
