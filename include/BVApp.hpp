@@ -1,6 +1,8 @@
 #pragma once
 #include <memory>
 #include <vector>
+#include <condition_variable>
+#include <queue>
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
 #include "BVActor.hpp"
@@ -22,18 +24,25 @@
 class BVApp
 {
 private:
-    // std::shared_ptr<std::vector> servicesV;
-    // or servicesV should belong to Actor?
-    // app should have only the app's params.
-    // states,
-
     bool isRunning = true;
     BVActor actor;
-    std::shared_ptr<std::queue> service_queue;
+    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue;
+    std::vector<BVService> serviceV; // iterable for services e.g. to display
     // event queue?
 
+    std::mutex& discoveryQueueMutex;
+    std::condition_variable& discoveryQueueCV;
+
+     // checking the serviceQueue
+    virtual void ListenForUpcomingServices(void)
+    {
+    }
+
 public:
-    BVApp::BVApp(std::shared_ptr<std::queue> _service_queue) : service_queue(_service_queue)
+    BVApp(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
+          std::mutex& _discoveryQueueMutex,
+          std::condition_variable& _discoveryQueueCV) :
+          discoveryQueue(_discoveryQueue), discoveryQueueMutex(_discoveryQueueMutex), discoveryQueueCV(_discoveryQueueCV) {};
 
     virtual void Init(void) = 0;
     virtual void Run(void) = 0;
@@ -42,11 +51,13 @@ public:
     virtual void HandleServicesDiscoveredUpdateEvent(void) = 0;
     virtual void HandleUserKeyboardInput(void) = 0;
 
-    void operator()(void)
-    {
-        this->Init();
-        this->Run();
-    }
+    // virtual destructor??
+
+    // void operator()(void) // TODO: maybe it shouldn't really be a function object
+    // {
+    //     this->Init();
+    //     this->Run();
+    // }
 };
 
 // LC_Client will be a derivation of BVApp

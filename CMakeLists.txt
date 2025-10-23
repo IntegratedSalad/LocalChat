@@ -20,7 +20,10 @@ add_subdirectory(tests)
 add_library(linked_list STATIC ${CMAKE_SOURCE_DIR}/src/linked_list.c ${CMAKE_SOURCE_DIR}/include/linked_list.h)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp)
+add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVApp_ConsoleClient_Bonjour.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVActor.cpp
+)
 
 if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
@@ -29,6 +32,7 @@ endif()
 
 enable_testing()
 
+# Why are these static libraries?
 add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.cpp)
 add_library(BVDiscovery_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Bonjour.cpp)
 target_link_libraries(LocalChat BVService_Bonjour)

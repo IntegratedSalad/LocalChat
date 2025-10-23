@@ -13,24 +13,43 @@
     User types: "Message XXX MMMMMMM" -> sends message
     etc...
     As simple as it gets.
-    It does however, browse continuously for new services
+    It does however, browse continuously for new services.
+    It can use (LISTENFORMESSAGE) which basically tells us that the client blocks on read from
+    stdin OR it can create a separate thread on which it listens for message and updates "screen" =>
+    prints ~70 new lines and messages and prompt etc.
 */
+
+typedef enum class BVConsoleAction
+{
+    BVCONSOLEACTION_LISTHOSTS,
+    BVCONSOLEACTION_SENDMSG,
+    BVCONSOLEACTION_EXIT,
+    BVCONSOLEACTION_BLOCKHOST
+} BVConsoleAction;
+
 class BVApp_ConsoleClient_Bonjour : private BVApp
 {
 private:
+    std::mutex ioMutex; // mutex for internal worker threads, in this case printing and listening for input.
 
 public:
-    // BVApp_ConsoleClient_Bonjour();
+    BVApp_ConsoleClient_Bonjour(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
+                                std::mutex& _discoveryQueueMutex,
+                                std::condition_variable& _discoveryQueueCV) :
+    BVApp(_discoveryQueue, _discoveryQueueMutex, _discoveryQueueCV) {}
 
     void Init(void) override;
     void Run(void) override;
     void Quit(void) override;
 
-    // BVStatus SendMessage(const asio::const_buffer);
-
+    BVStatus ParseAction(const std::string&);
     BVStatus SendMessage(const std::string&);
     BVStatus ReadMessages(void);
     BVStatus PrintServices(void);
+    void PrintScreen(void);
 
-    ~BVApp_ConsoleClient_Bonjour();
+    void HandleServicesDiscoveredUpdateEvent(void) override;
+    void HandleUserKeyboardInput(void) override;
+
+    ~BVApp_ConsoleClient_Bonjour() {}
 };

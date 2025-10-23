@@ -24,7 +24,7 @@ void C_RegisterReply(
 
 BVStatus BVService_Bonjour::Register()
 {
-    BVStatus status = BVStatus::BV_STATUS_IN_PROGRESS;
+    BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
     DNSServiceErrorType error = DNSServiceRegister(&this->dnsRef,
                                                     0,
                                                     0,

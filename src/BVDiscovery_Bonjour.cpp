@@ -56,9 +56,12 @@ void C_ServiceBrowseReply(
 }
 }
 
-BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _queueMutex,
-                                         boost::asio::io_context& _ioContext, std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue)
-    : service_p(_service_p), queueMutex(_queueMutex), discoveryQueue_p(_discoveryQueue), ioContext(_ioContext), discoveryTimer(_ioContext)
+BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p,
+                                         std::mutex& _queueMutex,
+                                         boost::asio::io_context& _ioContext,
+                                         std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
+                                         std::condition_variable& _discoveryQueueCV)
+    : service_p(_service_p), queueMutex(_queueMutex), discoveryQueue_p(_discoveryQueue), ioContext(_ioContext), discoveryTimer(_ioContext), discoveryQueueCV(_discoveryQueueCV)
 {
     this->dnsRef = nullptr;
     this->c_ll_p = LinkedList_str_Constructor(NULL);

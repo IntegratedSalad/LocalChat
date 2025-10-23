@@ -1,4 +1,4 @@
-### Design
+### Design of BonVoyage FileSharing
 Because what I will write here will be used for BonVoyage, a graphical client for sharing files, we should
 design an interface that takes out some of the core functionality of DNS-SD.
 
@@ -42,6 +42,7 @@ Next we will be resolving the discovered services.
 
 Question: How to make sure that the service with the specific hostname is not registered twice?
 Is it done on the mDNS level?
+Maybe we can detect that instance of LocalChat is already running with some OS mechanism?
 
 ## Component 'BVDiscovery'
 Description:
@@ -91,6 +92,7 @@ When the TCP connection is to be made - DNS resolution is made.
 Remember to disallow to interact with service registered on the same machine.
 How to announce that client disconnects? This should be a multicast/broadcast message
 so that BVApps can update their UI.
+Separate ioContext for each BVTCPConnection?
 
 # Resolution
 What exactly does 'Resolve' in mDNS mean:

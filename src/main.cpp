@@ -2,11 +2,15 @@
 #include <boost/asio.hpp>
 #include <thread>
 #include <future>
+#include <condition_variable>
 #include "dns_sd.h"
 #include "BVService_Bonjour.hpp"
 #include "BVDiscovery_Bonjour.hpp"
+#include "BVApp_ConsoleClient_Bonjour.hpp"
 
-std::mutex queueMutex;
+std::mutex discoveryQueueMutex;
+std::mutex messageQueueMutex;
+std::condition_variable discoveryQueueCV;
 int main(int argc, char** argv)
 {
     boost::asio::io_context ioContext;
@@ -46,6 +50,8 @@ int main(int argc, char** argv)
 
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
         std::make_shared<std::queue<BVServiceBrowseInstance>>();
+    std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
+        std::make_shared<std::queue<BVThrMessage>>();
 
     // TODO: change this to the structure holding data to current service (host)
     // Not necessarily. This object can be used to distinguish host service from others.
@@ -53,14 +59,21 @@ int main(int argc, char** argv)
     std::shared_ptr<const BVService_Bonjour> service_p =
         std::make_shared<const BVService_Bonjour>(service);
 
-    boost::asio::thread_pool tp{2};
     // Create a discovery object, that periodically performs DNS-SD functionality.
-    BVDiscovery_Bonjour discovery{service_p, queueMutex, ioContext, discoveryQueue_p};
+    BVDiscovery_Bonjour discovery{service_p, discoveryQueueMutex, ioContext, discoveryQueue_p, discoveryQueueCV}; // TODO: pass messageQueue and condition variable
 
-    boost::asio::post(tp, [&discovery](){
+    // Somehow we will need to communicate with discovery thread, to gracefully stop. pause/resume?
+    // maybe another queue - discovery doesn't need another thread, it can utilize another mutex.
+    // after 5 seconds => before putting the results in the discoveryQueue_p, check if msgQueue has
+    // any messages => consume first, if it's pause, pause but if any incoming messages are quit => don't pause
+    // and just quit.
+
+    std::thread td([&discovery](){
         discovery();
     });
 
-    tp.join();
+    BVApp_ConsoleClient_Bonjour BVApp_ConsoleClient_Bonjour{discoveryQueue_p, discoveryQueueMutex, discoveryQueueCV}; // TODO: Pass condition variable
+
+    td.join();
     return 0;
 }

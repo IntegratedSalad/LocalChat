@@ -6,6 +6,7 @@
 #include <mutex>
 #include <memory>
 #include <queue>
+#include <condition_variable>
 #include "linked_list.h"
 
 #define N_BYTES_SERVNAME_MAX      24
@@ -34,6 +35,7 @@ private:
     std::shared_ptr<const BVService_Bonjour> service_p;
     DNSServiceRef dnsRef; // TODO: shouldn't this be in BVDiscovery? DNSServiceRef should be allocated no matter the implementation
     std::mutex& queueMutex;
+    std::condition_variable& discoveryQueueCV;
 
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
     boost::asio::io_context& ioContext;
@@ -42,13 +44,16 @@ private:
     BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list. TODO: This method should also be in the BVDiscovery parent class.
     void PushBrowsedServicesToQueue(void);
 
-    BVStatus status = BVStatus::BV_STATUS_IN_PROGRESS; // TODO: This parameter should be in BVDiscovery parent class.
+    BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS; // TODO: This parameter should be in BVDiscovery parent class.
     bool isBrowsingActive = false;
     LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
 
 public:
-    BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p, std::mutex& _queueMutex,
-                        boost::asio::io_context& _ioContext, std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue);
+    BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p,
+                        std::mutex& _queueMutex,
+                        boost::asio::io_context& _ioContext,
+                        std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
+                        std::condition_variable& _discoveryQueueCV);
     ~BVDiscovery_Bonjour();
 
     void run() override;
