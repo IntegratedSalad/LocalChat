@@ -57,11 +57,18 @@ void C_ServiceBrowseReply(
 }
 
 BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p,
-                                         std::mutex& _queueMutex,
+                                         std::mutex& _discoveryQueueMutex,
                                          boost::asio::io_context& _ioContext,
                                          std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                                         std::condition_variable& _discoveryQueueCV)
-    : service_p(_service_p), queueMutex(_queueMutex), discoveryQueue_p(_discoveryQueue), ioContext(_ioContext), discoveryTimer(_ioContext), discoveryQueueCV(_discoveryQueueCV)
+                                         std::condition_variable& _discoveryQueueCV,
+                                         bool& _isDiscoveryQueueReady) :
+    service_p(_service_p),
+    discoveryQueueMutex(_discoveryQueueMutex),
+    discoveryQueue_p(_discoveryQueue),
+    ioContext(_ioContext),
+    discoveryTimer(_ioContext),
+    discoveryQueueCV(_discoveryQueueCV),
+    isDiscoveryQueueReady(_isDiscoveryQueueReady)
 {
     this->dnsRef = nullptr;
     this->c_ll_p = LinkedList_str_Constructor(NULL);
@@ -70,7 +77,7 @@ BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
     LinkedList_str_Destructor(&this->c_ll_p);
-    // When dnsRef is deallocated, service is no longer discoverable
+    // When dnsRef is deallocated, service is no longer discoverable (true????) and browsing stops.
     DNSServiceRefDeallocate(this->dnsRef);
 }
 
@@ -117,12 +124,22 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     }
 
     std::cout << "timer scheduled" << std::endl;
-    this->PushBrowsedServicesToQueue();
+
+    // TODO: How to stop this?
+
+    std::unique_lock lk(discoveryQueueMutex);
+    discoveryQueueCV.wait(lk, [this]{return !this->isDiscoveryQueueReady;});
+
+    this->PushBrowsedServicesToQueue(); // critical section
+
+    this->isDiscoveryQueueReady = true;
+    lk.unlock();
+    this->discoveryQueueCV.notify_one();
 
     // Clear list after appending to queue.
     LinkedList_str_ClearList(this->c_ll_p);
 
-    // if active
+    // if active => maybe check the message queue
     this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
     this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
     {
@@ -143,7 +160,6 @@ void BVDiscovery_Bonjour::run()
     this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
     {
         this->ProcessDNSServiceBrowseResult();
-
     });
 
     this->ioContext.run();
@@ -158,7 +174,7 @@ void BVDiscovery_Bonjour::run()
 
 void BVDiscovery_Bonjour::PushBrowsedServicesToQueue(void)
 {
-    std::lock_guard<std::mutex> lock(this->queueMutex);
+    // std::lock_guard<std::mutex> lock(this->discoveryQueueMutex);
     for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
         lle_p != NULL;)
     {

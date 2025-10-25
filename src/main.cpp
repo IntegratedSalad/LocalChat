@@ -11,6 +11,7 @@
 std::mutex discoveryQueueMutex;
 std::mutex messageQueueMutex;
 std::condition_variable discoveryQueueCV;
+bool isDiscoveryQueueReady = false;
 int main(int argc, char** argv)
 {
     boost::asio::io_context ioContext;
@@ -60,19 +61,29 @@ int main(int argc, char** argv)
         std::make_shared<const BVService_Bonjour>(service);
 
     // Create a discovery object, that periodically performs DNS-SD functionality.
-    BVDiscovery_Bonjour discovery{service_p, discoveryQueueMutex, ioContext, discoveryQueue_p, discoveryQueueCV}; // TODO: pass messageQueue and condition variable
+    BVDiscovery_Bonjour discovery{service_p,
+                                  discoveryQueueMutex,
+                                  ioContext,
+                                  discoveryQueue_p,
+                                  discoveryQueueCV,
+                                  isDiscoveryQueueReady}; // TODO: Pass messageQueue
+
+    BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
+                                              discoveryQueueMutex,
+                                              discoveryQueueCV,
+                                              isDiscoveryQueueReady}; // TODO: Pass messageQueue
 
     // Somehow we will need to communicate with discovery thread, to gracefully stop. pause/resume?
     // maybe another queue - discovery doesn't need another thread, it can utilize another mutex.
     // after 5 seconds => before putting the results in the discoveryQueue_p, check if msgQueue has
-    // any messages => consume first, if it's pause, pause but if any incoming messages are quit => don't pause
+    // any messages => consume first, if it's paused, pause but if any incoming messages are quit => don't pause
     // and just quit.
 
     std::thread td([&discovery](){
         discovery();
     });
 
-    BVApp_ConsoleClient_Bonjour BVApp_ConsoleClient_Bonjour{discoveryQueue_p, discoveryQueueMutex, discoveryQueueCV}; // TODO: Pass condition variable
+    // consoleClient.Run();
 
     td.join();
     return 0;

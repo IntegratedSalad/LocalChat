@@ -21,8 +21,9 @@
 
 typedef enum class BVConsoleAction
 {
-    BVCONSOLEACTION_LISTHOSTS,
+    BVCONSOLEACTION_LISTHOSTS, // this would be good if it happened concurrently.
     BVCONSOLEACTION_SENDMSG,
+    BVCONSOLEACTION_REPRINT,
     BVCONSOLEACTION_EXIT,
     BVCONSOLEACTION_BLOCKHOST
 } BVConsoleAction;
@@ -30,13 +31,17 @@ typedef enum class BVConsoleAction
 class BVApp_ConsoleClient_Bonjour : private BVApp
 {
 private:
-    std::mutex ioMutex; // mutex for internal worker threads, in this case printing and listening for input.
+    std::mutex stdoutMutex; // mutex for internal worker threads, in this case printing.
 
 public:
     BVApp_ConsoleClient_Bonjour(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                                 std::mutex& _discoveryQueueMutex,
-                                std::condition_variable& _discoveryQueueCV) :
-    BVApp(_discoveryQueue, _discoveryQueueMutex, _discoveryQueueCV) {}
+                                std::condition_variable& _discoveryQueueCV,
+                                bool& _isDiscoveryQueueReady) :
+    BVApp(_discoveryQueue, _discoveryQueueMutex, _discoveryQueueCV, _isDiscoveryQueueReady)
+    {
+        this->Init();
+    }
 
     void Init(void) override;
     void Run(void) override;
@@ -45,11 +50,14 @@ public:
     BVStatus ParseAction(const std::string&);
     BVStatus SendMessage(const std::string&);
     BVStatus ReadMessages(void);
+    BVStatus PrintMessages(void);
     BVStatus PrintServices(void);
-    void PrintScreen(void);
+    void PrintAll(void);
 
     void HandleServicesDiscoveredUpdateEvent(void) override;
     void HandleUserKeyboardInput(void) override;
+
+    // -------------------------------------------------------
 
     ~BVApp_ConsoleClient_Bonjour() {}
 };

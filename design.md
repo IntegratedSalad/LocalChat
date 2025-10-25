@@ -73,6 +73,11 @@ An actor, an instance that acts like a user would.
 Actor will be sending messages, keeping message history etc.
 
 ## Component 'BVApp'
+BVApp is an abstract class for an application
+that utilizes discovery results from discovery component.
+It listens for new results by using condition variable and discoveryQueueMutex.
+Upon queue not being empty, it consumes whatever there is and updates the serviceVector.
+
 !Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
 Czy nie da sie zrobic jakiegos systemu ktory by byl abstrakcją tego? Czy to jest potrzebne?
 Poniewaz teraz BVActor musi wyszukac, czy istnieje juz nazwa hosta o podanym serwisie. Jezeli istnieje, to nie rejestruj jeszcze raz.
@@ -196,6 +201,9 @@ It has to register the service with hostname, and wait for the daemon to reply.
 Second thread handles GUI.
 
 Third thread handles communication over TCP.
+
+## Misc
+Instead of writing BV(...) use a namespace
 
 ### Implementation roadmap
 

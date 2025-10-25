@@ -25,4 +25,11 @@ struct BVServiceBrowseInstance
     std::string serviceName;
     std::string regType;
     std::string replyDomain;
+
+    bool operator==(const BVServiceBrowseInstance& otherBI)
+    {
+        return (this->serviceName == otherBI.serviceName &&
+                this->regType     == otherBI.regType     &&
+                this->replyDomain == otherBI.replyDomain);
+    }
 };
