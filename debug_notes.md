@@ -49,3 +49,18 @@ mDNSPosix tries to include mbedtls/certs.h which is not present in version 3.x.x
 Might switch to 2.x.x but not system-wide.
 It is because I'm using the old mDNSResponder version!
 Latest doesn't include mbedtls/certs.h...
+Okay - symbols that are referenced in dns-sd.h on MacOS are present in the libSystemB.dylib which is linked by default. In Linux, I have to somehow provide a libdns_sd.so.
+nm -D /path/to/.so/ -> list symbols in file.
+## Compatibility library problems
+If using avahi compatibility layer is too hard/demanding - just compile the mDNSResponder daemon and use full Bonjour implementation. But this means that we have to disable the avahi daemon - it's not optimal.
+We might just have to do two targets - BV_Bonjour and BV_Avahi.
+Application will be the same for each of the implementations...
+In case of having Avahi and Bonjour, we have to make abstract clasess more precise.
+Discovery should have the same interface - only implementation changes.
+Bonjour and Avahi should put BrowseInstances on queue.
+First - compile on linux the example.
+Maybe get around first in the hacky way - at least to see that two services in the in-progress-app can
+discover each other.
+This is only talking about the mDNS and DNS-SD functionality, so service registration, browsing and resolution.
+I think logic that handles communication and application itself can be written so that it can communicate
+with both implementations.
