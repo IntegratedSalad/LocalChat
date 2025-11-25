@@ -40,3 +40,12 @@ For example - BVApp consumes queue and makes Service List that graphical/TCP com
 When consuming queue and updating list there should be a check if next queue element is in list already.
 
 # How to announce that a service has disconnected?
+
+# Installing linux dependencies
+Sometimes even if a certain package is installed, there are no header files that come with that library.
+It means that the .so files were compiled with the header files, but the package doesn't come with it.
+It is helpful to find a dev package.
+mDNSPosix tries to include mbedtls/certs.h which is not present in version 3.x.x of mbedtls
+Might switch to 2.x.x but not system-wide.
+It is because I'm using the old mDNSResponder version!
+Latest doesn't include mbedtls/certs.h...

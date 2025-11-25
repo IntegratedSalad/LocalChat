@@ -73,17 +73,11 @@ int main(int argc, char** argv)
                                               discoveryQueueCV,
                                               isDiscoveryQueueReady}; // TODO: Pass messageQueue
 
-    // Somehow we will need to communicate with discovery thread, to gracefully stop. pause/resume?
-    // maybe another queue - discovery doesn't need another thread, it can utilize another mutex.
-    // after 5 seconds => before putting the results in the discoveryQueue_p, check if msgQueue has
-    // any messages => consume first, if it's paused, pause but if any incoming messages are quit => don't pause
-    // and just quit.
-
     std::thread td([&discovery](){
         discovery();
     });
 
-    // consoleClient.Run();
+    consoleClient.Run();
 
     td.join();
     return 0;

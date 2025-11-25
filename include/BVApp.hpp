@@ -11,9 +11,10 @@
 #include "BVService_Bonjour.hpp"
 #include "BVActor.hpp"
 
-// enum class BVAppEvent_e
-// {
-// };
+enum class BVAppEvent_e
+{
+    BVAPPEVENT_NEW_SERVICES
+};
 //?
 
 /*
@@ -49,14 +50,18 @@ protected:
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue;
     std::mutex& discoveryQueueMutex;
     std::condition_variable& discoveryQueueCV;
-
     bool& isDiscoveryQueueReady;
+
+    std::queue<BVAppEvent_e> eventQueue;
+    std::mutex eventQueueMutex;
+    std::condition_variable eventQueueCV;
+
     virtual void ListenForUpcomingServices(void)
     {
         while (this->isRunning)
         {
             std::unique_lock lk(this->discoveryQueueMutex);
-            discoveryQueueCV.wait(lk, [this]{return this->isDiscoveryQueueReady;});
+            discoveryQueueCV.wait(lk, [this]{return this->isDiscoveryQueueReady;}); // maybe only check on event from discovery component?
 
             // question is... will the Discovery_Bonjour component modify isDiscoveryQueueReady boolean?
 
@@ -65,20 +70,34 @@ protected:
             // if discovery component tries to update queue now, it cannot.
             // Also - when shutting down we have to make sure that neither of the threads
             // lock for eternity.
+            // Instead of locking next time we can notify some different queue (send a message)
             std::unique_lock vlk(this->serviceVectorMutex);
             while (!discoveryQueue->empty())
             {
                 BVServiceBrowseInstance bI = discoveryQueue->front();
-                if (std::find(this->serviceV.begin(), this->serviceV.end(), bI) != serviceV.end())
+                if (std::find(this->serviceV.begin(), this->serviceV.end(), bI) == serviceV.end())
                 {
                     this->serviceV.push_back(bI);
                 }
                 discoveryQueue->pop(); // consume everything
             }
+
+            // TODO: Another thread that's waiting on queue
+            // Or -> make a flag, and put this before lk(this->discoveryQueueMutex), at the beginning
+            // if updated => lock, push, unlock
+            // now there are 3 locks in this place
+            // Or better -> spawn thread which will print new services to the screen and utilize the method
+            // for handling this event => BVAPPEVENT_NEW_SERVICES.
+
+            // std::unique_lock elk(eventQueueMutex);
+            // eventQueue.push(BVAppEvent_e::BVAPPEVENT_NEW_SERVICES); // do we need event queue? -> yes, but later
+            // elk.unlock();
+
             vlk.unlock(); // main thread can now utilize vector
             this->isDiscoveryQueueReady = false; // meaning - it's not ready, nothing should be in there, queue empty
             lk.unlock();
             this->discoveryQueueCV.notify_one(); // now Discovery component can enter critical section
+            this->HandleServicesDiscoveredUpdateEvent();
         }
     }
 

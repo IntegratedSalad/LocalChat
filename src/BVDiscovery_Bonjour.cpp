@@ -135,6 +135,8 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     this->isDiscoveryQueueReady = true;
     lk.unlock();
     this->discoveryQueueCV.notify_one();
+    // We could send a message to the thread now.
+    // Upon receiving the message, the application could consume the queue and update its data.
 
     // Clear list after appending to queue.
     LinkedList_str_ClearList(this->c_ll_p);

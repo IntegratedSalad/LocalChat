@@ -5,8 +5,8 @@ void BVApp_ConsoleClient_Bonjour::Init(void)
 }
 void BVApp_ConsoleClient_Bonjour::Run(void)
 {
-    this->Init();
     this->StartListenerThread();
+    this->PrintAll();
     while (this->GetIsRunning())
     {
         // print console
@@ -23,17 +23,42 @@ void BVApp_ConsoleClient_Bonjour::Quit(void)
     // Also DeInit
 }
 
+// I think that any event that needs to draw something
+// must redraw everything
+void BVApp_ConsoleClient_Bonjour::PrintAll(void)
+{
+    for (int i = 0; i < 100; i++) {std::cout << std::endl;}
+    std::cout << "LocalChat console client v0.1.2.1" << std::endl;
+    std::cout << "(P)rint services" << std::endl;
+    std::cout << "(S)witch to conversation" << std::endl;
+    std::cout << "(E)xit" << std::endl;
+    std::cout << "-----------------------------" << std::endl;
+    std::cout << "Available services:" << std::endl;
+    this->PrintServices();
+    std::cout << "=============================" << std::endl;
+    std::cout << ">> " << std::endl;
+}
+
 BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void)
 {
     BVStatus status = BVStatus::BVSTATUS_OK;
+    if (this->serviceV.size() == 0)
+    {
+        std::cout << "None available" << std::endl;
+    }
     std::lock_guard vlk(this->serviceVectorMutex);
-
-
+    int i = 1;
+    for (BVServiceBrowseInstance bI : this->serviceV)
+    {
+        std::cout << i << ":" << std::endl;
+        bI.print();
+        std::cout << "+-+-+-+-" << std::endl;
+    }
 }
 
 void BVApp_ConsoleClient_Bonjour::HandleServicesDiscoveredUpdateEvent(void)
 {
-
+    this->PrintAll();
 }
 
 void BVApp_ConsoleClient_Bonjour::HandleUserKeyboardInput(void)

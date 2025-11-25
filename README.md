@@ -11,6 +11,9 @@ mDNSResponder and mNDSResponderHelper daemons are run at boot.
 LocalChat is tested and run on macOS Monterey 12.3.1 and macOS Sequoia.
 
 ## Linux
+### Dependencies
+mDNSResponder for macOS 26.0
+
 ### Avahi
 ### Bonjour?
 

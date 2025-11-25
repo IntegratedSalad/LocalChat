@@ -13,3 +13,8 @@ They should check if parts of the system are working as intended:
 -
 
 ## Capacity tests
+
+## Live
+# VM
+Fedora Linux -> compile mDNS and LocalChat.
+Ensure that VM has a separate IP Address.

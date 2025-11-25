@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <iostream>
 
 typedef enum class BVThrMessage
 {
@@ -31,5 +32,12 @@ struct BVServiceBrowseInstance
         return (this->serviceName == otherBI.serviceName &&
                 this->regType     == otherBI.regType     &&
                 this->replyDomain == otherBI.replyDomain);
+    }
+
+    void print(void)
+    {
+        std::cout << "service name: " << serviceName << std::endl;
+        std::cout << "reg type:     " << regType     << std::endl;
+        std::cout << "domain:       " << replyDomain << std::endl;
     }
 };

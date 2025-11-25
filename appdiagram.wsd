@@ -1,0 +1,12 @@
+@startuml App Execution Loop
+participant DiscoveryComponent as Discovery
+queue ServiceQueue as Queue
+participant App as app
+collections ServiceVector as Vector
+
+Queue <- app : Listen (wait)
+Discovery -> Queue : Discovered services
+Queue -> app : Notify
+app -> Vector : Update
+app -> app : Redraw
+@enduml

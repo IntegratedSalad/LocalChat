@@ -89,6 +89,75 @@ To ma swoj koszt - musimy rozroznic znow pomiedzy Bonjour i Avahi.
 Chyba, ze najlepiej zrobic BVActor ktory dziala niezaleznie od implementacji. Jednakze, najlatwiej bedzie zrobic prototyp, gdzie bedzie klasa
 BVActor_Bonjour i BVActor_Avahi
 
+## Component BVApp_ConsoleClient
+BVApp_ConsoleClient implements BVApp.
+It is a CLI application that is meant to be a preview and/or playground environment
+that provides simple functionality of exchanging messages between hosts.
+1. User has a list of 10 max available hosts he can message.
+   1. They're appearing regardless of action of the user - the list is updated concurrently.
+2. User has a prompt '>> ' and he can execute several instructions.
+   1. They can (S)witch to the host and it's messages.
+   2. They can send the (M)essage
+   3. They can (E)xit the application.
+   4. They can (P)rint the screen again
+
+Execution loop:
+1. User executes the application.
+2. Main screen is printed. It has list of connected (registered) services.
+   Next to the service, there's a string: '(X) messages unread' if the host sent the user a message.
+3. User is idle. The discovery queue has been updated.
+   1. The app is notified about the event
+   2. Screen is refreshed with the new positions.
+4. User chooses (S)witch to the host.
+   1. The screen is redrawn. It shows message history.
+   2. The host doesn't disconnect.
+      1. User writes a message
+      2. Host (receiver) receives the message
+      3. Host (sender) sends message to the user
+      4. Message is printed.
+      5. User (S)witches screen to main OR host disconnects
+   3. Host disconnects
+      1. Information is printed that user closed the app.
+      2. (M)essaging does nothing
+5. User (E)xits.
+
+discoveryQueue:
+Queue is updated (items are pushed into this queue) by BVDiscovery component.
+Items are consumed by BVApp_ConsoleClient.
+Another thread that waits and prints the updated services?
+
+/ discoveryQueueMutex is locked by discovery component
+=> services are put to discoveryQueue
+/ discoveryQueueMutex is unlocked by discovery component
+/ discoveryQueueMutex is locked by app
+/ vectorMutex is locked by thread handling discoveryQueue
+=> vector is updated
+/ discoveryQueueMutex is unlocked by app
+/ vectorMutex is unlocked by thread handling discoveryQueue
+=> app event 'updated vector' is sent
+ => ?services? ?app event handler? thread executes function responsible for handling this -> printing (performing std I/O op.)
+ => function is called ->
+  / vectorMutex doesn't have to be locked here? What if the vector will be updated again? Maybe lock it.
+  => vector is printed
+  / vectorMutex is unlocked
+What if the user writes to stdout and the function that is a handler of 'updated vector' is called
+at the same time? what happens with the stdout?
+If the user is typing something and then the screen gets redrawn by the handler, what happens?
+Maybe these operations are directly executed upon receiving a message.
+So -> (P)rint sends message, handler sends a message (to update the screen)
+So these are put on the queue and executed sequentially and there's only one class managing the I/O queue,
+that performs printing to the screen.
+It listens for messages and it only performs I/O.
+So - any action in APP component involving discoveryQueue,vector and I/O is a request in form of a message to the queue.
+There's a class that handles discoveryQueue and I/O - discoveryQueue has items - there's a message sent.
+Update vector - message.
+User wants to print something - message.
+There has to be an update on screen - message.
+User chooses some host (accesses vector) - message.
+App has exclusive access to the I/O
+
+Maybe for now, let's just see which problems we are facing.
+
 ## Component 'BVTCPConnection'
 Establishes a TCP connection between two hosts.
 Main question: when is it established?
@@ -201,6 +270,13 @@ It has to register the service with hostname, and wait for the daemon to reply.
 Second thread handles GUI.
 
 Third thread handles communication over TCP.
+
+## Producers and consumers
+List every producer and consumer
+## Console client
+### Producers
+
+### Consumers
 
 ## Misc
 Instead of writing BV(...) use a namespace
