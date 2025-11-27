@@ -12,8 +12,6 @@
 #include "BVApp_ConsoleClient_Bonjour.hpp"
 #elif __linux__
 #include "BVService_Avahi.hpp"
-#include <avahi-client/client.h>
-#include <avahi-common/simple-watch.h>
 #endif
 
 std::mutex discoveryQueueMutex;
@@ -53,7 +51,14 @@ int main(int argc, char** argv)
 #if __APPLE__
     BVService_Bonjour service{hostname, domain, PORT};
 #elif __linux__
-    BVService_Avahi service{hostname, domain, PORT};
+    // AvahiSimplePoll will be used by avahi service registration and then service browsing
+    std::shared_ptr<AvahiSimplePoll> simple_poll = BVService_Avahi::MakeSimplePoll(avahi_simple_poll_new());
+    if (simple_poll == nullptr)
+    {
+        std::cerr << "Failed to create simple poll object." << std::endl;
+        std::exit(-1);
+    }
+    BVService_Avahi service{hostname, domain, PORT, simple_poll};
 #endif
     BVStatus status = service.Register(); // blocks
     if (status == BVStatus::BVSTATUS_OK)

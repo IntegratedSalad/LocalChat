@@ -16,9 +16,9 @@ private:
      * This must not be null until the termination of the service when User closes the application
     */
     std::unique_ptr<AvahiClient> client_p = nullptr;
-    std::unique_ptr<AvahiSimplePoll> simple_poll_p = nullptr; // maybe put this outside
+    std::shared_ptr<AvahiSimplePoll> simple_poll_p = nullptr;
 
-    AvahiClient* CreateAvahiClient(void);
+    BVStatus CreateAvahiClient(void);
     BVStatus Setup(void);
     BVStatus WaitForServiceCreation(void);
 
@@ -32,9 +32,10 @@ private:
     */
 
 public:
-    BVService_Avahi(std::string& _hostname,  std::string& _domain, int _port)
+    BVService_Avahi(std::string& _hostname,  std::string& _domain, int _port, std::shared_ptr<AvahiSimplePoll> _simple_poll_p)
     : BVService(_hostname,  _domain, _port)
     {
+        this->simple_poll_p = _simple_poll_p;
         BVStatus status = Setup();
         if (status != BVStatus::BVSTATUS_OK)
         {
@@ -44,6 +45,11 @@ public:
 
     ~BVService_Avahi()
     {
+    }
+
+    static std::shared_ptr<AvahiSimplePoll> MakeSimplePoll(AvahiSimplePoll* sp_p)
+    {
+        return std::shared_ptr<AvahiSimplePoll>(sp_p, avahi_simple_poll_free);
     }
 
     BVStatus Register() override;
