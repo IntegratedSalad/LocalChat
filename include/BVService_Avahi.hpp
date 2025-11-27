@@ -4,8 +4,18 @@
 #include <memory>
 #include "BVService.hpp"
 #include <avahi-client/client.h>
+#include <avahi-client/publish.h>
 #include <avahi-common/simple-watch.h>
 
+// Because of the AvahiSimplePoll needed to be accessed from single thread only,
+// maybe we create a manager object, that has exclusive ownership of the AvahiSimplePoll?
+
+static AvahiEntryGroup* group = NULL;
+extern "C"
+{
+bool critical_failure = 0;
+bool register_success = 0;
+}
 class BVService_Avahi : public BVService
 {
 private:
@@ -15,8 +25,8 @@ private:
      * Calling avahi_client_free() frees entry group object (service)
      * This must not be null until the termination of the service when User closes the application
     */
-    std::unique_ptr<AvahiClient> client_p = nullptr;
-    std::shared_ptr<AvahiSimplePoll> simple_poll_p = nullptr;
+    std::unique_ptr<AvahiClient, AvahiClientDeleter> client_p = nullptr;
+    std::shared_ptr<AvahiSimplePoll> simple_poll_p = nullptr; // for now, 
 
     BVStatus CreateAvahiClient(void);
     BVStatus Setup(void);
@@ -53,4 +63,12 @@ public:
     }
 
     BVStatus Register() override;
+};
+
+struct AvahiClientDeleter
+{
+    void operator()(AvahiClient* p)
+    {
+        avahi_client_free(p);
+    }
 };
