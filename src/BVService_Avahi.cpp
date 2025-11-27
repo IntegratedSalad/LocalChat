@@ -1,5 +1,11 @@
 #include "BVService_Avahi.hpp"
 
+#ifndef EXT_FLAGS_C_
+#define EXT_FLAGS_C_
+bool critical_failure = 0;
+bool register_success = 0;
+#endif // EXT_FLAGS_C_
+
 extern "C"
 {
 #include "avahi-client/client.h"
@@ -7,6 +13,8 @@ extern "C"
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+
+static void create_services(AvahiClient* cl_p, const char* hostname_regtype);
 static void entry_group_callback(AvahiEntryGroup* g, AvahiEntryGroupState state, AVAHI_GCC_UNUSED void* userdata)
 {
     assert(g == group || group == NULL);
@@ -32,6 +40,10 @@ static void entry_group_callback(AvahiEntryGroup* g, AvahiEntryGroupState state,
             critical_failure = 1;
             break;
         }
+        default:
+        {
+            break;
+        }
     }
 }
 
@@ -42,7 +54,17 @@ static void client_callback(AvahiClient* cl_p, AvahiClientState state, void* use
         case AVAHI_CLIENT_S_RUNNING:
         {
             // create services...
+            fprintf(stdout, "Creating a service with userdata %s\n", (const char* )userdata);
             create_services(cl_p, (const char*)userdata);
+            break;
+        }
+        case AVAHI_CLIENT_FAILURE:
+        {
+            fprintf(stderr, "Client failure: %s\n", avahi_strerror(avahi_client_errno(cl_p)));
+            break;
+        }
+        default:
+        {
             break;
         }
     }
@@ -61,11 +83,11 @@ static void create_services(AvahiClient* cl_p, const char* hostname_regtype)
     {
 
         char* dup = strdup(hostname_regtype);
-        const char* hostname = strtok(dup, ",");
-        const char* regtype = strtok(dup, ",");
+        char* hostname = strtok(dup, ",");
+        const char* regtype = strtok(NULL, ",");
 
-        fprintf(stdout, "Hostname: %s: \n", hostname);
-        fprintf(stdout, "Regtype: %s: \n", regtype);
+        fprintf(stdout, "Hostname: %s \n", hostname);
+        fprintf(stdout, "Regtype: %s \n", regtype);
 
         ret = avahi_entry_group_add_service(group, 
                                             AVAHI_IF_UNSPEC, 
@@ -73,9 +95,10 @@ static void create_services(AvahiClient* cl_p, const char* hostname_regtype)
                                             (AvahiPublishFlags)0, 
                                             hostname,
                                             regtype,
+                                            "local",
                                             0,
-                                            0,
-                                            PORT);
+                                            PORT,
+                                            NULL);
         if (ret == AVAHI_SERVER_COLLISION)
         {
             // handle collision
@@ -92,7 +115,7 @@ static void create_services(AvahiClient* cl_p, const char* hostname_regtype)
         }
     }
     return;
-} 
+}
 }
 
 BVStatus BVService_Avahi::CreateAvahiClient(void)
@@ -112,7 +135,7 @@ BVStatus BVService_Avahi::CreateAvahiClient(void)
     {
         status = BVStatus::BVSTATUS_NOK; // optionally set up an error type
     }
-    return status
+    return status;
 }
 
 BVStatus BVService_Avahi::Setup(void)
@@ -123,7 +146,7 @@ BVStatus BVService_Avahi::Setup(void)
 
 BVStatus BVService_Avahi::Register(void)
 {
-    BVStatus status;
+    BVStatus status = BVStatus::BVSTATUS_NOK;
     avahi_simple_poll_iterate(this->simple_poll_p.get(), 10 * 1000);
     if (register_success)
     {

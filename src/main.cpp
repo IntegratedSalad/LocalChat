@@ -3,7 +3,7 @@
 #include <thread>
 #include <future>
 #include <condition_variable>
-#include "BVService.hpp"
+#include <chrono>
 #include "BVDiscovery.hpp"
 #if __APPLE__
 #include "dns_sd.h"
@@ -70,36 +70,39 @@ int main(int argc, char** argv)
         std::exit(-1);
     }
 
-    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
-        std::make_shared<std::queue<BVServiceBrowseInstance>>();
-    std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
-        std::make_shared<std::queue<BVThrMessage>>();
+    std::this_thread::sleep_for(std::chrono::seconds(20));
 
-    // TODO: change this to the structure holding data to current service (host)
-    // Not necessarily. This object can be used to distinguish host service from others.
-    // But BVDiscovery_Bonjour doesn't need the entire class
-    std::shared_ptr<const BVService_Bonjour> service_p =
-        std::make_shared<const BVService_Bonjour>(service);
 
-    // Create a discovery object, that periodically performs DNS-SD functionality.
-    BVDiscovery_Bonjour discovery{service_p,
-                                  discoveryQueueMutex,
-                                  ioContext,
-                                  discoveryQueue_p,
-                                  discoveryQueueCV,
-                                  isDiscoveryQueueReady}; // TODO: Pass messageQueue
+    // std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
+    //     std::make_shared<std::queue<BVServiceBrowseInstance>>();
+    // std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
+    //     std::make_shared<std::queue<BVThrMessage>>();
 
-    BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
-                                              discoveryQueueMutex,
-                                              discoveryQueueCV,
-                                              isDiscoveryQueueReady}; // TODO: Pass messageQueue
+    // // TODO: change this to the structure holding data to current service (host)
+    // // Not necessarily. This object can be used to distinguish host service from others.
+    // // But BVDiscovery_Bonjour doesn't need the entire class
+    // std::shared_ptr<const BVService_Bonjour> service_p =
+    //     std::make_shared<const BVService_Bonjour>(service);
 
-    std::thread td([&discovery](){
-        discovery();
-    });
+    // // Create a discovery object, that periodically performs DNS-SD functionality.
+    // BVDiscovery_Bonjour discovery{service_p,
+    //                               discoveryQueueMutex,
+    //                               ioContext,
+    //                               discoveryQueue_p,
+    //                               discoveryQueueCV,
+    //                               isDiscoveryQueueReady}; // TODO: Pass messageQueue
 
-    consoleClient.Run();
+    // BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
+    //                                           discoveryQueueMutex,
+    //                                           discoveryQueueCV,
+    //                                           isDiscoveryQueueReady}; // TODO: Pass messageQueue
 
-    td.join();
+    // std::thread td([&discovery](){
+    //     discovery();
+    // });
+
+    // consoleClient.Run();
+
+    // td.join();
     return 0;
 }

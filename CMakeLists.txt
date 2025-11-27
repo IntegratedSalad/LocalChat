@@ -33,6 +33,8 @@ endif()
 enable_testing()
 
 if(UNIX)
+	add_library(BVService_Avahi STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Avahi.cpp)
+	target_link_libraries(LocalChat BVService_Avahi)
 	target_link_libraries(LocalChat -lavahi-client)
 	target_link_libraries(LocalChat -lavahi-common)
 endif()
