@@ -4,6 +4,8 @@
 #include <boost/asio.hpp>
 #include "BVApp.hpp"
 
+// Does it really have to be a Bonjour implementation (and later Avahi?)
+
 /*
     BVApp_ConsoleClient_Bonjour functions as a console application of LocalChat.
     Define as a function object, because it should be run in a different thread?

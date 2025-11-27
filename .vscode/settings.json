@@ -1,5 +1,10 @@
 {
     "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
-    "cmake.sourceDirectory": "/Users/dev/Documents/GitHub/LocalChat/",
-    "cmake.configureSettings": { "gtest_build_samples": "ON" }
+    "cmake.sourceDirectory": "/home/bupux/Documents/LocalChat",
+    "cmake.configureSettings": {
+        "gtest_build_samples": "ON"
+    },
+    "files.associations": {
+        "algorithm": "cpp"
+    }
 }

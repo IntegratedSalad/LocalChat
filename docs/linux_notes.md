@@ -1,3 +1,10 @@
+# General
+## VM
+12GB space 8GB RAM Fedora Workstation 43 on aarch64
+## Setup
+Install avahi-devel, cmake, boost, gcc, g++, wxGTK-devel
+Preferred dev environment is vscode with cmake and C++ tools installed.
+
 # Avahi
 ## Example
 [Example](https://avahi.org/doxygen/html/client-browse-services_8c-example.html#a30)

@@ -32,11 +32,21 @@ endif()
 
 enable_testing()
 
+if(UNIX)
+	target_link_libraries(LocalChat -lavahi-client)
+	target_link_libraries(LocalChat -lavahi-common)
+endif()
+
 # Why are these static libraries?
-add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.cpp)
-add_library(BVDiscovery_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Bonjour.cpp)
-target_link_libraries(LocalChat BVService_Bonjour)
-target_link_libraries(LocalChat BVDiscovery_Bonjour)
+# It's an okay solution for multiplatform development
+# Do not add or link these libraries when on UNIX
+
+if (APPLE)
+	add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.cpp)
+	add_library(BVDiscovery_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Bonjour.cpp)
+	target_link_libraries(LocalChat BVService_Bonjour)
+	target_link_libraries(LocalChat BVDiscovery_Bonjour)
+endif()
 target_link_libraries(LocalChat linked_list)
 target_link_libraries(LocalChat wxWidgets::wxWidgets)
 

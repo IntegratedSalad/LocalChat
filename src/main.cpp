@@ -3,10 +3,18 @@
 #include <thread>
 #include <future>
 #include <condition_variable>
+#include "BVService.hpp"
+#include "BVDiscovery.hpp"
+#if __APPLE__
 #include "dns_sd.h"
 #include "BVService_Bonjour.hpp"
 #include "BVDiscovery_Bonjour.hpp"
 #include "BVApp_ConsoleClient_Bonjour.hpp"
+#elif __linux__
+#include "BVService_Avahi.hpp"
+#include <avahi-client/client.h>
+#include <avahi-common/simple-watch.h>
+#endif
 
 std::mutex discoveryQueueMutex;
 std::mutex messageQueueMutex;
@@ -16,6 +24,7 @@ int main(int argc, char** argv)
 {
     boost::asio::io_context ioContext;
 
+#if __APPLE__
     /* Put this in a test */
     uint32_t v;
     uint32_t size = sizeof(v);
@@ -30,7 +39,8 @@ int main(int argc, char** argv)
                   << v / 10000 << "." << v / 100 % 100 << "." << v % 100 << std::endl;
     }
     /* */
-
+#endif
+// for linux maybe write a simple function that communicates with the avahi-daemon?
     std::string hostname = boost::asio::ip::host_name();  // Use an appropriate host name or retrieve it
     std::string domain = "local";
 
@@ -38,7 +48,13 @@ int main(int argc, char** argv)
         Let's keep registration procedure synchronous, at least for now.
         It really is a crucial step in order for the application to function.
     */
+
+    // This has to be a parent class BVService, not dependent on implementation
+#if __APPLE__
     BVService_Bonjour service{hostname, domain, PORT};
+#elif __linux__
+    BVService_Avahi service{hostname, domain, PORT};
+#endif
     BVStatus status = service.Register(); // blocks
     if (status == BVStatus::BVSTATUS_OK)
     {
