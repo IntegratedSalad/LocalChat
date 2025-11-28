@@ -4,12 +4,6 @@ Wydaje mi sie, ze jezeli te funkcje w API zawieraja operacje blokujace to tak - 
 Wazne:
 dns_sd to jest API do DNS-SD tylko - czyli do service discovery.
 
-DNSServiceResolve() pozwala na rozwiazanie service name ktora zostala odkryta za pomoca DNSServiceBrowse.
-Ta funkcja zawiera pointer do ciagu znakow *hosttarget, ktory zapewne jest zmienna, do ktorej zostaje zapisany hostname +:
-"This name can be passed to functions like gethostbyname() to identify the host's IP address."
-ip::basic_resolver::resolve (4 of 12 overloads)-> resolves, czyli tlumaczy z nazwy do endpoint (IP address)
-Moze musimy zrobic Browse() za pomoca mDNS a pozniej, jak dostaniemy nazwe hosta, uzyc basic_resolver::resolve aby znalezc ip takiego urzadzenia
-
 mDNS podstawy:
 Kiedy client mDNS ma jakis hostname i potrzebuje miec ip tego hosta, wysyla pakiet IP multicastowy (do wszystkich zainteresowanych), aby ten, kto ma taka nazwe, wyslal swoj adres IP. Ten host wysyla znow pakiet multicastowy IP do wszystkich zainteresowanych hostow ze swoim adresem IP. mDNS resolvuje .local domenowe nazwy na lokalne adresy IP.
 Jest to implementacja zero-conf napisana przez Apple.
@@ -27,18 +21,10 @@ Where:
 
 a wiec przyklad:
 dns-sd -R bupsiobup _bupsiobuphost._tcp local 50001
-(musi to byc _localchathost._tcp jako type)
+(musi to byc _localchathost._tcp jako type dla tej aplikacji)
 
 TODO:
 Wziac RaspberryPi i na nim zarejestrowac usluge o takiej samej nazwie (localchat_host) i sprobowac zrobic lookup oraz -G (get addresss information for hostname) i zobaczyc czy ma inny adres. [V]
-
-Co chcemy aby ta aplikacja robila:
-
-1. Dodany zostaje lokalny host (np moj laptop),
-   1.a Konkretniej -> zostaje dodana usluga pod okreslona nazwa (to moze byc np nazwa hosta + uslugi).
-2. Zostaje uruchomione szukanie serwisow pod danym typie (localchathost)
-3. Wyslany zostaje pakiet IP do kazdego hosta w sieci lokalnej, albo z nazwa domeny lokalnej .local albo od razu IP,
-4. Kiedy uzytkownik chce napisac wiadomosc (zaczac czat) zostaje wyslana wiadomosc, czy chce. Tutaj takze jest uruchomiona funkcjonalnosc mDNS, gdzie tworzy sie zapytanie kto z taka nazwa (targetową, osoby do ktorej chcemy wyslac wiadomosc) ma taki a taki lokalny adres IP. 
 
 Wazne:
 RR -> Resource Record

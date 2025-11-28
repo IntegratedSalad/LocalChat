@@ -1,15 +1,16 @@
-### Design of BonVoyage FileSharing
+# Design of BonVoyage FileSharing (LocalChat)
 Because what I will write here will be used for BonVoyage, a graphical client for sharing files, we should
 design an interface that takes out some of the core functionality of DNS-SD.
 
-BVXXX_Bonjour is defined as an implementation of BV suite utilizing the mDNSResponder - Bonjour software
-implemented by Apple
+## Concepts
+**mDNS** - Multicast DNS. It resolves hostnames to IP addresses **without** any DNS server configured.
+**DNS-SD** - DNS Service Discovery. in both *Bonjour* and *Avahi* implementations, mDNS and DNS-SD functionality are paired. [DNS-SD](https://en.wikipedia.org/wiki/Zero-configuration_networking#DNS-based_service_discovery)
+**BV** - BonVoyage, name of the suite
+**LocalChat** - Name of the application utilizing the BonVoyage suite and providing messaging and file sharing over LAN with mDNS.
+**Bonjour** - Apple mDNSResponder zero-conf implementation that serves as a publisher of mDNS information
+**Avahi** - Native Linux API implementing mDNS zero-conf implmentation and DNS-SD.
 
-**Avahi implementation is not planned**
-
-BV - BonVoyage, suite name
-LocalChat is an application providing simple messaging utility over mDNS.
-FileSharing is an application providing simple file exchanging utility over mDNS.
+**Avahi implementation is in progress**
 
 There should be also a CLI tool offering the same functionality.
 But maybe just focus on the GUI application.
@@ -17,6 +18,14 @@ First step is to allow sharing messages. ?And maybe encryption of these messages
 
 MAKE A CLEAR DISTINCTION BETWEEN DNS-SD AND MDNS!
 Make sure that we are using hostname to IP resolution WITH mDNS, not any local DNS server.
+
+### Sources
+[Wikipedia on mDNS](https://en.wikipedia.org/wiki/Multicast_DNS)
+[multicastdns.org](https://www.multicastdns.org/)
+[RFC6762](https://datatracker.ietf.org/doc/html/rfc6762)
+[RFC6763](https://www.ietf.org/rfc/rfc6763.txt)
+[mDNSResponder repository](https://github.com/apple-oss-distributions/mDNSResponder)
+[Avahi main site](https://avahi.org/)
 
 ## Classes (Components)
 ## Component 'BVService'
@@ -178,7 +187,8 @@ Yes, if it is not passed, the name of the host is chosen.
 Okay, little confusion:
 DNSSD Resolution:
  * Resolve a service name discovered via DNSServiceBrowse() to a target host name, port number, and
- * txt record.
+txt record.
+
 If we already passed host name as the name of the service:
 ""_Service" part can be concatenation of name + host"
 then why resolve the service name to target host name?
@@ -218,7 +228,6 @@ Target functionality is to have a bunch of people messaging/trying to send files
 Record handling?
 
 ## GUI library:
-FTLK or raygui
 wxWidgets
 
 ## Logging
@@ -241,20 +250,18 @@ text field, and other widgets.
 
 # LocalChat flow
 1. Initialization of BVService_Bonjour (for now class that supports only Bonjour)
-2. Registration of service (TODO: provide complete service name) (_localchat._tcp.local?),
+2. Registration of service
    where .local is mandatory, because mDNS exclusively resolves hostnames ending with the .local top-level domain[^1].
    [^1]: [Wikipedia on mDNS](https://en.wikipedia.org/wiki/Multicast_DNS#Protocol_overview)
    1. If service was already registered, do not register it twice. (TODO: Should this application work in background?)
       meaning, if someone writes a message to a user, where their application was closed, (but not the service)
       should they receive the messages? -> Closing the application means closing the service.
-3. UI initialization. This can mean a CLI or GUI aplication. (TODO: Build for different targets?)
+3. UI initialization. This can mean a CLI or GUI aplication.
 4. Main Program Loop:
    1. Accept user input AND
    2. Discovery for localchat services periodically (timer) AND
-   3. Notify user when someone is available to chat AND (Thread handling this will block until specific ?message? comes)
+   3. Notify user when someone is available to chat AND
    4. Output messages sent to user (callback upon receiving data on socket)
-   Main problem is, that discovery for localchat services etc. needs to call callbacks/completion handlers upon
-   finished task.
 
 # Constants
 How many hosts can one user discover max?
@@ -282,8 +289,6 @@ List every producer and consumer
 Instead of writing BV(...) use a namespace
 
 ### Implementation roadmap
-
 We have to start simple.
 One other client that registers its service and communication with them, while continuously browsing.
-No avahi support is planned for now.
 Test on macOS first.
