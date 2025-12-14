@@ -1,6 +1,7 @@
 # General
 ## VM
 12GB space 8GB RAM Fedora Workstation 43 on aarch64
+Network must be bridged. Without it, VM will be isolated from the LAN.
 ## Setup
 Install avahi-devel, cmake, boost, gcc, g++, wxGTK-devel
 Preferred dev environment is vscode with cmake and C++ tools installed.

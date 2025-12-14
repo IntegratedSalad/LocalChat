@@ -5,6 +5,12 @@
 #include <avahi-common/simple-watch.h>
 
 // TODO Later
+
+/* 
+ * Class managing access to the SimplePoll.
+ * Simple poll should be accessed only by one thread at a time.
+ *
+*/
 class BVSimplePollManager_Avahi
 {
 private:

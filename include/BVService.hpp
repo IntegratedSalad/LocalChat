@@ -6,6 +6,15 @@
 #define SERVICETYPE_STR "_localchathost._tcp"
 #define PORT            50001
 
+// This represents a host service that was just registered
+struct BVServiceHostData
+{
+    int port;
+    std::string hostname;
+    std::string domain;
+    std::string regtype;
+};
+
 class BVService
 {
 private:
@@ -57,6 +66,17 @@ public:
     void SetIsRegistered(const bool _isRegistered)
     {
         this->isRegistered = _isRegistered;
+    }
+
+    BVServiceHostData GetHostData(void)
+    {
+        BVServiceHostData hData = {
+                                   .port = this->port,
+                                   .hostname = this->hostname,
+                                   .domain = this->domain,
+                                   .regtype = this->regtype
+                                  };
+        return hData;
     }
 };
 

@@ -1,7 +1,7 @@
 #include "BVService_Bonjour.hpp"
 
 bool replyError = false;
-extern "C"
+extern "C" // TODO: Put these in separate h/c files.
 {
 #include "stdio.h"
 void C_RegisterReply(

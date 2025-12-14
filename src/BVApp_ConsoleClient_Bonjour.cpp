@@ -50,7 +50,7 @@ BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void)
     int i = 1;
     for (BVServiceBrowseInstance bI : this->serviceV)
     {
-        std::cout << i << ":" << std::endl;
+        std::cout << i++ << ":" << std::endl;
         bI.print();
         std::cout << "+-+-+-+-" << std::endl;
     }

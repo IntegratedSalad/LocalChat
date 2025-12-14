@@ -4,6 +4,7 @@
 #include <future>
 #include <condition_variable>
 #include <chrono>
+#include <queue>
 #include "BVDiscovery.hpp"
 #if __APPLE__
 #include "dns_sd.h"
@@ -52,6 +53,10 @@ int main(int argc, char** argv)
     BVService_Bonjour service{hostname, domain, PORT};
 #elif __linux__
     // AvahiSimplePoll will be used by avahi service registration and then service browsing
+    // TODO: shouldn't it be unique ptr?
+    // Even if service does not go out of scope/is destroyed,
+    // it doesn't mean that there should be one simple poll shared by all of the objects.
+    // fix it later...
     std::shared_ptr<AvahiSimplePoll> simple_poll = BVService_Avahi::MakeSimplePoll(avahi_simple_poll_new());
     if (simple_poll == nullptr)
     {
@@ -70,39 +75,65 @@ int main(int argc, char** argv)
         std::exit(-1);
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(20));
-
-
     // std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
     //     std::make_shared<std::queue<BVServiceBrowseInstance>>();
     // std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
     //     std::make_shared<std::queue<BVThrMessage>>();
 
-    // // TODO: change this to the structure holding data to current service (host)
-    // // Not necessarily. This object can be used to distinguish host service from others.
-    // // But BVDiscovery_Bonjour doesn't need the entire class
-    // std::shared_ptr<const BVService_Bonjour> service_p =
-    //     std::make_shared<const BVService_Bonjour>(service);
+    // // // TODO: change this to the structure holding data to current service (host)
+    // // // Not necessarily. This object can be used to distinguish host service from others.
+    // // // But BVDiscovery_Bonjour doesn't need the entire class.
+    // Yes - BVDiscovery_XXX class doesn't need a pointer to the service class.
+    // It needs only:
+    // hostname, domain, port and context pointer:
+    // In case of Bonjour, it's null, because DNSServiceRef is allocated upon browsing
+    // In case of Avahi, a pointer to AvahiClient
+    // Furthermore, Bonjour Discovery class is NOT utilizing any data that's specific to the BVService class,
+    // because hostname, domain and type are known ahead of the creation of the object
+    // std::shared_ptr<const BVService> service_p =
+    //     std::make_shared<const BVService>(service);
 
-    // // Create a discovery object, that periodically performs DNS-SD functionality.
-    // BVDiscovery_Bonjour discovery{service_p,
-    //                               discoveryQueueMutex,
-    //                               ioContext,
-    //                               discoveryQueue_p,
-    //                               discoveryQueueCV,
-    //                               isDiscoveryQueueReady}; // TODO: Pass messageQueue
+    /* 
+     TODO:
+     Do we require an additional manager object?
+     What if client wants to reconnect?
+     After the service is registered, the discovery object gets ownership
+     of the client. If that discovery gets halted, we exit the discovery thread,
+     what is going to resume it? There's no control over the discovery other than
+     running in once.
+     Maybe App should get it, or there should be a manager object for that...
+    
+    */
 
-    // BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
-    //                                           discoveryQueueMutex,
-    //                                           discoveryQueueCV,
-    //                                           isDiscoveryQueueReady}; // TODO: Pass messageQueue
+#if __APPLE__
+    // Create a discovery object, that periodically performs DNS-SD functionality.
+    BVDiscovery_Bonjour discovery{service_p,
+                                  discoveryQueueMutex,
+                                  ioContext,
+                                  discoveryQueue_p,
+                                  discoveryQueueCV,
+                                  isDiscoveryQueueReady}; // TODO: Pass messageQueue
 
+    BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
+                                              discoveryQueueMutex,
+                                              discoveryQueueCV,
+                                              isDiscoveryQueueReady}; // TODO: Pass messageQueue
+#endif
+#if __linux__
+    
+    std::shared_ptr<const BVService_Avahi> service_p = 
+        std::make_shared<const BVService_Avahi>(service);
+
+    // BVDiscovery_Avahi discovery{};
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+
+#endif
     // std::thread td([&discovery](){
     //     discovery();
     // });
 
     // consoleClient.Run();
-
     // td.join();
+
     return 0;
 }

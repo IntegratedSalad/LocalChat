@@ -3,7 +3,7 @@
 // TODO: Get reply for service discovery and registration to other file
 //       and test it (simulate reply from the daemon)
 
-// This function should be put in a separate file. It is C API on top of mDNS.
+// This function should be put in a separate file. It is C DNS-SD API on top of mDNS.
 extern "C"
 {
 #include <stdio.h>
@@ -71,13 +71,13 @@ BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour
     isDiscoveryQueueReady(_isDiscoveryQueueReady)
 {
     this->dnsRef = nullptr;
-    this->c_ll_p = LinkedList_str_Constructor(NULL);
+    this->c_ll_p = LinkedList_str_Constructor(NULL); // this is also utilized in BVDiscovery_Avahi
 }
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
     LinkedList_str_Destructor(&this->c_ll_p);
-    // When dnsRef is deallocated, service is no longer discoverable (true????) and browsing stops.
+    // When dnsRef is deallocated, service is no longer discoverable and browsing stops.
     DNSServiceRefDeallocate(this->dnsRef);
 }
 
@@ -174,6 +174,7 @@ void BVDiscovery_Bonjour::run()
     // with a regtype and domain
 }
 
+// Will this function be used also in avahi?
 void BVDiscovery_Bonjour::PushBrowsedServicesToQueue(void)
 {
     // std::lock_guard<std::mutex> lock(this->discoveryQueueMutex);

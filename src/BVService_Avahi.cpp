@@ -6,7 +6,7 @@ bool critical_failure = 0;
 bool register_success = 0;
 #endif // EXT_FLAGS_C_
 
-extern "C"
+extern "C" // TODO: Put these in separate h/c files.
 {
 #include "avahi-client/client.h"
 #include "avahi-common/error.h"
@@ -15,6 +15,8 @@ extern "C"
 #include <string.h>
 
 static void create_services(AvahiClient* cl_p, const char* hostname_regtype);
+// client callback prototype?
+// entry_group_callback prototype?
 static void entry_group_callback(AvahiEntryGroup* g, AvahiEntryGroupState state, AVAHI_GCC_UNUSED void* userdata)
 {
     assert(g == group || group == NULL);
@@ -81,7 +83,6 @@ static void create_services(AvahiClient* cl_p, const char* hostname_regtype)
     }
     if (avahi_entry_group_is_empty(group))
     {
-
         char* dup = strdup(hostname_regtype);
         char* hostname = strtok(dup, ",");
         const char* regtype = strtok(NULL, ",");
@@ -140,8 +141,7 @@ BVStatus BVService_Avahi::CreateAvahiClient(void)
 
 BVStatus BVService_Avahi::Setup(void)
 {
-    return this->CreateAvahiClient(); // remember, the pointer is not for the use inside the callback
-
+    return this->CreateAvahiClient(); // remember, the pointer client_p is not for the use outside the callback
 }
 
 BVStatus BVService_Avahi::Register(void)
