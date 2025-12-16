@@ -59,12 +59,23 @@ public:
 
     void AvahiOnServiceNewWrapper(void)
     {
+        std::unique_lock lk(discoveryQueueMutex);
+        discoveryQueueCV.wait(lk, [this]{return !this->isDiscoveryQueueReady;});
         this->PushBrowsedServicesToQueue();
+        this->isDiscoveryQueueReady = true;
+        lk.unlock();
+        this->discoveryQueueCV.notify_one();
+        LinkedList_str_ClearList(this->c_ll_p);
     }
 
     LinkedList_str* GetLinkedList(void)
     {
         return this->c_ll_p;
+    }
+
+    AvahiSimplePoll* GetSimplePoll(void)
+    {
+        return this->simple_poll_p.get();
     }
 
     void run() override;

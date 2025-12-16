@@ -6,12 +6,12 @@ extern "C" // These functions should be put in a separate file. It is C DNS-SD A
 // when there's problem with the client/client's state change
 #include <stdio.h>
 #include <string.h>
-typedef struct BrowseData
-{
-    AvahiClient* client_p;
-    AvahiSimplePoll* simplepoll_p;
-    BVDiscovery_Avahi* d_p;
-} BrowseData;
+// typedef struct BrowseData
+// {
+//     AvahiClient* client_p;
+//     AvahiSimplePoll* simplepoll_p;
+//     BVDiscovery_Avahi* d_p;
+// } BrowseData;
 
 static void browse_callback(
     AvahiServiceBrowser* sb,
@@ -24,15 +24,8 @@ static void browse_callback(
     AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
     void* userdata)
 {
-    BrowseData* browsedata_p = (BrowseData*)userdata;
-    AvahiClient* c = browsedata_p->client_p;
-    AvahiSimplePoll* sp = browsedata_p->simplepoll_p;
-    BVDiscovery_Avahi* discovery_p = static_cast<BVDiscovery_Avahi*>(browsedata_p->d_p);
-    LinkedList_str* ll_p = discovery_p->GetLinkedList();
-    assert(sb);
-    assert(c);
-    assert(sp);
-    assert(ll_p);
+    BVDiscovery_Avahi* discovery_p = static_cast<BVDiscovery_Avahi*>(userdata);
+    // If this will be problematic, just pass intermediate structure
 
     switch (event)
     {
@@ -40,7 +33,7 @@ static void browse_callback(
         {
             fprintf(stderr, "(Browser) %s\n", 
                 avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(sb))));
-                avahi_simple_poll_quit(sp);
+                avahi_simple_poll_quit(discovery_p->GetSimplePoll());
             return;
         }
         case AVAHI_BROWSER_NEW:
@@ -72,7 +65,7 @@ static void browse_callback(
             }
             buff[N_BYTES_SERVICE_STR_TOTAL-1] = '\0';
             LinkedListElement_str* lle_p = LinkedListElement_str_Constructor(buff, NULL);
-            LinkedList_str_AddElement(ll_p, lle_p);
+            LinkedList_str_AddElement(discovery_p->GetLinkedList(), lle_p);
 
             // We must call the member function that is responsible for enqueing the results
             discovery_p->AvahiOnServiceNewWrapper(); // calls PushBrowsedServicesToQueue
@@ -138,9 +131,6 @@ void BVDiscovery_Avahi::CreateConnectionContext(void)
 {
     const std::string regtype = this->hostData.regtype;
     const std::string domain  = this->hostData.domain;
-    BrowseData bd = {.client_p = this->client_p.get(), 
-                     .simplepoll_p = this->simple_poll_p.get(), 
-                     .d_p = this};
     this->serviceBrowser_p = std::unique_ptr<AvahiServiceBrowser, AvahiServiceBrowserDeleter>(
         avahi_service_browser_new(client_p.get(), 
                                   AVAHI_IF_UNSPEC, 
@@ -149,7 +139,7 @@ void BVDiscovery_Avahi::CreateConnectionContext(void)
                                   domain.c_str(), 
                                   (AvahiLookupFlags)0,
                                   browse_callback,
-                                  &bd)
+                                  this)
     );
 }
 
