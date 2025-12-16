@@ -11,11 +11,11 @@
 #include "dns_sd.h"
 #include "BVService_Bonjour.hpp"
 #include "BVDiscovery_Bonjour.hpp"
-#include "BVApp_ConsoleClient_Bonjour.hpp"
 #elif __linux__
 #include "BVService_Avahi.hpp"
 #include "BVDiscovery_Avahi.hpp"
 #endif
+#include "BVApp_ConsoleClient_Bonjour.hpp"
 
 std::mutex discoveryQueueMutex;
 std::mutex messageQueueMutex;
@@ -118,10 +118,7 @@ int main(int argc, char** argv)
                                   discoveryQueueCV,
                                   isDiscoveryQueueReady}; // TODO: Pass messageQueue
 
-    BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
-                                              discoveryQueueMutex,
-                                              discoveryQueueCV,
-                                              isDiscoveryQueueReady}; // TODO: Pass messageQueue
+
 #endif
 #if __linux__
     auto data = service.TransferClient();
@@ -133,15 +130,18 @@ int main(int argc, char** argv)
                                 isDiscoveryQueueReady,
                                 service.GetHostData(),
                                 simple_poll_p}; // TODO: Pass messageQueue
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-
 #endif
-    // std::thread td([&discovery](){
-    //     discovery();
-    // });
+    BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
+                                              discoveryQueueMutex,
+                                              discoveryQueueCV,
+                                              isDiscoveryQueueReady}; // TODO: Pass messageQueue
 
-    // consoleClient.Run();
-    // td.join();
+    std::thread td([&discovery](){
+        discovery();
+    });
+
+    consoleClient.Run();
+    td.join();
 
     return 0;
 }

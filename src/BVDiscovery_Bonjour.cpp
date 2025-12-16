@@ -82,7 +82,7 @@ BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
     DNSServiceRefDeallocate(this->dnsRef); 
 }
 
-void BVDiscovery_Bonjour::StartBrowsing(void)
+void BVDiscovery_Bonjour::CreateConnectionContext(void)
 {
     /*
         DNSServiceBrowse is needed to be called exactly once.
@@ -155,7 +155,7 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 void BVDiscovery_Bonjour::run()
 {
     std::cout << "Scheduling the timer..." << std::endl;
-    this->StartBrowsing();
+    this->CreateConnectionContext();
 
     // if !replyError
     std::cout << "timer scheduled" << std::endl;
@@ -173,6 +173,7 @@ void BVDiscovery_Bonjour::run()
     // it will call DNSServiceBrowse, and somehow write back
     // the reply from the daemon - it will be a service name
     // with a regtype and domain
+    // Do we really need a delay?
 }
 
 // Will this function be used also in avahi?

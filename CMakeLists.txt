@@ -32,7 +32,7 @@ endif()
 
 enable_testing()
 
-if(UNIX)
+if(LINUX)
 	add_library(BVService_Avahi STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Avahi.cpp)
 	add_library(BVDiscovery_Avahi STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Avahi.cpp)
 	target_link_libraries(LocalChat BVService_Avahi)

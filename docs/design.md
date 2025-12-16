@@ -20,10 +20,16 @@ Make sure that we are using hostname to IP resolution WITH mDNS, not any local D
 
 # Architecture
 BVApp acts as a manager of components that provide certain functionality.
-With version 2.1 there's a small architectural rewrite needed.
+With version 2.2 there's a small architectural rewrite needed.
 This is not a problem per se - I'm writing a prototype that shows multiplatform functionality.
 It is still early enough, that I can design a proper architecture
-that allows for the clean managing of the components
+that allows for the clean managing of the components.
+
+Components below MUST provide a messaging interface for their functionalities.
+
+## Concepts
+Component - a class providing a functionality eg DNS-SD Registration or DNS-SD Browsing
+Functionality
 
 ## Classes (Components)
 ## Component 'BVService'
@@ -177,6 +183,7 @@ Remember to disallow to interact with service registered on the same machine.
 How to announce that client disconnects? This should be a multicast/broadcast message
 so that BVApps can update their UI.
 Separate ioContext for each BVTCPConnection?
+Maybe utilize thread pool. For each connection, just take unused thread.
 
 # Resolution
 What exactly does 'Resolve' in mDNS mean:

@@ -13,6 +13,7 @@
 class BVDiscovery
 {
 public:
+    // Function that is called upon running the discovery functionality
     virtual void run() = 0;
     void operator()(void)
     {

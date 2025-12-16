@@ -34,6 +34,7 @@ typedef enum class BVConsoleAction
     BVCONSOLEACTION_BLOCKHOST
 } BVConsoleAction;
 
+// I don't think that ConsoleClient component will change with the implementation...
 class BVApp_ConsoleClient_Bonjour : private BVApp
 {
 private:

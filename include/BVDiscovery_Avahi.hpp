@@ -24,6 +24,7 @@ class BVDiscovery_Avahi : public BVDiscovery
 private:
     std::unique_ptr<AvahiClient, AvahiClientDeleter> client_p = nullptr;
     std::unique_ptr<AvahiServiceBrowser, AvahiServiceBrowserDeleter> serviceBrowser_p = nullptr;
+    std::shared_ptr<AvahiSimplePoll> simple_poll_p;
 
     const BVServiceHostData hostData;
 
@@ -34,8 +35,8 @@ private:
 
     boost::asio::io_context& ioContext;
     boost::asio::steady_timer discoveryTimer;
-    void StartBrowsing(void);
-    BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list. TODO: This method should also be in the BVDiscovery parent class.
+    void CreateConnectionContext(void);
+    // void DestroyConnectionContext
     void PushBrowsedServicesToQueue(void);
 
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS; // TODO: This parameter should be in BVDiscovery parent class.
@@ -43,7 +44,7 @@ private:
     LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
     // TODO: LinkedList_str should be wrapped in a unique ptr.
 
-    void Setup(std::shared_ptr<AvahiSimplePoll>);
+    void Setup(void);
 
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
@@ -53,8 +54,18 @@ public:
                       std::condition_variable& _discoveryQueueCV,
                       bool& _isDiscoveryQueueReady,
                       const BVServiceHostData _hostData,
-                      std::shared_ptr<AvahiSimplePoll> simple_poll_p);
+                      std::shared_ptr<AvahiSimplePoll> _simple_poll_p);
     ~BVDiscovery_Avahi();
+
+    void AvahiOnServiceNewWrapper(void)
+    {
+        this->PushBrowsedServicesToQueue();
+    }
+
+    LinkedList_str* GetLinkedList(void)
+    {
+        return this->c_ll_p;
+    }
 
     void run() override;
 };

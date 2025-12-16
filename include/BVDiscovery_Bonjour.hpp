@@ -37,7 +37,7 @@ private:
 
     boost::asio::io_context& ioContext;
     boost::asio::steady_timer discoveryTimer;
-    void StartBrowsing(void);
+    void CreateConnectionContext(void);
     BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list. TODO: This method should also be in the BVDiscovery parent class.
     void PushBrowsedServicesToQueue(void);
 
