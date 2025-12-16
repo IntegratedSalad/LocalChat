@@ -109,16 +109,14 @@ int main(int argc, char** argv)
 
 #if __APPLE__
     // Create a discovery object, that periodically performs DNS-SD functionality.
-    std::shared_ptr<const BVService> service_p =
-        std::make_shared<const BVService>(service);
+    std::shared_ptr<const BVService_Bonjour> service_p =
+        std::make_shared<const BVService_Bonjour>(service);
     BVDiscovery_Bonjour discovery{service_p,
                                   discoveryQueueMutex,
                                   ioContext,
                                   discoveryQueue_p,
                                   discoveryQueueCV,
                                   isDiscoveryQueueReady}; // TODO: Pass messageQueue
-
-
 #endif
 #if __linux__
     auto data = service.TransferClient();
