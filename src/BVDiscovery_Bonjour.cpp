@@ -77,8 +77,9 @@ BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
     LinkedList_str_Destructor(&this->c_ll_p);
-    // When dnsRef is deallocated, service is no longer discoverable and browsing stops.
-    DNSServiceRefDeallocate(this->dnsRef);
+    // When dnsRef is deallocated, browsing stops.
+    // TODO: Think of it maybe being deallocated in a separate method for control
+    DNSServiceRefDeallocate(this->dnsRef); 
 }
 
 void BVDiscovery_Bonjour::StartBrowsing(void)

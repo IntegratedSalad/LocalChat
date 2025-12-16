@@ -68,7 +68,7 @@ public:
         this->isRegistered = _isRegistered;
     }
 
-    BVServiceHostData GetHostData(void)
+    BVServiceHostData GetHostData(void) const
     {
         BVServiceHostData hData = {
                                    .port = this->port,

@@ -4,6 +4,12 @@ extern "C" // These functions should be put in a separate file. It is C DNS-SD A
 {
 //client callback? client is not created here, but the daemon might call this function
 // when there's problem with the client/client's state change
+typedef struct BrowseData
+{
+    AvahiClient* client_p;
+    AvahiSimplePoll* simplepoll_p;
+} BrowseData;
+
 static void browse_callback(
     AvahiServiceBrowser* sb,
     AvahiIfIndex interface,
@@ -13,11 +19,14 @@ static void browse_callback(
     const char* type,
     const char* domain,
     AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
-    void* userdata) // pass simple poll...
+    void* userdata)
 {
-    AvahiClient* c = (AvahiClient*)userdata;
+    BrowseData* browsedata_p = (BrowseData*)userdata;
+    AvahiClient* c = browsedata_p->client_p;
+    AvahiSimplePoll* sp = browsedata_p->simplepoll_p;
     assert(sb);
     assert(c);
+    assert(sp);
 
     switch (event)
     {
@@ -25,7 +34,7 @@ static void browse_callback(
         {
             fprintf(stderr, "(Browser) %s\n", 
                 avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(sb))));
-                avahi_simple_poll_quit(simple_poll);
+                avahi_simple_poll_quit(sp);
             return;
         }
     }
@@ -38,7 +47,8 @@ BVDiscovery_Avahi::BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDel
                   std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                   std::condition_variable& _discoveryQueueCV,
                   bool& _isDiscoveryQueueReady,
-                  const BVServiceHostData _hostData) :
+                  const BVServiceHostData _hostData,
+                  std::shared_ptr<AvahiSimplePoll> simple_poll_p):
     client_p(std::move(_client_p)),
     discoveryQueueMutex(_discoveryQueueMutex),
     discoveryQueue_p(_discoveryQueue),
@@ -49,10 +59,10 @@ BVDiscovery_Avahi::BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDel
     hostData(_hostData)
 {
     this->c_ll_p = LinkedList_str_Constructor(NULL);
-    this->Setup();
+    this->Setup(simple_poll_p);
 }
 
-void BVDiscovery_Avahi::Setup(void)
+void BVDiscovery_Avahi::Setup(std::shared_ptr<AvahiSimplePoll> sp_p)
 {
     /* We have to have the data from BVService here: type, hostname etc... */
     const std::string regtype = this->hostData.regtype;
@@ -61,6 +71,8 @@ void BVDiscovery_Avahi::Setup(void)
     {
         throw std::bad_alloc();
     }
+
+    BrowseData bd = {.client_p = client_p.get(), sp_p.get()};
     this->serviceBrowser_p = std::unique_ptr<AvahiServiceBrowser, AvahiServiceBrowserDeleter>(
         avahi_service_browser_new(client_p.get(), 
                                   AVAHI_IF_UNSPEC, 
@@ -69,7 +81,7 @@ void BVDiscovery_Avahi::Setup(void)
                                   domain.c_str(), 
                                   (AvahiLookupFlags)0,
                                   browse_callback,
-                                  client_p.get())
+                                  &bd)
     );
 }
 

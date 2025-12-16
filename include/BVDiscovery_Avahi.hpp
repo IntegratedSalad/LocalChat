@@ -43,7 +43,7 @@ private:
     LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
     // TODO: LinkedList_str should be wrapped in a unique ptr.
 
-    void Setup(void);
+    void Setup(std::shared_ptr<AvahiSimplePoll>);
 
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
@@ -52,7 +52,8 @@ public:
                       std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                       std::condition_variable& _discoveryQueueCV,
                       bool& _isDiscoveryQueueReady,
-                      const BVServiceHostData _hostData);
+                      const BVServiceHostData _hostData,
+                      std::shared_ptr<AvahiSimplePoll> simple_poll_p);
     ~BVDiscovery_Avahi();
 
     void run() override;

@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <chrono>
 #include <queue>
+#include <memory>
 #include "BVDiscovery.hpp"
 #if __APPLE__
 #include "dns_sd.h"
@@ -13,6 +14,7 @@
 #include "BVApp_ConsoleClient_Bonjour.hpp"
 #elif __linux__
 #include "BVService_Avahi.hpp"
+#include "BVDiscovery_Avahi.hpp"
 #endif
 
 std::mutex discoveryQueueMutex;
@@ -57,13 +59,13 @@ int main(int argc, char** argv)
     // Even if service does not go out of scope/is destroyed,
     // it doesn't mean that there should be one simple poll shared by all of the objects.
     // fix it later...
-    std::shared_ptr<AvahiSimplePoll> simple_poll = BVService_Avahi::MakeSimplePoll(avahi_simple_poll_new());
-    if (simple_poll == nullptr)
+    std::shared_ptr<AvahiSimplePoll> simple_poll_p = BVService_Avahi::MakeSimplePoll(avahi_simple_poll_new());
+    if (simple_poll_p == nullptr)
     {
         std::cerr << "Failed to create simple poll object." << std::endl;
         std::exit(-1);
     }
-    BVService_Avahi service{hostname, domain, PORT, simple_poll};
+    BVService_Avahi service{hostname, domain, PORT, simple_poll_p};
 #endif
     BVStatus status = service.Register(); // blocks
     if (status == BVStatus::BVSTATUS_OK)
@@ -74,11 +76,12 @@ int main(int argc, char** argv)
         std::cerr << "Setup failed" << std::endl;
         std::exit(-1);
     }
+    // From this point, the context pointers of both implementations are alive, and the services are discoverable
 
-    // std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
-    //     std::make_shared<std::queue<BVServiceBrowseInstance>>();
-    // std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
-    //     std::make_shared<std::queue<BVThrMessage>>();
+    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
+        std::make_shared<std::queue<BVServiceBrowseInstance>>();
+    std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
+        std::make_shared<std::queue<BVThrMessage>>();
 
     // // // TODO: change this to the structure holding data to current service (host)
     // // // Not necessarily. This object can be used to distinguish host service from others.
@@ -90,8 +93,7 @@ int main(int argc, char** argv)
     // In case of Avahi, a pointer to AvahiClient
     // Furthermore, Bonjour Discovery class is NOT utilizing any data that's specific to the BVService class,
     // because hostname, domain and type are known ahead of the creation of the object
-    // std::shared_ptr<const BVService> service_p =
-    //     std::make_shared<const BVService>(service);
+
 
     /* 
      TODO:
@@ -107,6 +109,8 @@ int main(int argc, char** argv)
 
 #if __APPLE__
     // Create a discovery object, that periodically performs DNS-SD functionality.
+    std::shared_ptr<const BVService> service_p =
+        std::make_shared<const BVService>(service);
     BVDiscovery_Bonjour discovery{service_p,
                                   discoveryQueueMutex,
                                   ioContext,
@@ -120,11 +124,15 @@ int main(int argc, char** argv)
                                               isDiscoveryQueueReady}; // TODO: Pass messageQueue
 #endif
 #if __linux__
-    
-    std::shared_ptr<const BVService_Avahi> service_p = 
-        std::make_shared<const BVService_Avahi>(service);
-
-    // BVDiscovery_Avahi discovery{};
+    auto data = service.TransferClient();
+    BVDiscovery_Avahi discovery{std::move(data), // client_p
+                                discoveryQueueMutex,
+                                ioContext,
+                                discoveryQueue_p,
+                                discoveryQueueCV,
+                                isDiscoveryQueueReady,
+                                service.GetHostData(),
+                                simple_poll_p}; // TODO: Pass messageQueue
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
 #endif

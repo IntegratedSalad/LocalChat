@@ -22,8 +22,8 @@ enum class BVAppEvent_e
  * BVApp defines behavior and manages data related to
  * an application that user interacts with.
  * Behavior is simply a reaction to an event.
- * What event does a user do, that is abstract of a particular GUI lib?
- * It wants to send a message
+ * What event does a user do, that is abstract of a particular GUI lib.
+ * They want to send a message, pause 
  *
 */
 class BVApp
