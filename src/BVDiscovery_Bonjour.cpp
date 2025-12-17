@@ -127,7 +127,6 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     std::cout << "timer scheduled" << std::endl;
 
     // TODO: How to stop this?
-
     // TODO: Before pushing onto queue check somehow if the service at the given
     //       servicename was already Registered!
 
@@ -160,7 +159,6 @@ void BVDiscovery_Bonjour::run()
     std::cout << "Scheduling the timer..." << std::endl;
     this->CreateConnectionContext();
 
-    // if !replyError
     std::cout << "timer scheduled" << std::endl;
     this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
     this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)

@@ -83,17 +83,13 @@ int main(int argc, char** argv)
     std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
         std::make_shared<std::queue<BVThrMessage>>();
 
-    // // // TODO: change this to the structure holding data to current service (host)
-    // // // Not necessarily. This object can be used to distinguish host service from others.
-    // // // But BVDiscovery_Bonjour doesn't need the entire class.
-    // Yes - BVDiscovery_XXX class doesn't need a pointer to the service class.
+    // BVDiscovery_XXX class doesn't need a pointer to the service class.
     // It needs only:
     // hostname, domain, port and context pointer:
     // In case of Bonjour, it's null, because DNSServiceRef is allocated upon browsing
     // In case of Avahi, a pointer to AvahiClient
     // Furthermore, Bonjour Discovery class is NOT utilizing any data that's specific to the BVService class,
     // because hostname, domain and type are known ahead of the creation of the object
-
 
     /* 
      TODO:
@@ -104,7 +100,8 @@ int main(int argc, char** argv)
      what is going to resume it? There's no control over the discovery other than
      running in once.
      Maybe App should get it, or there should be a manager object for that...
-    
+
+     Yes - architecture rewrite is needed
     */
 
 #if __APPLE__

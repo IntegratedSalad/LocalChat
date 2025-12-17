@@ -24,8 +24,9 @@
 class BVDiscovery_Bonjour : public BVDiscovery
 {
 private:
-    // TODO: is this really necessary to hold a shared pointer to service_p and not just a structure of needed params?
+    // Is this really necessary to hold a shared pointer to service_p and not just a structure of needed params?
     // BVService_Bonjour component is alive in the main thread...
+    // Probably not. Some manager class will have a pointer to the active service.
     std::shared_ptr<const BVService_Bonjour> service_p;
     DNSServiceRef dnsRef;
 

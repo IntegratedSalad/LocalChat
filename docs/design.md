@@ -262,7 +262,7 @@ text field, and other widgets.
 2. Registration of service
    where .local is mandatory, because mDNS exclusively resolves hostnames ending with the .local top-level domain[^1].
    [^1]: [Wikipedia on mDNS](https://en.wikipedia.org/wiki/Multicast_DNS#Protocol_overview)
-   1. If service was already registered, do not register it twice. (TODO: Should this application work in background?)
+   1. If service was already registered, do not register it twice. 
       meaning, if someone writes a message to a user, where their application was closed, (but not the service)
       should they receive the messages? -> Closing the application means closing the service.
 3. UI initialization. This can mean a CLI or GUI aplication.
@@ -271,6 +271,9 @@ text field, and other widgets.
    2. Discovery for localchat services periodically (timer) AND
    3. Notify user when someone is available to chat AND
    4. Output messages sent to user (callback upon receiving data on socket)
+
+(TODO: Should this application work in background?)
+How to ensure that an application works in the background?
 
 # Constants
 How many hosts can one user discover max?

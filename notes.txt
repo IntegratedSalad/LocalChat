@@ -23,9 +23,6 @@ a wiec przyklad:
 dns-sd -R bupsiobup _bupsiobuphost._tcp local 50001
 (musi to byc _localchathost._tcp jako type dla tej aplikacji)
 
-TODO:
-Wziac RaspberryPi i na nim zarejestrowac usluge o takiej samej nazwie (localchat_host) i sprobowac zrobic lookup oraz -G (get addresss information for hostname) i zobaczyc czy ma inny adres. [V]
-
 Wazne:
 RR -> Resource Record
 SRV -> Service

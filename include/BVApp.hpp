@@ -82,17 +82,6 @@ protected:
                 discoveryQueue->pop(); // consume everything
             }
 
-            // TODO: Another thread that's waiting on queue
-            // Or -> make a flag, and put this before lk(this->discoveryQueueMutex), at the beginning
-            // if updated => lock, push, unlock
-            // now there are 3 locks in this place
-            // Or better -> spawn thread which will print new services to the screen and utilize the method
-            // for handling this event => BVAPPEVENT_NEW_SERVICES.
-
-            // std::unique_lock elk(eventQueueMutex);
-            // eventQueue.push(BVAppEvent_e::BVAPPEVENT_NEW_SERVICES); // do we need event queue? -> yes, but later
-            // elk.unlock();
-
             vlk.unlock(); // main thread can now utilize vector
             this->isDiscoveryQueueReady = false; // meaning - it's not ready, nothing should be in there, queue empty
             lk.unlock();
