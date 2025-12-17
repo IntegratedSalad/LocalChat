@@ -1,13 +1,18 @@
-0.1:
+0.
 1. Host registering a service ._localchathost_tcp service. [V]
 2. Discovering services on the local net. [V]
-   1. Discovering services and showing them to the user WITHOUT user events []
-   2. Stopping the discovery service []
-| BEFORE IMPLEMENTING A CLASS HANDLING EVENTS |
+   a. Plans:
+   1.1a -> Write Discovery with Avahi regardless of the architecture [V]
+   1.2a -> Test if it works on mac and linux [V]
+   1.3a -> Write Discovery interface, an abstraction that provides functionality
+           for writing to a queue regardless of implementation []
+   1.4a -> Test if it works on mac and linux []
+   2. Stopping and restarting the Registration functionality []
+      2.2 Needs an architectural rewrite. []
+   3. Stopping and restarting the discovery functionality []
 3. Choosing one service and sending it a string of bytes. []
-   1. Resolving the host with DNSServiceResolve
-
-0.2:
-2.
-3. Local Chat console application - sending and receiving text messages with active hosts.
-4. Announcing that hosts has disconnected - closed the application.
+   1. Resolving the host with DNSServiceResolve []
+4. Multiple sessions opened []
+5. Sending files []
+1.0 Release:
+Console Chat application that handles multiple sessions and allows for file exchange []

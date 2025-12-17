@@ -64,3 +64,16 @@ discover each other.
 This is only talking about the mDNS and DNS-SD functionality, so service registration, browsing and resolution.
 I think logic that handles communication and application itself can be written so that it can communicate
 with both implementations.
+
+## Corruption debugging
+When something gets corrupted by multithreaded access and dumps a core:
+build with this (at least on Linux):
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG="-g -Og -fno-omit-frame-pointer"
+cmake --build build
+./Localchat in the build/ subdirectory
+**coredumpctl** gdb LocalChat
+then backtrace:
+bt
+find the frame e.g. 0:
+frame 0
+where

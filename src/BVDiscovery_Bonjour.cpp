@@ -3,7 +3,7 @@
 // TODO: Get reply for service discovery and registration to other file
 //       and test it (simulate reply from the daemon)
 
-// This function should be put in a separate file. It is C API on top of mDNS.
+// This function should be put in a separate file. It is C DNS-SD API on top of mDNS.
 extern "C"
 {
 #include <stdio.h>
@@ -71,17 +71,18 @@ BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour
     isDiscoveryQueueReady(_isDiscoveryQueueReady)
 {
     this->dnsRef = nullptr;
-    this->c_ll_p = LinkedList_str_Constructor(NULL);
+    this->c_ll_p = LinkedList_str_Constructor(NULL); // this is also utilized in BVDiscovery_Avahi
 }
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
     LinkedList_str_Destructor(&this->c_ll_p);
-    // When dnsRef is deallocated, service is no longer discoverable (true????) and browsing stops.
-    DNSServiceRefDeallocate(this->dnsRef);
+    // When dnsRef is deallocated, browsing stops.
+    // TODO: Think of it maybe being deallocated in a separate method for control
+    DNSServiceRefDeallocate(this->dnsRef); 
 }
 
-void BVDiscovery_Bonjour::StartBrowsing(void)
+void BVDiscovery_Bonjour::CreateConnectionContext(void)
 {
     /*
         DNSServiceBrowse is needed to be called exactly once.
@@ -127,6 +128,9 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 
     // TODO: How to stop this?
 
+    // TODO: Before pushing onto queue check somehow if the service at the given
+    //       servicename was already Registered!
+
     std::unique_lock lk(discoveryQueueMutex);
     discoveryQueueCV.wait(lk, [this]{return !this->isDiscoveryQueueReady;});
 
@@ -154,7 +158,7 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 void BVDiscovery_Bonjour::run()
 {
     std::cout << "Scheduling the timer..." << std::endl;
-    this->StartBrowsing();
+    this->CreateConnectionContext();
 
     // if !replyError
     std::cout << "timer scheduled" << std::endl;
@@ -172,8 +176,10 @@ void BVDiscovery_Bonjour::run()
     // it will call DNSServiceBrowse, and somehow write back
     // the reply from the daemon - it will be a service name
     // with a regtype and domain
+    // Do we really need a delay?
 }
 
+// Will this function be used also in avahi?
 void BVDiscovery_Bonjour::PushBrowsedServicesToQueue(void)
 {
     // std::lock_guard<std::mutex> lock(this->discoveryQueueMutex);

@@ -6,7 +6,9 @@ void BVApp_ConsoleClient_Bonjour::Init(void)
 void BVApp_ConsoleClient_Bonjour::Run(void)
 {
     this->StartListenerThread();
-    this->PrintAll();
+    // Wow! Always make sure that you're not calling functions that lock resources
+    // where they shouldn't be called
+    // this->PrintAll();
     while (this->GetIsRunning())
     {
         // print console
@@ -28,7 +30,7 @@ void BVApp_ConsoleClient_Bonjour::Quit(void)
 void BVApp_ConsoleClient_Bonjour::PrintAll(void)
 {
     for (int i = 0; i < 100; i++) {std::cout << std::endl;}
-    std::cout << "LocalChat console client v0.1.2.1" << std::endl;
+    std::cout << "LocalChat console client v0.2.1.2a" << std::endl;
     std::cout << "(P)rint services" << std::endl;
     std::cout << "(S)witch to conversation" << std::endl;
     std::cout << "(E)xit" << std::endl;
@@ -41,19 +43,20 @@ void BVApp_ConsoleClient_Bonjour::PrintAll(void)
 
 BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void)
 {
+    std::lock_guard vlk(this->serviceVectorMutex);
     BVStatus status = BVStatus::BVSTATUS_OK;
     if (this->serviceV.size() == 0)
     {
         std::cout << "None available" << std::endl;
     }
-    std::lock_guard vlk(this->serviceVectorMutex);
     int i = 1;
-    for (BVServiceBrowseInstance bI : this->serviceV)
+    for (BVServiceBrowseInstance& bI : this->serviceV)
     {
-        std::cout << i << ":" << std::endl;
+        std::cout << i++ << ":" << std::endl;
         bI.print();
         std::cout << "+-+-+-+-" << std::endl;
     }
+    return status;
 }
 
 void BVApp_ConsoleClient_Bonjour::HandleServicesDiscoveredUpdateEvent(void)

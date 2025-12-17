@@ -9,12 +9,6 @@
 #include <condition_variable>
 #include "linked_list.h"
 
-#define N_BYTES_SERVNAME_MAX      24
-#define N_BYTES_REGTYPE_MAX       24
-#define N_BYTES_REPLDOMN_MAX      16
-#define N_BYTES_SERVICE_STR_TOTAL (N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX + N_BYTES_REPLDOMN_MAX)
-#define N_SERVICES_MAX            32
-
 /*
  *   This class is a Bonjour implementation of BV Discovery Component.
  *   It utilizes a LL of records that is copied to the shared queue.
@@ -33,7 +27,7 @@ private:
     // TODO: is this really necessary to hold a shared pointer to service_p and not just a structure of needed params?
     // BVService_Bonjour component is alive in the main thread...
     std::shared_ptr<const BVService_Bonjour> service_p;
-    DNSServiceRef dnsRef; // TODO: shouldn't this be in BVDiscovery? DNSServiceRef should be allocated no matter the implementation
+    DNSServiceRef dnsRef;
 
     std::mutex& discoveryQueueMutex;
     std::condition_variable& discoveryQueueCV;
@@ -42,7 +36,7 @@ private:
 
     boost::asio::io_context& ioContext;
     boost::asio::steady_timer discoveryTimer;
-    void StartBrowsing(void);
+    void CreateConnectionContext(void);
     BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list. TODO: This method should also be in the BVDiscovery parent class.
     void PushBrowsedServicesToQueue(void);
 

@@ -11,10 +11,16 @@ mDNSResponder and mNDSResponderHelper daemons are run at boot.
 LocalChat is tested and run on macOS Monterey 12.3.1 and macOS Sequoia.
 
 ## Linux
-### Dependencies
-
 ### Avahi
-### Bonjour?
+Tested on Fedora Linux Workstation 43
+Install avahi-devel, cmake, boost, gcc, g++, wxGTK-devel
+avahi-daemon runs on boot, however avahi-devel is needed to compile the source.
+For development see docs/linux_notes.md
+
+## All
+cmake build .
+make -jX, where X is the number of threads.
+./LocalChat
 
 ## Windows
 ### Bonjour
