@@ -30,7 +30,7 @@ void BVApp_ConsoleClient_Bonjour::Quit(void)
 void BVApp_ConsoleClient_Bonjour::PrintAll(void)
 {
     for (int i = 0; i < 100; i++) {std::cout << std::endl;}
-    std::cout << "LocalChat console client v0.1.2.1" << std::endl;
+    std::cout << "LocalChat console client v0.2.1.2a" << std::endl;
     std::cout << "(P)rint services" << std::endl;
     std::cout << "(S)witch to conversation" << std::endl;
     std::cout << "(E)xit" << std::endl;

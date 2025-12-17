@@ -128,6 +128,9 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 
     // TODO: How to stop this?
 
+    // TODO: Before pushing onto queue check somehow if the service at the given
+    //       servicename was already Registered!
+
     std::unique_lock lk(discoveryQueueMutex);
     discoveryQueueCV.wait(lk, [this]{return !this->isDiscoveryQueueReady;});
 

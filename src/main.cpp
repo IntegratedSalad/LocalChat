@@ -120,7 +120,7 @@ int main(int argc, char** argv)
 #endif
 #if __linux__
     auto data = service.TransferClient();
-    BVDiscovery_Avahi discovery{std::move(data), // client_p
+    BVDiscovery_Avahi discovery{std::move(data),
                                 discoveryQueueMutex,
                                 ioContext,
                                 discoveryQueue_p,

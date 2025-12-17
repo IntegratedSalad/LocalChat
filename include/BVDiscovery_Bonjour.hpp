@@ -9,7 +9,6 @@
 #include <condition_variable>
 #include "linked_list.h"
 
-
 /*
  *   This class is a Bonjour implementation of BV Discovery Component.
  *   It utilizes a LL of records that is copied to the shared queue.

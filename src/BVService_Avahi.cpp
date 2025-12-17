@@ -159,4 +159,4 @@ BVStatus BVService_Avahi::Register(void)
 }
 
 // Deregister
-// Deregistering MUST mean that no callbacks are deem to be called!
+// Deregistering MUST mean that no callbacks will be called!
