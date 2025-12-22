@@ -61,3 +61,4 @@ dns-sd -L [ServiceName] _localchathost local -> gives instance name (host) and p
 Now we have host name that publishes a service that we just looked up, now we can resolve:
 dns-sd -G v4 [hostname].local -> yields local address of the hostname
 
+TODO: Put these notes somewhere else and delete the file.

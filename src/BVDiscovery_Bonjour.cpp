@@ -1,8 +1,5 @@
 #include "BVDiscovery_Bonjour.hpp"
 
-// TODO: Get reply for service discovery and registration to other file
-//       and test it (simulate reply from the daemon)
-
 // This function should be put in a separate file. It is C DNS-SD API on top of mDNS.
 extern "C"
 {
@@ -113,7 +110,7 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
     }
 }
 
-// StopBrowsing?
+// TODO: StopBrowsing
 
 BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 {

@@ -86,5 +86,4 @@ handled asynchronously.
 
 And on top of that, we have to take into consideration the fact that mDNSResponder is a Windows and macOS
 solution only - there will be avahi on Linux.
-
 */

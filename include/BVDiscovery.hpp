@@ -10,6 +10,8 @@
 #define N_BYTES_SERVICE_STR_TOTAL (N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX + N_BYTES_REPLDOMN_MAX)
 #define N_SERVICES_MAX            32
 
+// TODO: Rewrite this base class
+// We do not need it to be a functional object (no operator() overload)
 class BVDiscovery
 {
 public:

@@ -128,8 +128,3 @@ public:
         this->isRunning = state;
     }
 };
-
-// LC_Client will be a derivation of BVApp
-// BVApp has method run => is a functional object that can be run.
-// It takes a pointer to the queue.
-// Can somehow Discovery class send something to update the std::vector of services? Or maybe it should have a different thread that waits (blocks) on a queue.

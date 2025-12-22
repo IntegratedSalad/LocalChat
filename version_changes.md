@@ -14,5 +14,5 @@
    1. Resolving the host with DNSServiceResolve []
 4. Multiple sessions opened []
 5. Sending files []
-1.0 Release:
-Console Chat application that handles multiple sessions and allows for file exchange []
+1. Release:
+1. Console Chat application that handles multiple sessions and allows for file exchange []

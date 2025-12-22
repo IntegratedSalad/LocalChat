@@ -39,34 +39,13 @@ Either we deal with this in BVDiscovery component or in App.
 For example - BVApp consumes queue and makes Service List that graphical/TCP components utilize.
 When consuming queue and updating list there should be a check if next queue element is in list already.
 
-# How to announce that a service has disconnected?
-
-# Installing linux dependencies
-Sometimes even if a certain package is installed, there are no header files that come with that library.
-It means that the .so files were compiled with the header files, but the package doesn't come with it.
-It is helpful to find a dev package.
-mDNSPosix tries to include mbedtls/certs.h which is not present in version 3.x.x of mbedtls
-Might switch to 2.x.x but not system-wide.
-It is because I'm using the old mDNSResponder version!
-Latest doesn't include mbedtls/certs.h...
-Okay - symbols that are referenced in dns-sd.h on MacOS are present in the libSystemB.dylib which is linked by default. In Linux, I have to somehow provide a libdns_sd.so.
+# How to announce that a service has disconnected on Bonjour implementation?
 nm -D /path/to/.so/ -> list symbols in file.
-## Compatibility library problems
-If using avahi compatibility layer is too hard/demanding - just compile the mDNSResponder daemon and use full Bonjour implementation. But this means that we have to disable the avahi daemon - it's not optimal.
-We might just have to do two targets - BV_Bonjour and BV_Avahi.
-Application will be the same for each of the implementations...
-In case of having Avahi and Bonjour, we have to make abstract clasess more precise.
-Discovery should have the same interface - only implementation changes.
-Bonjour and Avahi should put BrowseInstances on queue.
-First - compile on linux the example.
-Maybe get around first in the hacky way - at least to see that two services in the in-progress-app can
-discover each other.
-This is only talking about the mDNS and DNS-SD functionality, so service registration, browsing and resolution.
 I think logic that handles communication and application itself can be written so that it can communicate
 with both implementations.
 
-## Corruption debugging
-When something gets corrupted by multithreaded access and dumps a core:
+## Debugging crashes
+When something gets corrupted by multithreaded access and app dumps a core:
 build with this (at least on Linux):
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG="-g -Og -fno-omit-frame-pointer"
 cmake --build build
@@ -74,6 +53,10 @@ cmake --build build
 **coredumpctl** gdb LocalChat
 then backtrace:
 bt
-find the frame e.g. 0:
+find the stack frame e.g. 0:
 frame 0
 where
+
+## Checking traffic
+sudo tcpdump -ni any port 53 | grep _localchathost
+There shouldn't be any traffic related to this registration type on port 5353

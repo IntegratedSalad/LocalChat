@@ -5,6 +5,7 @@
 #include <avahi-common/simple-watch.h>
 
 // TODO Later
+// Redundant?
 
 /* 
  * Class managing access to the SimplePoll.

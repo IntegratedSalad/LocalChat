@@ -118,7 +118,6 @@ void BVDiscovery_Avahi::Setup(void)
         throw std::bad_alloc();
     }
     // any setup required...
-
 }
 
 BVDiscovery_Avahi::~BVDiscovery_Avahi()

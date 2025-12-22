@@ -8,6 +8,8 @@
 // BVActorManager?
 // Could be named BVSession
 
+// Redundant?
+
 class BVActor
 {
 private:
