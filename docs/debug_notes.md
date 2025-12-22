@@ -14,6 +14,7 @@ launchctl dumpstate | grep -iE ".*mdns" -> view information about mdns daemon
 ls -lah /var/run -> list all daemons
 otool -L LocalChat -> list object files
 nm -g .dylib -> list symbols within shared lib
+nm -D /path/to/.so -> list symbols in file.
 
 ## Useful dirs
 /usr/bin -> binaries
@@ -40,23 +41,22 @@ For example - BVApp consumes queue and makes Service List that graphical/TCP com
 When consuming queue and updating list there should be a check if next queue element is in list already.
 
 # How to announce that a service has disconnected on Bonjour implementation?
-nm -D /path/to/.so/ -> list symbols in file.
 I think logic that handles communication and application itself can be written so that it can communicate
 with both implementations.
 
-## Debugging crashes
-When something gets corrupted by multithreaded access and app dumps a core:
-build with this (at least on Linux):
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG="-g -Og -fno-omit-frame-pointer"
-cmake --build build
-./Localchat in the build/ subdirectory
-**coredumpctl** gdb LocalChat
-then backtrace:
-bt
-find the stack frame e.g. 0:
-frame 0
-where
+## Corruption debugging
+When something gets corrupted by multithreaded access and process dumps a core:
 
-## Checking traffic
-sudo tcpdump -ni any port 53 | grep _localchathost
-There shouldn't be any traffic related to this registration type on port 5353
+*build with this (at least on Linux):*
+```
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS_DEBUG="-g -Og -fno-omit-frame-pointer"*
+*cmake --build build*
+./Localchat in the build/ subdirectory
+coredumpctl gdb LocalChat
+```
+*then backtrace:*
+```
+bt
+frame 0 // find the frame in this example 0:
+where
+```

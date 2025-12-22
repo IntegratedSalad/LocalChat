@@ -10,11 +10,28 @@ design an interface that takes out some of the core functionality of DNS-SD.
 **Bonjour** - Apple mDNSResponder zero-conf implementation that serves as a publisher of mDNS information
 **Avahi** - Native Linux API implementing mDNS zero-conf implmentation and DNS-SD.
 
+## dns-sd daemons
+The Bonjour and Avahi provide ways to communicate with
+mDNSResponder daemon and avahi-daemon background processess
+respectively, listening on port 5353 for multicast DNS.
+These multicast DNS messages contain information of specific
+DNS queries **TODO: describe the messages, queries, records, PTRs etc...**
+
+To verify:
+Run
+sudo tcpdump -ni any port 5353 | grep _localchathost
+And
+sudo tcpdump -ni any port 53 | grep _localchathost
+and confirm NO traffic concerning the regtype *_localchathost* is present
+when running the application
+
 **Avahi implementation is in progress**
 
 There should be also a CLI tool offering the same functionality.
 But maybe just focus on the GUI application.
 First step is to allow sharing messages. ?And maybe encryption of these messages?
+
+
 
 MAKE A CLEAR DISTINCTION BETWEEN DNS-SD AND MDNS!
 Make sure that we are using hostname to IP resolution WITH mDNS, not any local DNS server.
@@ -26,7 +43,6 @@ Make sure that we are using hostname to IP resolution WITH mDNS, not any local D
 [RFC6763](https://www.ietf.org/rfc/rfc6763.txt)
 [mDNSResponder repository](https://github.com/apple-oss-distributions/mDNSResponder)
 [Avahi main site](https://avahi.org/)
-
 
 ## Concepts
 Component - a class providing a functionality eg DNS-SD Registration or DNS-SD Browsing
@@ -66,20 +82,29 @@ This class embeds the DNS-SD Service Discovery functionality:
       c. Putting the results onto a Queue
     ? 2. Resolving a host name of a service (to IPv4).?
 
-How to interface with asio? Discovery is an asynchronous task.
-This is a good idea, BVDiscovery can be a function object.
-Does BVDiscovery need its own io_context? Or does it need just a reference
-to io_context from main? BVDiscovery utilizes external io_context.
+### Data exchange
 How will discovery results from BVDiscovery be used?
 Should they be stored in queue for consumption?
 Who will consume them?
-One reason is that what comes from BVDiscovery should be consumed and stored somewhere else.
-Maybe one class that stores that information. Session?
-Then UI, and component that will send messages/files can acquire const pointer to this BVSession.
-Then, if new discovery results come, they will be put on queue and the consumer
-can update its data with new results (check if they're in fact new).
-Session always tries to read the queue.
-BVSession can contain every information that is tied to a session.
+### Discovery Queue
+BVDiscovery main goal is to populate a discoveryQueue
+(non-priority queue, with thread-safe operations)
+with structures that contain information about services discovered via
+dns-sd functionality over multicast.
+Discovery component (class) should provide the functions for
+starting/stopping the component functionality being executed.
+This is done by making sure that the connection context of a particular implementation
+is allocated and alive for the duration of discovery functionality.
+It would be probably better that discovery queue
+is not managed *per se* by Discovery component, but it can 'query' a thread-safe queue object that would put the new discovery object on the queue on discovery object' behalf.
+### Discovery Thread
+Discovery object ?should? run in a separate thread as it will need to block waiting for the response from the daemon about a new service being discovered.
+### Shutdown procedure
+We have to make sure that the shutdown of the discovery object,
+either permanent (user closing the application) or momentary
+(user toggling the discovery off) is announced, synchronized and
+executed with the consumer in
+
 How many bytes were transmitted?
 How much hosts were discovered etc.
 
@@ -91,7 +116,7 @@ Actor will be sending messages, keeping message history etc.
 ## Component 'BVApp' (A manager class)
 BVApp is a class with virtual methods that helps define a GUI framework
 while providing basic functionality for managing sub-components.
-Managing subcomponents: 
+Managing subcomponents:
 1. It can Register/Deregister a service.
 2. It can start/stop browsing
 3. It can start/stop watching the browser queue.
@@ -262,7 +287,7 @@ text field, and other widgets.
 2. Registration of service
    where .local is mandatory, because mDNS exclusively resolves hostnames ending with the .local top-level domain[^1].
    [^1]: [Wikipedia on mDNS](https://en.wikipedia.org/wiki/Multicast_DNS#Protocol_overview)
-   1. If service was already registered, do not register it twice. 
+   1. If service was already registered, do not register it twice.
       meaning, if someone writes a message to a user, where their application was closed, (but not the service)
       should they receive the messages? -> Closing the application means closing the service.
 3. UI initialization. This can mean a CLI or GUI aplication.
@@ -280,27 +305,27 @@ How many hosts can one user discover max?
 128?
 
 # Threading
+## Best practices [^2]
+**SRP - Single Responsibility Principle**
+Method/class/component should have a single reason to change.
+[^2]: Taken from the Clean Code by Robert C. Martin
+
+**Limit the scope of data**
+Limit the number of critical sections where two or more threads modify the data within the section.
+Severely limit the access of any data that may be shared.
+
+**Use copies of data**
+In some situations it is possible to use copies of data and treat them as read-only.
+
+**Threads should be as independent as possible**
+
 ## Boost threadpool
 boost::threadpool allows for the automatic thread management.
 ## Threads needed
-First should take care of registration and announce if it was succesful or not.
-It has to register the service with hostname, and wait for the daemon to reply.
-
-Second thread handles GUI.
-
-Third thread handles communication over TCP.
 
 ## Producers and consumers
-List every producer and consumer
 ## Console client
 ### Producers
-
 ### Consumers
-
 ## Misc
 Instead of writing BV(...) use a namespace
-
-### Implementation roadmap
-We have to start simple.
-One other client that registers its service and communication with them, while continuously browsing.
-Test on macOS first.
