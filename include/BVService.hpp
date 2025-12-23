@@ -33,8 +33,7 @@ public:
     }
 
     virtual ~BVService() = default;
-
-    virtual BVStatus Register(void) = 0;
+    virtual BVStatus Register(void) = 0; 
 
     std::string GetHostname(void) const
     {

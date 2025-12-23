@@ -21,7 +21,7 @@ public:
     {
     }
 
-    ~BVService_Bonjour()
+    ~BVService_Bonjour() override
     {
         DNSServiceRefDeallocate(this->dnsRef);
     }

@@ -53,27 +53,57 @@ void C_ServiceBrowseReply(
 }
 }
 
-BVDiscovery_Bonjour::BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p,
+BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceHostData _hostData,
                                          std::mutex& _discoveryQueueMutex,
                                          boost::asio::io_context& _ioContext,
                                          std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                                          std::condition_variable& _discoveryQueueCV,
                                          bool& _isDiscoveryQueueReady) :
-    service_p(_service_p),
-    discoveryQueueMutex(_discoveryQueueMutex),
-    discoveryQueue_p(_discoveryQueue),
     ioContext(_ioContext),
     discoveryTimer(_ioContext),
-    discoveryQueueCV(_discoveryQueueCV),
-    isDiscoveryQueueReady(_isDiscoveryQueueReady)
+    BVDiscovery(_hostData, 
+                _discoveryQueueMutex,
+                _discoveryQueue,
+                _discoveryQueueCV,
+                _isDiscoveryQueueReady)
+
 {
     this->dnsRef = nullptr;
-    this->c_ll_p = LinkedList_str_Constructor(NULL); // this is also utilized in BVDiscovery_Avahi
 }
+
+void BVDiscovery_Bonjour::Setup(void)
+{
+
+}
+
+
+void BVDiscovery_Bonjour::Shutdown(void)
+{
+
+}
+
+
+void BVDiscovery_Bonjour::OnShutdown(void)
+{
+
+}
+
+
+void BVDiscovery_Bonjour::Start(void)
+{
+
+}
+
+
+void BVDiscovery_Bonjour::OnStart(void)
+{
+
+}
+
+
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
-    LinkedList_str_Destructor(&this->c_ll_p);
     // When dnsRef is deallocated, browsing stops.
     // TODO: Think of it maybe being deallocated in a separate method for control
     DNSServiceRefDeallocate(this->dnsRef); 
@@ -86,24 +116,25 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
         Browsing goes indefinitely, until the DNSServiceRef is passed to
         DNSServiceRefDeallocate.
     */
-    if (!this->isBrowsingActive)
+    if (!this->GetIsBrowsingActive())
     {
+        const BVServiceHostData hd = this->GetHostData();
         std::cout << "Browsing for: ";
-        std::cout << this->service_p->GetRegType() << ".";
-        std::cout << this->service_p->GetDomain() << std::endl;
+        std::cout << hd.regtype << ".";
+        std::cout << hd.domain  << std::endl; // Do not pass the pointer to service
         DNSServiceErrorType error = DNSServiceBrowse(&this->dnsRef,
                                                     0,
                                                     0,
-                                                    this->service_p->GetRegType().c_str(),
-                                                    this->service_p->GetDomain().c_str(),
+                                                    hd.regtype.c_str(),
+                                                    hd.domain.c_str(),
                                                     C_ServiceBrowseReply,
-                                                    &this->c_ll_p);
+                                                    &this->GetLinkedList_p()); // TODO: how to pass the address of a pointer?
         if (!(error == kDNSServiceErr_NoError))
         {
-            this->status = BVStatus::BVSTATUS_NOK;
+            this->SetStatus(BVStatus::BVSTATUS_NOK);
             return;
         }
-        this->isBrowsingActive = true;
+        this->SetIsBrowsingActive(true);
     } else
     {
         std::cout << "Browsing active..." << std::endl;
@@ -127,19 +158,19 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     // TODO: Before pushing onto queue check somehow if the service at the given
     //       servicename was already Registered!
 
-    std::unique_lock lk(discoveryQueueMutex);
-    discoveryQueueCV.wait(lk, [this]{return !this->isDiscoveryQueueReady;});
+    std::unique_lock lk(this->GetDiscoveryQueueMutex());
+    this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
 
     this->PushBrowsedServicesToQueue(); // critical section
 
-    this->isDiscoveryQueueReady = true;
+    this->SetIsDiscoveryQueueReady(true);
     lk.unlock();
-    this->discoveryQueueCV.notify_one();
+    this->GetDiscoveryQueueCV().notify_one();
     // We could send a message to the thread now.
     // Upon receiving the message, the application could consume the queue and update its data.
 
     // Clear list after appending to queue.
-    LinkedList_str_ClearList(this->c_ll_p);
+    LinkedList_str_ClearList(this->GetLinkedList_p());
 
     // if active => maybe check the message queue
     this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
@@ -172,28 +203,4 @@ void BVDiscovery_Bonjour::run()
     // the reply from the daemon - it will be a service name
     // with a regtype and domain
     // Do we really need a delay?
-}
-
-// Will this function be used also in avahi?
-void BVDiscovery_Bonjour::PushBrowsedServicesToQueue(void)
-{
-    // std::lock_guard<std::mutex> lock(this->discoveryQueueMutex);
-    for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
-        lle_p != NULL;)
-    {
-        BVServiceBrowseInstance bI; // put on heap? No, STL containers have elements allocated on heap.
-        std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
-        std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
-        std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
-
-        regType.erase(std::remove(regType.begin(), regType.end(), ' '), regType.end());
-        replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), ' '), replyDomain.end());
-        serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), ' '), serviceName.end());
-
-        bI.regType = regType;
-        bI.replyDomain = replyDomain;
-        bI.serviceName = serviceName;
-        this->discoveryQueue_p->push(bI);
-        lle_p = lle_p->next_p;
-    }
 }

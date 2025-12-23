@@ -8,7 +8,7 @@ set(BOOST_ROOT /opt/homebrew/Cellar/boost)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -g -O0") # Default is debug TODO: Utilize Release and Debug dirs
 cmake_print_variables(Boost_INCLUDE_DIRS)
 find_package(Boost)
 find_package(Threads REQUIRED)

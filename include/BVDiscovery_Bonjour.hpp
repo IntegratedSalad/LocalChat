@@ -1,7 +1,6 @@
 #pragma once
 #include "BV.hpp"
 #include "BVDiscovery.hpp"
-#include "BVService_Bonjour.hpp"
 #include "dns_sd.h"
 #include <mutex>
 #include <memory>
@@ -27,32 +26,27 @@ private:
     // Is this really necessary to hold a shared pointer to service_p and not just a structure of needed params?
     // BVService_Bonjour component is alive in the main thread...
     // Probably not. Some manager class will have a pointer to the active service.
-    std::shared_ptr<const BVService_Bonjour> service_p;
     DNSServiceRef dnsRef;
+    BVStatus ProcessDNSServiceBrowseResult(void);
 
-    std::mutex& discoveryQueueMutex;
-    std::condition_variable& discoveryQueueCV;
-    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
-    bool& isDiscoveryQueueReady;
+    void CreateConnectionContext(void) override; // private member function which actually starts
+    void Setup(void) override;
+    void run() override;
 
-    boost::asio::io_context& ioContext;
     boost::asio::steady_timer discoveryTimer;
-    void CreateConnectionContext(void);
-    BVStatus ProcessDNSServiceBrowseResult(void); // this method should update the list. TODO: This method should also be in the BVDiscovery parent class.
-    void PushBrowsedServicesToQueue(void);
-
-    BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS; // TODO: This parameter should be in BVDiscovery parent class.
-    bool isBrowsingActive = false;
-    LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
+    boost::asio::io_context& ioContext;
 
 public:
-    BVDiscovery_Bonjour(std::shared_ptr<const BVService_Bonjour>& _service_p,
+    BVDiscovery_Bonjour(const BVServiceHostData _hostData,
                         std::mutex& _discoveryQueueMutex,
                         boost::asio::io_context& _ioContext,
                         std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                         std::condition_variable& _discoveryQueueCV,
                         bool& _isDiscoveryQueueReady);
-    ~BVDiscovery_Bonjour();
+    ~BVDiscovery_Bonjour() override;
 
-    void run() override;
+    void Shutdown() override;
+    void OnShutdown() override;
+    void Start() override;
+    void OnStart() override;
 };
