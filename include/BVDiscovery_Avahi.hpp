@@ -28,6 +28,7 @@ private:
 
     void CreateConnectionContext(void) override;
     void Setup(void) override;
+    void run() override;
 
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
@@ -56,7 +57,6 @@ public:
         return this->simple_poll_p.get();
     }
 
-    void run() override;
     void Shutdown() override;
     void OnShutdown() override;
     void Start() override;
