@@ -7,6 +7,7 @@
 #include <queue>
 #include <condition_variable>
 #include "linked_list.h"
+#include "bonjour_api.h"
 
 /*
  *   This class is a Bonjour implementation of BV Discovery Component.

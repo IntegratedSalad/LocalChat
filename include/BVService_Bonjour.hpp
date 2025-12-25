@@ -1,5 +1,6 @@
 #pragma once
 #include "BVService.hpp"
+#include "bonjour_api.h"
 #include "dns_sd.h"
 #include <atomic>
 #include <iostream>

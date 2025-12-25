@@ -1,27 +1,6 @@
 #include "BVService_Bonjour.hpp"
 
 bool replyError = false;
-extern "C" // TODO: Put these in separate h/c files.
-{
-#include "stdio.h"
-void C_RegisterReply(
-    DNSServiceRef sdRef,
-    DNSServiceFlags flags,
-    DNSServiceErrorType errorCode,
-    const char *name,
-    const char *regtype,
-    const char *domain,
-    void *context) // maybe pass the pointer to shouldProcess here?
-{
-    if (errorCode == kDNSServiceErr_NoError) {
-        printf("--- Registered %s, as %s, in %s!\n", name, regtype, domain);
-    } else {
-        fprintf(stderr, "An error occurred while trying to register %s\n", name);
-        replyError = true;
-    }
-}
-}
-
 BVStatus BVService_Bonjour::Register()
 {
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
