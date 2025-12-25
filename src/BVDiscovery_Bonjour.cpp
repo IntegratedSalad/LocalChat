@@ -76,7 +76,6 @@ void BVDiscovery_Bonjour::Setup(void)
 
 }
 
-
 void BVDiscovery_Bonjour::Shutdown(void)
 {
 

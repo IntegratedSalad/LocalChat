@@ -65,7 +65,7 @@ static void browse_callback(
             }
             buff[N_BYTES_SERVICE_STR_TOTAL-1] = '\0';
             LinkedListElement_str* lle_p = LinkedListElement_str_Constructor(buff, NULL);
-            LinkedList_str_AddElement(discovery_p->GetLinkedList(), lle_p);
+            LinkedList_str_AddElement(discovery_p->GetLinkedList_p(), lle_p);
 
             // We must call the member function that is responsible for enqueing the results
             discovery_p->AvahiOnServiceNewWrapper(); // calls PushBrowsedServicesToQueue
@@ -95,16 +95,13 @@ BVDiscovery_Avahi::BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDel
                   const BVServiceHostData _hostData,
                   std::shared_ptr<AvahiSimplePoll> _simple_poll_p):
     client_p(std::move(_client_p)),
-    discoveryQueueMutex(_discoveryQueueMutex),
-    discoveryQueue_p(_discoveryQueue),
-    ioContext(_ioContext),
-    discoveryTimer(_ioContext),
-    discoveryQueueCV(_discoveryQueueCV),
-    isDiscoveryQueueReady(_isDiscoveryQueueReady),
-    hostData(_hostData),
-    simple_poll_p(_simple_poll_p)
+    simple_poll_p(_simple_poll_p),
+    BVDiscovery(_hostData, 
+                _discoveryQueueMutex,
+                _discoveryQueue,
+                _discoveryQueueCV,
+                _isDiscoveryQueueReady)
 {
-    this->c_ll_p = LinkedList_str_Constructor(NULL);
     this->Setup();
 }
 
@@ -120,16 +117,40 @@ void BVDiscovery_Avahi::Setup(void)
     // any setup required...
 }
 
+void BVDiscovery_Avahi::Shutdown(void)
+{
+
+}
+
+
+void BVDiscovery_Avahi::OnShutdown(void)
+{
+
+}
+
+
+void BVDiscovery_Avahi::Start(void)
+{
+
+}
+
+
+void BVDiscovery_Avahi::OnStart(void)
+{
+
+}
+
+
 BVDiscovery_Avahi::~BVDiscovery_Avahi()
 {   
-    LinkedList_str_Destructor(&this->c_ll_p);
 }
+
 // This essentially creates a connection context
 // and sets up the callback
 void BVDiscovery_Avahi::CreateConnectionContext(void)
 {
-    const std::string regtype = this->hostData.regtype;
-    const std::string domain  = this->hostData.domain;
+    const std::string regtype = this->GetHostData().regtype;
+    const std::string domain  = this->GetHostData().domain;
     this->serviceBrowser_p = std::unique_ptr<AvahiServiceBrowser, AvahiServiceBrowserDeleter>(
         avahi_service_browser_new(client_p.get(), 
                                   AVAHI_IF_UNSPEC, 
@@ -143,28 +164,6 @@ void BVDiscovery_Avahi::CreateConnectionContext(void)
 }
 
 // void DestroyConnectionContext
-
-void BVDiscovery_Avahi::PushBrowsedServicesToQueue(void)
-{
-    for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
-        lle_p != NULL;)
-    {
-        BVServiceBrowseInstance bI; // put on heap? No, STL containers have elements allocated on heap.
-        std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
-        std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
-        std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
-
-        regType.erase(std::remove(regType.begin(), regType.end(), ' '), regType.end());
-        replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), ' '), replyDomain.end());
-        serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), ' '), serviceName.end());
-
-        bI.regType = regType;
-        bI.replyDomain = replyDomain;
-        bI.serviceName = serviceName;
-        this->discoveryQueue_p->push(bI);
-        lle_p = lle_p->next_p;
-    }
-}
 
 void BVDiscovery_Avahi::run()
 {

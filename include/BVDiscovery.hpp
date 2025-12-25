@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <chrono>
+#include <queue>
 #include <boost/asio.hpp>
 #include "linked_list.h"
 #include "BVService.hpp"

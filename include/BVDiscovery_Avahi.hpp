@@ -25,7 +25,9 @@ private:
     std::unique_ptr<AvahiClient, AvahiClientDeleter> client_p = nullptr;
     std::unique_ptr<AvahiServiceBrowser, AvahiServiceBrowserDeleter> serviceBrowser_p = nullptr;
     std::shared_ptr<AvahiSimplePoll> simple_poll_p;
-    const BVServiceHostData hostData;
+
+    void CreateConnectionContext(void) override;
+    void Setup(void) override;
 
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
@@ -40,18 +42,13 @@ public:
 
     void AvahiOnServiceNewWrapper(void)
     {
-        std::unique_lock lk(discoveryQueueMutex);
-        discoveryQueueCV.wait(lk, [this]{return !this->isDiscoveryQueueReady;});
+        std::unique_lock lk(this->GetDiscoveryQueueMutex());
+        this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
         this->PushBrowsedServicesToQueue();
-        this->isDiscoveryQueueReady = true;
+        this->SetIsDiscoveryQueueReady(true);
         lk.unlock();
-        this->discoveryQueueCV.notify_one();
-        LinkedList_str_ClearList(this->c_ll_p);
-    }
-
-    LinkedList_str* GetLinkedList(void)
-    {
-        return this->c_ll_p;
+        this->GetDiscoveryQueueCV().notify_one();
+        LinkedList_str_ClearList(this->GetLinkedList_p());
     }
 
     AvahiSimplePoll* GetSimplePoll(void)
@@ -60,4 +57,8 @@ public:
     }
 
     void run() override;
+    void Shutdown() override;
+    void OnShutdown() override;
+    void Start() override;
+    void OnStart() override;
 };

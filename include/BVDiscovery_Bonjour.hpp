@@ -29,7 +29,7 @@ private:
     DNSServiceRef dnsRef;
     BVStatus ProcessDNSServiceBrowseResult(void);
 
-    void CreateConnectionContext(void) override; // private member function which actually starts
+    void CreateConnectionContext(void) override; // private member function which actually starts the Discovery service
     void Setup(void) override;
     void run() override;
 
