@@ -1,3 +1,4 @@
+#pragma once
 #include "BV.hpp"
 #include "BVDiscovery.hpp"
 #include "BVService_Avahi.hpp"
@@ -6,6 +7,7 @@
 #include <queue>
 #include <condition_variable>
 #include "linked_list.h"
+#include "avahi_api.h"
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
 #include <avahi-common/error.h>
@@ -18,6 +20,7 @@ struct AvahiServiceBrowserDeleter
         avahi_service_browser_free(p);
     }
 };
+
 
 class BVDiscovery_Avahi : public BVDiscovery
 {
@@ -41,7 +44,7 @@ public:
                       std::shared_ptr<AvahiSimplePoll> _simple_poll_p);
     ~BVDiscovery_Avahi();
 
-    void AvahiOnServiceNewWrapper(void)
+    void OnServiceFound(void)
     {
         std::unique_lock lk(this->GetDiscoveryQueueMutex());
         this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
@@ -62,3 +65,6 @@ public:
     void Start() override;
     void OnStart() override;
 };
+
+// I think now - create a file
+// avahi_c_api_bridge.cpp, where we define 

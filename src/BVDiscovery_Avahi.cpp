@@ -1,7 +1,5 @@
 #include "BVDiscovery_Avahi.hpp"
 
-extern "C" // These functions should be put in a separate file. It is C DNS-SD API on top of mDNS.
-{
 //client callback? client is not created here, but the daemon might call this function
 // when there's problem with the client/client's state change
 #include <stdio.h>
@@ -12,79 +10,6 @@ extern "C" // These functions should be put in a separate file. It is C DNS-SD A
 //     AvahiSimplePoll* simplepoll_p;
 //     BVDiscovery_Avahi* d_p;
 // } BrowseData;
-
-static void browse_callback(
-    AvahiServiceBrowser* sb,
-    AvahiIfIndex interface,
-    AvahiProtocol protocol,
-    AvahiBrowserEvent event,
-    const char* name,
-    const char* type,
-    const char* domain,
-    AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
-    void* userdata)
-{
-    BVDiscovery_Avahi* discovery_p = static_cast<BVDiscovery_Avahi*>(userdata);
-    // If this will be problematic, just pass intermediate structure
-
-    switch (event)
-    {
-        case AVAHI_BROWSER_FAILURE:
-        {
-            fprintf(stderr, "(Browser) %s\n", 
-                avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(sb))));
-                avahi_simple_poll_quit(discovery_p->GetSimplePoll());
-            return;
-        }
-        case AVAHI_BROWSER_NEW:
-        {
-            // Add discovered services to the linked list
-            setbuf(stdout, NULL);
-            printf("Found %s.%s in %s!\n", name, type, domain);
-
-            // todo: put this in a separate function
-            char buff[N_BYTES_SERVICE_STR_TOTAL];
-            const size_t servLen = strlen(name);
-            const size_t regLen = strlen(type);
-            const size_t replDmnLen = strlen(domain);
-            for (int i = 0; i < N_BYTES_SERVICE_STR_TOTAL; i++)
-            {
-                buff[i] = ' ';
-            }
-                if (servLen < N_BYTES_SERVNAME_MAX)
-            {
-                memcpy(buff, name, servLen);
-            }
-            if (regLen < N_BYTES_REGTYPE_MAX)
-            {
-                memcpy(buff + N_BYTES_SERVNAME_MAX, type, regLen);
-            }
-            if (replDmnLen < N_BYTES_REPLDOMN_MAX)
-            {
-                memcpy(buff + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, domain, replDmnLen);
-            }
-            buff[N_BYTES_SERVICE_STR_TOTAL-1] = '\0';
-            LinkedListElement_str* lle_p = LinkedListElement_str_Constructor(buff, NULL);
-            LinkedList_str_AddElement(discovery_p->GetLinkedList_p(), lle_p);
-
-            // We must call the member function that is responsible for enqueing the results
-            discovery_p->AvahiOnServiceNewWrapper(); // calls PushBrowsedServicesToQueue
-            break;
-        }
-        case AVAHI_BROWSER_REMOVE:
-        {
-            fprintf(stdout, "Service was removed... TODO \n");
-            break;
-        }
-        case AVAHI_BROWSER_ALL_FOR_NOW:
-        case AVAHI_BROWSER_CACHE_EXHAUSTED:
-        {
-            fprintf(stdout, "Cache exhuast or all for now... TODO");
-            break;
-        }
-    }
-}
-}
 
 BVDiscovery_Avahi::BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
                   std::mutex& _discoveryQueueMutex,
