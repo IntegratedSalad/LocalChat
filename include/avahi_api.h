@@ -50,14 +50,39 @@ void browse_callback(
     AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
     void* userdata);
 
+
+// * Service Registration callbacks * //
+
+/* 
+ *
+ *
+ * 
+ * 
+ * 
+*/
 void entry_group_callback(AvahiEntryGroup* g, 
                           AvahiEntryGroupState state, 
                           AVAHI_GCC_UNUSED void* userdata);
 
+
+/* 
+ *
+ *
+ * 
+ * 
+ * 
+*/
 void client_callback(AvahiClient* cl_p, 
                      AvahiClientState state, 
                      void* userdata);
 
+/* 
+ *
+ *
+ * 
+ * 
+ * 
+*/
 void create_services(AvahiClient* cl_p, const char* hostname_regtype);
 
 #ifdef __cplusplus

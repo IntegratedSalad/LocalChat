@@ -135,8 +135,6 @@ int main(int argc, char** argv)
         discovery();
     });
 
-    // std::thread td{std::ref(discovery)};
-
     consoleClient.Run();
     td.join();
 

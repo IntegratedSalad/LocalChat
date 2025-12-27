@@ -64,6 +64,3 @@ public:
     void Start() override;
     void OnStart() override;
 };
-
-// I think now - create a file
-// avahi_c_api_bridge.cpp, where we define 
