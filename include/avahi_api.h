@@ -13,11 +13,13 @@ extern "C" {
 #include <avahi-client/lookup.h>
 #include <avahi-common/error.h>
 #include <avahi-common/simple-watch.h>
+#include <avahi-client/publish.h>
 #include "const.h"
 #include "avahi_api_bridge.h"
 
 extern bool critical_failure;
 extern bool register_success;
+extern AvahiEntryGroup* group;
 
 /* Wrapper for Discovery object and its methods
 */
@@ -47,6 +49,16 @@ void browse_callback(
     const char* domain,
     AVAHI_GCC_UNUSED AvahiLookupResultFlags flags,
     void* userdata);
+
+void entry_group_callback(AvahiEntryGroup* g, 
+                          AvahiEntryGroupState state, 
+                          AVAHI_GCC_UNUSED void* userdata);
+
+void client_callback(AvahiClient* cl_p, 
+                     AvahiClientState state, 
+                     void* userdata);
+
+void create_services(AvahiClient* cl_p, const char* hostname_regtype);
 
 #ifdef __cplusplus
 }

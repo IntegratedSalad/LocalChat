@@ -4,26 +4,16 @@
 #include <memory>
 #include <utility>
 #include "BVService.hpp"
-#include <avahi-client/client.h>
-#include <avahi-client/publish.h>
-#include <avahi-common/simple-watch.h>
+#include "BVAvahi_Common.hpp"
+#include "avahi_api.h"
 
 // Because of the AvahiSimplePoll needed to be accessed from single thread only,
 // maybe we create a manager object, that has exclusive ownership of the AvahiSimplePoll?
 
-struct AvahiClientDeleter
-{
-    void operator()(AvahiClient* p)
-    {
-        avahi_client_free(p);
-    }
-};
-
-static AvahiEntryGroup* group = NULL;
+// We can also pass a pointer to this in create_services
 class BVService_Avahi : public BVService
 {
 private:
-
     /* 
      * Avahi client functions as a connection context (maybe something similar to DNSServiceRef)
      * Calling avahi_client_free() frees entry group object (service)

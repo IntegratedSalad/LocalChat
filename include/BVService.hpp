@@ -2,9 +2,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include "BV.hpp"
-
-#define SERVICETYPE_STR "_localchathost._tcp"
-#define PORT            50001
+#include "const.h"
 
 // This represents a host service that was just registered
 struct BVServiceHostData

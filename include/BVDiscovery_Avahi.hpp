@@ -1,7 +1,7 @@
 #pragma once
 #include "BV.hpp"
 #include "BVDiscovery.hpp"
-#include "BVService_Avahi.hpp"
+#include "BVAvahi_Common.hpp"
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -20,7 +20,6 @@ struct AvahiServiceBrowserDeleter
         avahi_service_browser_free(p);
     }
 };
-
 
 class BVDiscovery_Avahi : public BVDiscovery
 {
