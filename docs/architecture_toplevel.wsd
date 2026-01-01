@@ -1,0 +1,46 @@
+@startuml
+skinparam componentStyle uml2
+left to right direction
+
+' Components
+component "Broker" as Broker
+component "Service" as Service
+component "Discovery" as Discovery
+component "App" as App
+
+' Message Topics (Interfaces)
+interface "ServiceEvents" as ServiceEvents
+interface "DiscoveryEvents" as DiscoveryEvents
+interface "AppEvents" as AppEvents
+
+' Broker provides all topics
+Broker -- ServiceEvents
+Broker -- DiscoveryEvents
+Broker -- AppEvents
+
+' Publishers
+Service ..> ServiceEvents : publish
+Discovery ..> DiscoveryEvents : publish
+App ..> AppEvents : publish
+
+' Subscribers
+App ..> ServiceEvents : subscribe
+App ..> DiscoveryEvents : subscribe
+
+Service ..> AppEvents : subscribe
+Discovery ..> AppEvents : subscribe
+
+' Notes
+note right of Broker
+Central message router.
+No component communicates directly.
+Each subscription maps to certain
+event type.
+end note
+
+note bottom of ServiceEvents
+Each event contains event type (message type)
+and data
+end note
+
+@enduml

@@ -1,22 +1,34 @@
 #### For now, keep this in a separate file
 # Architecture
-Every Component in Application needs a coordinated and well defined matter in which it operates. Without it, we will not be able to manage jobs, starting up, shutting down and ensure a safe way of sharing data between threads.
+Every Component in Application needs a coordinated and well defined matter in which it operates. Without it, we will not be able to manage jobs, start up, shut down and ensure a safe way of sharing data between threads.
 ## Components interaction
 The three components - Discovery, Service and App have to know how to interact with each other (perform tasks) in a way that doesn't introduce data races on data they share.
 Discovery can start and stop - it has to listen to App demand.
-Discoevry puts discovery instances onto the queue - it has to inform the App somehow
+Discovery puts discovery instances onto the queue - it has to inform the App somehow.
+Service is not put on a new thread.
+### Discovery queue handling
+**What Discovery does (who produces the items to be put on queue)**
+Discovery polls the DNS-SD results and appends it to a queue.
+Discovery should not directly (not in a non thread-safe manner) push to the queue.
+It should send a message when done querying the queue for objects to be pushed.
 
-## Component interfaces
-Discovery and Service have to have some basic **interface** which provides way to request changes in how they operate.
-Discovery will Start/Stop. It will also try to access a shared ThreadSafeQueue.
-Service will also Start/Stop.
-App will also Start/Stop.
+**Problem?**
+Isn't bonjour discovery component blocked when there's no browsed instances?
+How will it react to the shutdown? It has to shutdown gracefully ie do the whole procedure
+of deallocating the dnsRef
+How the components simultaneously wait on queue and do things?
+I think it can be solved with two threads per each Component.
+Also App Component has this problem.
+Bonjour could manage two threads.
+One is the discovery thread - it performs DNS-SD Discovery functionality and
+it has a handle to the Broker object in order to message App.
+
+**Who consumes the queue**
+Application itself should not consume the items.
+It should query the queue.
 
 ## Component communication
-Will they need some manager class outside App?
-Or this Manager/Synchronizer will be an orchestrator of the whole application?
-MessageQueues? Listeners? Subscribers?
-There's separation into independent threads. (C++ Concurrency In Action section 4.4.2)
+There's an idea of separation into independent threads. (C++ Concurrency In Action section 4.4.2)
 That requires to be ensured that no data is shared between the threads other than through message queues.
 
 "Using synchronization of operations to simplify code":
@@ -24,4 +36,108 @@ That requires to be ensured that no data is shared between the threads other tha
 I don't want to use async programming here.
 But maybe Subscriber/Observer architecture in which each Observer acts upon an event type passed to the queue. So each message is actually broadcasted, but only if the Observer has Subscribed to the specific message event type, the callback/action is called.
 Plus we can orchestrate everything with the FSM Finite State Machine. This is because we don't want to Stop (free) the Discovery component twice, we don't want to Register a service twice etc.. Maybe each component has a 'brain' - a SFM?
-If they all receive a shared pointer to the queue, they cannot consume anything from queue. If the message is broadcasted, how to know that we can clear/consume the element?
+There cannot be just one global queue: they all possess a shared_ptr to each of their queues and share it with the Broker.
+
+Or three queues. Each for the certain type of event
+
+### ?ACK/NACK/STATUS INFORMATION?
+?Some actions need confirmation from another component?
+
+## Component Execution Flow Brief
+They all have member functions corresponding to the action
+that is taken upon receiving a message.
+These functions, if applicable, *try* to change the State of the component.
+They are completely unaware of the state diagram.
+If a component cannot change state (or change from state A->A is forbidden),
+it is a FSM responsibility to prevent that.
+They also provide a way to communicate with a broker (send message)
+
+## Component Interface
+*Rationale:*
+Discovery and Service have to have some basic **interface** which provides way to request changes in how they operate.
+Discovery will Start/Stop. It will also try to access a shared ThreadSafeQueue.
+Service will also Start/Stop.
+App will also Start/Stop.
+
+Component interface defines member variables and functions
+that facilitate interactions:
+
+**member vars**:
+ThreadSafeQueue mailBox
+
+**member functions**:
+1. OnStart = abstract
+2. OnShutdown = abstract
+3. OnRestart? = abstract
+4. Send(Message)
+5. Attach(Broker) = concrete
+
+???
+5. RequestStart    -> concrete, virtual
+6. RequestShutdown -> concrete, virtual
+7. RequestRestart  -> concrete, virtual
+8. RequestStatus?  -> concrete, virtual
+
+## Finite State Machine class
+
+## Broker class
+Maintains a list of subscribers and their mailboxes (ThreadSafe queues).
+Allows to subscribe/unsubscribe to Event (MessageType).
+Passess only messages that are interesting to subscribers of that type.
+
+**Problem?**
+Broker now has to wait on N queues.
+He will spawn multiple threads.
+
+**member vars**:
+std::vector of std::pair of Subscriber, Mailbox (ThreadSafeQueue)
+uint8_t numOfSubscribersRegistered
+
+**member functions**:
+SendMessage(Message)
+Subscribe(subscriber, const std::array of Events)
+Unsubscribe(subscriber, const Event)
+
+## Subscriber struct
+ID (uint8_t or std::string)
+std::vector of EventTypes
+
+## Message struct
+EventType
+Data*
+
+### How broker works
+### Subscription
+Subscription is nothing but pushing an enum symbolising
+a event type, which subscriber wants to be notified on,
+to a vector of EventTypes.
+### Sending a message
+
+## Component Execution Flow Specific
+
+### Application Starts
+
+**Init Sequence (App OnStart())**
+Service put on separate thread.
+Discovery put on separate thread.
+App on main thread.
+
+Service subscribes to Events: StartDiscovery/StopDiscovery/Shutdown
+Discovery subscribes to Events:
+App subscribes to Events:
+App Starts.
+App requests Service Registration:
+1. App sends message (Request Service Registration; Start Service)
+2. Broker forwards the message to the Service 
+3. Service waits on the queue and receives the message
+4. Service OnStart() happens (service.Register()) (does Service send an ACK?)
+5. Service sends status message
+6. If status message: BVStatus:OK -> App sends message (Request Discovery Start). If status message: BVStatus:ERROR/NOK -> Error is displayed and back to step 1
+7. OK: Discovery waits on queue and receives the message
+8. Discovery OnStart() happens (?Discovery spawns a discovery thread?).
+9. Discovery sends an ACK to App
+10. If everything is ok, Init is complete. If not, Error is displayed and user has the option to start discovery once again.
+
+**End Init Sequence**
+
+**Discovery publishes a discovery event Sequence**

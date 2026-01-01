@@ -97,6 +97,9 @@ This is done by making sure that the connection context of a particular implemen
 is allocated and alive for the duration of discovery functionality.
 It would be probably better that discovery queue
 is not managed *per se* by Discovery component, but it can 'query' a thread-safe queue object that would put the new discovery object on the queue on discovery object' behalf.
+
+Now - if Discovery thread and main thread should not share any data (discovery queue cannot be just passed to two objects), what should consume the queue and in what matter?
+
 ### Discovery Thread
 Discovery object ?should? run in a separate thread as it will need to block waiting for the response from the daemon about a new service being discovered.
 ### Shutdown procedure
