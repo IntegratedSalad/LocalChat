@@ -10,7 +10,6 @@ Service is not put on a new thread.
 **What Discovery does (who produces the items to be put on queue)**
 Discovery polls the DNS-SD results and appends it to a queue.
 Discovery should not directly (not in a non thread-safe manner) push to the queue.
-It should send a message when done querying the queue for objects to be pushed.
 
 **Problem?**
 Isn't bonjour discovery component blocked when there's no browsed instances?
@@ -34,11 +33,8 @@ That requires to be ensured that no data is shared between the threads other tha
 "Using synchronization of operations to simplify code":
 *"Rather than sharing data directly between threads, each task can be produced with the data it needs, and the result can be disseminated to any other threads that need it through the use of futures."*
 I don't want to use async programming here.
-But maybe Subscriber/Observer architecture in which each Observer acts upon an event type passed to the queue. So each message is actually broadcasted, but only if the Observer has Subscribed to the specific message event type, the callback/action is called.
-Plus we can orchestrate everything with the FSM Finite State Machine. This is because we don't want to Stop (free) the Discovery component twice, we don't want to Register a service twice etc.. Maybe each component has a 'brain' - a SFM?
-There cannot be just one global queue: they all possess a shared_ptr to each of their queues and share it with the Broker.
-
-Or three queues. Each for the certain type of event
+We can orchestrate everything with the FSM Finite State Machine. This is because we don't want to Stop (free) the Discovery component twice, we don't want to Register a service twice etc.. Maybe each component has a 'brain' - a SFM?
+There cannot be just one global queue: they all possess a shared_ptr to each of their queues and share it with the Broker. Or maybe there be MsgIn queue, to which every Component can put items, and only Broker can pop.
 
 ### ?ACK/NACK/STATUS INFORMATION?
 ?Some actions need confirmation from another component?
@@ -63,31 +59,39 @@ Component interface defines member variables and functions
 that facilitate interactions:
 
 **member vars**:
-ThreadSafeQueue mailBox
+shared_ptr to ThreadSafeQueue outMailBox_p
+shared_ptr to ThreadSafeQueue inMailBox_p
 
 **member functions**:
 1. OnStart = abstract
 2. OnShutdown = abstract
 3. OnRestart? = abstract
-4. Send(Message)
-5. Attach(Broker) = concrete
+4. Send(Message) = concrete, public => Send Message through mailbox to Broker
+6. DeAttach(Broker)
 
 ???
-5. RequestStart    -> concrete, virtual
-6. RequestShutdown -> concrete, virtual
-7. RequestRestart  -> concrete, virtual
-8. RequestStatus?  -> concrete, virtual
+1. RequestStart    -> concrete, virtual
+2. RequestShutdown -> concrete, virtual
+3. RequestRestart  -> concrete, virtual
+4. RequestStatus?  -> concrete, virtual
+
+Besides that, the concrete implementation of the Component also defines functions
+that "react" to the other messages.
 
 ## Finite State Machine class
 
 ## Broker class
-Maintains a list of subscribers and their mailboxes (ThreadSafe queues).
+Maintains a list/hashtable of subscribers and their mailboxes (ThreadSafe queues).
+Another idea: It keeps their mailboxes, but also inMailbox, where it does not put any message,
+instead: every component puts their message there.
+Key-> eventType
 Allows to subscribe/unsubscribe to Event (MessageType).
-Passess only messages that are interesting to subscribers of that type.
+Passess only messages to subscribers that are interested in them.
+Each mailbox is a shared_ptr between a Component and Broker
 
 **Problem?**
 Broker now has to wait on N queues.
-He will spawn multiple threads.
+It will spawn multiple threads.
 
 **member vars**:
 std::vector of std::pair of Subscriber, Mailbox (ThreadSafeQueue)
@@ -96,6 +100,7 @@ uint8_t numOfSubscribersRegistered
 **member functions**:
 SendMessage(Message)
 Subscribe(subscriber, const std::array of Events)
+Attach(Broker) = concrete => Create and share a MailBox and register a subscriber ID.
 Unsubscribe(subscriber, const Event)
 
 ## Subscriber struct
@@ -104,14 +109,27 @@ std::vector of EventTypes
 
 ## Message struct
 EventType
-Data*
+unique_ptr to std::any data
 
 ### How broker works
 ### Subscription
 Subscription is nothing but pushing an enum symbolising
-a event type, which subscriber wants to be notified on,
+an event type, which subscriber wants to be notified on,
 to a vector of EventTypes.
+### Receiving a message (Component -> Broker)
+Message comes from a Component to Broker through their dedicated channel (shared_ptr to mailbox).
+Another idea: it can come to a dedicated msgIn channel shared between any attached components.
+Broker does not publish any message to this channel.
+
 ### Sending a message
+Upon receiving a message, broker must now gather everyone that is interested in this.
+One idea: it iterates over the subscribers and their subscribed topics.
+When it finds a subscriber, it puts this message to its mailbox.
+It's probably slow.
+**Every message is const by default**
+
+Broker passess (copies) a message ?from the entry queue (its mailbox) to the
+specific component queue based on the message type subscribed?
 
 ## Component Execution Flow Specific
 

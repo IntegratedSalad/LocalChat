@@ -80,8 +80,8 @@ int main(int argc, char** argv)
 
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
         std::make_shared<std::queue<BVServiceBrowseInstance>>();
-    std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
-        std::make_shared<std::queue<BVThrMessage>>();
+    // std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
+        // std::make_shared<std::queue<BVThrMessage>>();
 
     // BVDiscovery_XXX class doesn't need a pointer to the service class.
     // It needs only:

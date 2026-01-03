@@ -1,0 +1,7 @@
+#pragma once
+typedef enum class BVEventType
+{
+    BVEVENTTYPE_DISCOVERY_START,
+    BVEVENTTYPE_DISCOVERY_STOP,
+    BVEVENTTYPE_DISCOVERY_PUBLISHED_SERVICE,
+} BVEventType;

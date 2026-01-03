@@ -2,13 +2,6 @@
 #include <string>
 #include <iostream>
 
-typedef enum class BVThrMessage
-{
-    BVTHRMESSAGE_PAUSE,
-    BVTHRMESSAGE_CONTINUE,
-    BVTHRMESSAGE_EXIT
-} BVThrMessage;
-
 // BVActorMessage?
 // messages sent between actors - someone disconnected, someone sent a message
 
