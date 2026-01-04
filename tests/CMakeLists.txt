@@ -3,8 +3,14 @@ project(my_project)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(BOOST_ROOT /opt/homebrew/Cellar/boost)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost)
+find_package(Threads REQUIRED)
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra  -g -O0")
 
 include(FetchContent)
 FetchContent_Declare(
@@ -16,6 +22,13 @@ FetchContent_MakeAvailable(googletest)
 
 # enable_testing()
 # add_library(linked_list STATIC ${CMAKE_SOURCE_DIR}/src/linked_list.c ${CMAKE_SOURCE_DIR}/include/linked_list.h)
+
+include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/tests)
+
+if(Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIRS})
+endif()
 
 add_executable(
   dns_sd_test_Registration
@@ -36,6 +49,18 @@ target_link_libraries(
   linked_list_test_Basic
   GTest::gtest_main
   linked_list
+)
+
+add_executable(
+  broker_test_Basic
+  broker_test_Basic.cpp
+)
+
+target_link_libraries(
+  broker_test_Basic
+  GTest::gtest_main
+  linked_list
+	${Boost_LIBRARIES}
 )
 
 # cmake -S . -B build -DUSE_ASAN=ON -> enable ASan

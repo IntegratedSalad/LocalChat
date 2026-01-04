@@ -1,3 +1,5 @@
+#include "component_mocks.hpp"
+#include <gtest/gtest.h>
 /*
     We can test broker and components initialization
     and communication with fake Discovery and App components "talking".
@@ -12,3 +14,8 @@
 
     1. Test attaching and detaching Components from Broker
 */
+
+TEST(BrokerBasic, CheckInit)
+{
+    ASSERT_EQ(1, 1);
+}

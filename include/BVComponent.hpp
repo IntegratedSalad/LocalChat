@@ -22,6 +22,7 @@ private:
     virtual BVStatus SendMessage(BVMessage msg) noexcept
     {
         this->outMailBox_p->push(std::move(msg));
+        return BVStatus::BVSTATUS_OK;
     }
 public:
     BVComponent() {};

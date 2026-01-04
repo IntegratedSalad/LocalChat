@@ -40,14 +40,14 @@ public:
     // Registers a subscriberID. Used at the setup.
     // This will be handy when TCPConnection, which is dynamically
     // created/deleted is implemented
-    BVStatus Attach(BVComponent& component);
+    [[nodiscard]] BVStatus Attach(BVComponent& component);
     // Remove this subID from map. OR remove the queue
-    BVStatus Detach(const SubscriberID id);
+    [[nodiscard]] BVStatus Detach(const SubscriberID id);
 
-    BVStatus Subscribe(const SubscriberID sid, const BVEventType event);
-    BVStatus Subscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
-    BVStatus Unsubscribe(const SubscriberID sid, const BVEventType event);
-    BVStatus Unsubscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
+    [[nodiscard]] BVStatus Subscribe(const SubscriberID sid, const BVEventType event);
+    [[nodiscard]] BVStatus Subscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
+    [[nodiscard]] BVStatus Unsubscribe(const SubscriberID sid, const BVEventType event);
+    [[nodiscard]] BVStatus Unsubscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
 
     void CycleCurrentSubscriberId(void);
 };

@@ -6,4 +6,4 @@
 
 class MockDiscovery : public BVDiscovery
 {
-};ss
+};
