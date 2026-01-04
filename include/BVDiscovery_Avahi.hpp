@@ -58,9 +58,4 @@ public:
     {
         return this->simple_poll_p.get();
     }
-
-    void Shutdown() override;
-    void OnShutdown() override;
-    void Start() override;
-    void OnStart() override;
 };

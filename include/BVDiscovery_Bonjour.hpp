@@ -45,9 +45,4 @@ public:
                         std::condition_variable& _discoveryQueueCV,
                         bool& _isDiscoveryQueueReady);
     ~BVDiscovery_Bonjour() override;
-
-    void Shutdown() override;
-    void OnShutdown() override;
-    void Start() override;
-    void OnStart() override;
 };

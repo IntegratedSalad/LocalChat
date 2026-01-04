@@ -11,7 +11,9 @@ typedef enum class BVStatus
     BVSTATUS_OK,
     BVSTATUS_NOK,
     BVSTATUS_IN_PROGRESS,
-    BVSTATUS_FATAL_ERROR
+    BVSTATUS_FATAL_ERROR,
+
+    BVSTATUS_MAX_COMPONENTS
 } BVStatus;
 
 struct BVServiceBrowseInstance

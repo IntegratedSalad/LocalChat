@@ -87,7 +87,11 @@ instead: every component puts their message there.
 Key-> eventType
 Allows to subscribe/unsubscribe to Event (MessageType).
 Passess only messages to subscribers that are interested in them.
-Each mailbox is a shared_ptr between a Component and Broker
+Each mailbox is a shared_ptr between a Component and Broker.
+It works in another thread.
+?It terminates when it reads EVENT_TERMINATE_ALL - it finishes everything (empties the queue), sends EVENT_TERMINATE to everyone and terminates itself.?
+This object should be set to never Restart.
+It must live until the end of the application
 
 **Problem?**
 Broker now has to wait on N queues.

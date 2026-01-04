@@ -70,13 +70,6 @@ public:
         LinkedList_str_Destructor(&this->GetLinkedList_p());
     };
 
-    // Public interface TODO: Provide base implementation
-    virtual void Shutdown(){};
-    virtual void Start(){};
-
-    virtual void OnShutdown(){};
-    virtual void OnStart(){};
-
     // Function that is called upon running the discovery functionality when being passed
     // as callable to a thread
     void operator()(void)

@@ -4,6 +4,7 @@
 #include "BVMessage.hpp"
 #include "BVSubscriber.hpp"
 #include "threadsafequeue.hpp"
+#include "BVComponent.hpp"
 #include <vector>
 #include <map>
 #include <utility>
@@ -11,24 +12,27 @@
 // typedef uint8_t SubscriberID;
 
 // should BVBroker be a Component?
-class BVComponent;
+// class BVComponent;
 class BVBroker
 {
 private:
     std::map<SubscriberID, 
-        std::shared_ptr<threadsafe_queue<BVMessage>> mailbox_m;
+        std::shared_ptr<threadsafe_queue<BVMessage>>> mailbox_m;
     std::map<BVEventType, std::vector<SubscriberID>> subs_m;
     std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p;
 
-    uint8_t numOfSubscribersRegistered;
-    void Listen(void);
+    uint8_t numOfSubscribersRegistered = 0;
+    SubscriberID currentSubscriberId = 0;
+
+    bool isRunning = true;
+    void Run(void);
     BVStatus Stop(void);
 
-    BVStatus SendMessage(const BVMessage message,
-                         const std::shared_ptr<threadsafe_queue<BVMessage>> mailbox_p);
+    // BVStatus SendMessage(BVMessage message,
+                        //  const std::shared_ptr<threadsafe_queue<BVMessage >> mailbox_p);
 public:
-    BVBroker(std::shared_ptr<threadsafe_queue<BVMessage>> _inMailBox_p);
-    ~BVBroker();
+    BVBroker(std::shared_ptr<threadsafe_queue<BVMessage >> _inMailBox_p);
+    ~BVBroker(){};
 
     BVBroker(const BVBroker& other) = delete;
     BVBroker& operator=(const BVBroker& other) = delete;
@@ -40,8 +44,10 @@ public:
     // Remove this subID from map. OR remove the queue
     BVStatus Detach(const SubscriberID id);
 
-    BVStatus Subscribe(const SubscriberID id, const BVEventType event);
-    BVStatus Subscribe(const SubscriberID id, const std::vector<BVEventType> events_v);
-    BVStatus Unsubscribe(const SubscriberID id, const BVEventType event);
-    BVStatus Unsubscribe(const SubscriberID id, const std::vector<BVEventType> events_v);
+    BVStatus Subscribe(const SubscriberID sid, const BVEventType event);
+    BVStatus Subscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
+    BVStatus Unsubscribe(const SubscriberID sid, const BVEventType event);
+    BVStatus Unsubscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
+
+    void CycleCurrentSubscriberId(void);
 };

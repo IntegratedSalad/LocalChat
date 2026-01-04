@@ -23,29 +23,15 @@ void BVDiscovery_Bonjour::Setup(void)
 
 }
 
-void BVDiscovery_Bonjour::Shutdown(void)
-{
+// void BVDiscovery_Bonjour::OnShutdown(void)
+// {
 
-}
+// }
 
+// void BVDiscovery_Bonjour::OnStart(void)
+// {
 
-void BVDiscovery_Bonjour::OnShutdown(void)
-{
-
-}
-
-
-void BVDiscovery_Bonjour::Start(void)
-{
-
-}
-
-
-void BVDiscovery_Bonjour::OnStart(void)
-{
-
-}
-
+// }
 
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()

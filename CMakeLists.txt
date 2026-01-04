@@ -23,7 +23,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVApp_ConsoleClient_Bonjour.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVActor.cpp
-						 ${CMAKE_SOURCE_DIR}/src/threadsafequeue.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
 )
 
 if(Boost_FOUND)
