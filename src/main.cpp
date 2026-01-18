@@ -91,19 +91,6 @@ int main(int argc, char** argv)
     // Furthermore, Bonjour Discovery class is NOT utilizing any data that's specific to the BVService class,
     // because hostname, domain and type are known ahead of the creation of the object
 
-    /* 
-     TODO:
-     Do we require an additional manager object?
-     What if client wants to reconnect?
-     After the service is registered, the discovery object gets ownership
-     of the client. If that discovery gets halted, we exit the discovery thread,
-     what is going to resume it? There's no control over the discovery other than
-     running in once.
-     Maybe App should get it, or there should be a manager object for that...
-
-     Yes - architecture rewrite is needed
-    */
-
 #if __APPLE__
     // Create a discovery object, that periodically performs DNS-SD functionality.
     std::shared_ptr<const BVService_Bonjour> service_p =

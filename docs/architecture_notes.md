@@ -6,6 +6,11 @@ The three components - Discovery, Service and App have to know how to interact w
 Discovery can start and stop - it has to listen to App demand.
 Discovery puts discovery instances onto the queue - it has to inform the App somehow.
 Service is not put on a new thread.
+Maybe it is put on the same thread as Discovery.
+
+## Key rules
+Each piece of mutable state, so a component and its data, has exactly one owning thread.
+
 ### Discovery queue handling
 **What Discovery does (who produces the items to be put on queue)**
 Discovery polls the DNS-SD results and appends it to a queue.
@@ -16,13 +21,35 @@ Isn't bonjour discovery component blocked when there's no browsed instances?
 How will it react to the shutdown? It has to shutdown gracefully ie do the whole procedure
 of deallocating the dnsRef
 How the components simultaneously wait on queue and do things?
-I think it can be solved with two threads per each Component.
-Also App Component has this problem.
-Bonjour could manage two threads.
-One is the discovery thread - it performs DNS-SD Discovery functionality and
-it has a handle to the Broker object in order to message App.
+^ This is when asynchronous processing comes to play.
 
-**Who consumes the queue**
+<s> **I think it can be solved with two threads per each Component.** </s>
+**^ THIS IS VERY BAD IDEA**
+We do not want to create two threads per component, because we will need to synchronize
+them with each other.
+We have to somehow make use of ASIO framework, to manage async tasks that Discovery is making.
+Discovery is very simple. It performs DNS-SD, and when it finds Services, it appends them to the discovery queue.
+It can then inform the Components which subscribe to the specific message.
+
+### Asio Use
+We do not make very good use of ASIO - simply using it for managing communications is not ideal.
+Seems like I'm creating problems and workarounds around a solution that is maybe complex, but really solid.
+We need to somehow listen for messages and perform 'business logic' (DNS-SD here) concurrently.
+Keeping it how it is now, will likely cause huge problems.
+
+I think that we can put any work that is done periodically to the ASIO loop, on the io_context.
+We can then define cancellation logic for it.
+Still, it doesn't solve the component waiting for messages on a separate thread.
+Still, Avahi has a separate logic for handling operations, a poll loop.
+
+Maybe there's a need for the execution context to post tasks.
+What it means, is that there is no two threads now, but one:
+Discovery and App now, because they operate on blocking I/O, don't need separate threads
+to monitor the queue and do their own things.
+Reacting upon receiving message now won't involve 2 threads and syncing them together.
+There's even a cancellation mechanism written, so for cancelling we have a library support.
+
+**Who consumes the Discovery queue**
 Application itself should not consume the items.
 It should query the queue.
 
@@ -32,7 +59,7 @@ That requires to be ensured that no data is shared between the threads other tha
 
 "Using synchronization of operations to simplify code":
 *"Rather than sharing data directly between threads, each task can be produced with the data it needs, and the result can be disseminated to any other threads that need it through the use of futures."*
-I don't want to use async programming here.
+We should rely on async programming (but not coroutines).
 We can orchestrate everything with the FSM Finite State Machine. This is because we don't want to Stop (free) the Discovery component twice, we don't want to Register a service twice etc.. Maybe each component has a 'brain' - a SFM?
 There cannot be just one global queue: they all possess a shared_ptr to each of their queues and share it with the Broker. Or maybe there be MsgIn queue, to which every Component can put items, and only Broker can pop.
 
@@ -93,10 +120,6 @@ It works in another thread.
 This object should be set to never Restart.
 It must live until the end of the application
 
-**Problem?**
-Broker now has to wait on N queues.
-It will spawn multiple threads.
-
 **member vars**:
 std::vector of std::pair of Subscriber, Mailbox (ThreadSafeQueue)
 uint8_t numOfSubscribersRegistered
@@ -122,7 +145,12 @@ an event type, which subscriber wants to be notified on,
 to a vector of EventTypes.
 ### Receiving a message (Component -> Broker)
 Message comes from a Component to Broker through their dedicated channel (shared_ptr to mailbox).
-Another idea: it can come to a dedicated msgIn channel shared between any attached components.
+
+**Another idea: it can come to a dedicated msgIn channel shared between any attached components.**
+**^ This also can be a bad idea**
+Somehow there's a callback posting architecture that can be better.
+It utilizes io_context.
+
 Broker does not publish any message to this channel.
 
 ### Sending a message
@@ -163,3 +191,92 @@ App requests Service Registration:
 **End Init Sequence**
 
 **Discovery publishes a discovery event Sequence**
+
+## Thread Model
+### IO thread
+**Thread Name:**
+io_thread
+
+**What data is allowed to mutate:**
+Discovery queue.
+Text UI:
+Various text on screen
+Discovered services list for the UI to utilize.
+Service state (registered/deregistered)
+
+**What runs the loop (wx main loop / io_context.run() / avahi_simple_poll_loop)**
+Bonjour:
+io_context.run()
+
+**What it is allowed to do:**
+Bonjour:
+Perform DNS-SD functionality, and append results to the queue.
+Text UI:
+Take stdin file descriptor and process user input.
+Update text ui.
+
+**How to schedule work onto it:**
+UI upon user input event can schedule start/stop discovery (either permanently or pause)
+UI upon user input event can schedule start/stop service (being able to be discovered/shutdown).
+Discovery upon services_found event can send services in queue for the UI to consume.
+
+**Lifetime (Who creates it what wakes it, who joins it, who stops it):**
+Main thread creates it, it is awaken throughout the application, main thread joins it and stops it.
+
+### Avahi thread
+**Thread Name:**
+avahi_thread
+
+**What data is allowed to mutate:**
+Discovery queue
+Discovered services list for the UI to utilize.
+(Maybe separate the data here - it's possible that this thread shouldn't modify the Discovery queue)
+It probably should just post events to io_context and NOT modify the io_thread data.
+
+**Important**
+Do not share the queue from now on. Maybe send just a snapshot (copy) of newly discovered services?
+
+**What runs the loop (wx main loop / io_context.run() / avahi_simple_poll_loop)**
+avahi_simple_poll_loop
+
+**What it is allowed to do:**
+Execute Avahi API calls.
+These calls should somehow request changes/something for the Discovery object.
+
+**How to schedule work onto it:**
+Probably IO thread upon receiving a message to stop, avahi_simple_poll_quit() will be executed.
+If IO thread requests start, start simple_poll.
+
+**Lifetime (Who creates it what wakes it, who joins it, who stops it):**
+io_thread creates it, if it is Linux.
+It joins, wakes it and stops it.
+
+### GUI thread
+**Thread Name:**
+gui_thread
+
+... (to be designed later)
+
+
+Maybe one thread which owns the io_context.
+Discovery thread (with io_context)
+
+## Problems and Important Things To Address
+1. Two threads per blocking Component (Initial idea)
+Blocking component is a component which requires some I/O operations.
+For Discovery, it is performing ProcessDNSServiceBrowseResult (waiting for daemon to answer),
+for App, it is taking input from the user and updating UI, text-based or GUI.
+This is not an ideal approach, because then two threads operate on one state.
+This was a solution for the Broker passing messages ('routing') - how to react upon a new message?
+*Have another one checking the messages and changing the behaviour, while the other performs other logic*
+**Solution: Probably find a way to post tasks tied to receiving a specific message to the execution loop**
+Another thread can post tasks
+
+2. Bonjour Discovery with a separate thread performing DNS-SD.
+**Solution: use ASIO for dispatching tasks and retrieving results with completion handlers**
+
+## Good ideas
+Broker routing messages from component to components that subscribe to the messages.
+Broker should be only to route message->component and post the task onto loop.
+It should not be put on a separate thread.
+This is called event-driven model.

@@ -34,13 +34,13 @@ Discovery ..> AppEvents : subscribe
 note right of Broker
 Central message router.
 No component communicates directly.
-Each subscription maps to certain
-event type.
+Each subscription means receiving certain
+event types.
 end note
 
 note bottom of ServiceEvents
-Each event contains event type (message type)
-and data
+Each event comes as a message
+containing event type and data.
 end note
 
 @enduml

@@ -12,10 +12,13 @@
     not performing the actual DNS-SD, but simulating the outcome of 
     their functionality.
 
-    1. Test attaching and detaching Components from Broker
+    1. Test attaching and detaching Components from Broker.
+    2. Test communication
 */
 
 TEST(BrokerBasic, CheckInit)
 {
+
+    
     ASSERT_EQ(1, 1);
 }
