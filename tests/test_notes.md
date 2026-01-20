@@ -7,18 +7,27 @@ to check if they're behaving in an expected way.
 
 ## Setup tests
 
-## Simulating Component Behaviour
+### Component
+
+### Broker
+
+## Simulating Component Behaviour (Behavioral tests)
+Simulate receiving some event amidst some action.
+Simulate without Broker
+
 ### Simulating BVService
 
 ### Simulating BVDiscovery
 
 ### Simulating BVApp
 
-## Communication tests
+## Communication tests (One Component / Multiple Components)
 ### Scenarios
 We need to test scenarios that are possible and their suspected outcome.
 
-## Integration tests/Behavioral? tests
+## Integration tests?
+Check if the Component has subscribed to one event, only this event is passed to it and handled by it!
+So Subscribe() to event and evoke many many other events and this specific. Only this specific should be forwarded to the susbcriber.
 
 ## Model
 Mocks strip down the Components of their I/O tasks (querying the mdns daemon, polling the avahi loop or UI reading from stdin), and simulate their behavior to be tested for concrete execution flow.
@@ -35,7 +44,7 @@ They should check if parts of the system are working as intended:
 - Pushing results to queue and consuming them
 -
 
-## Capacity tests
+## Stability tests?
 
 ## Live
 # VM

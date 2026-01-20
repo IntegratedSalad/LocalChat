@@ -19,6 +19,6 @@
 TEST(BrokerBasic, CheckInit)
 {
 
-    
+
     ASSERT_EQ(1, 1);
 }

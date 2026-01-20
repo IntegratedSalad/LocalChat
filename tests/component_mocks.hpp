@@ -1,11 +1,12 @@
 #include "BV.hpp"
+#include "BVApp.hpp"
 #include "BVComponent.hpp"
 #include "BVBroker.hpp"
 #include "BVDiscovery.hpp"
 #include "BVService.hpp"
 #include "const.h"
-
-// Mock interface?
+#include "linked_list.h"
+#include "stdio.h"
 
 class MockDiscovery : public BVDiscovery, 
                       public BVComponent
@@ -35,9 +36,11 @@ public:
         return isConnectionContextAlive;
     }
 
-    BVStatus OnStart(void) override;
-    BVStatus OnShutdown(void) override;
-    BVStatus OnRestart(void) override;
+    // Define callbacks for other events
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
 };
 
 class MockService : public BVService,
@@ -50,12 +53,44 @@ public:
     BVService(std::string("mockhost"), std::string(".local"), PORT)
     {}
 
-    ~MockService() override 
+    ~MockService() 
     {}
 
     BVStatus Register(void) override;
 
-    BVStatus OnStart(void) override;
-    BVStatus OnShutdown(void) override;
-    BVStatus OnRestart(void) override;
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
+};
+
+class MockApp : public BVApp,
+                public BVComponent
+{
+private:
+
+public:
+    MockApp(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
+            std::mutex& _discoveryQueueMutex,
+            std::condition_variable& _discoveryQueueCV,
+            bool& _isDiscoveryQueueReady) :
+    BVApp(_discoveryQueue,
+            _discoveryQueueMutex,
+            _discoveryQueueCV,
+            _isDiscoveryQueueReady)
+    {
+    }
+
+    ~MockApp() override
+    {}
+
+    void Init(void) override;
+    void Run(void) override;
+    void Quit(void) override;
+
+    void HandleServicesDiscoveredUpdateEvent(void) override;
+    void HandleUserKeyboardInput(void) override;
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
 };

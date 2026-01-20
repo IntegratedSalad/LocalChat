@@ -79,7 +79,7 @@ BVStatus BVBroker::Detach(const SubscriberID sid)
     }
     if (this->mailbox_m.at(sid) == nullptr)
     {
-        return BVStatus::BVSTATUS_NOK;
+        return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     this->mailbox_m[sid] = nullptr;
     numOfSubscribersRegistered -= 1;
@@ -93,9 +93,11 @@ BVStatus BVBroker::Subscribe(const SubscriberID sid, const BVEventType event)
         this->subs_m.at(event);
     } catch (const std::out_of_range& ex)
     {
-        std::cerr << "[BVBroker]::Subscribe for " << sid 
-                  << " out_of_range::what(): "    << ex.what() << std::endl;
-        return BVStatus::BVSTATUS_FATAL_ERROR;
+        // new event registerd
+        std::vector<SubscriberID> subV;
+        subV.push_back(sid);
+        this->subs_m.emplace(std::make_pair(event, subV));
+        return BVStatus::BVSTATUS_OK;
     }
     this->subs_m[event].push_back(sid);
     return BVStatus::BVSTATUS_OK;

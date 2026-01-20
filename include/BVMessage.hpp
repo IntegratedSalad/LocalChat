@@ -12,6 +12,10 @@ struct BVMessage
     std::unique_ptr<std::any> data_p;
 
     // Make the type move-only, to prohibit copying the message
+
+    BVMessage(BVEventType et, std::unique_ptr<std::any> p)
+    : event_t(et), data_p(std::move(p)) {};
+
     BVMessage(BVMessage&&) = default;
     BVMessage& operator=(BVMessage&&) = default;
 

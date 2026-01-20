@@ -87,8 +87,17 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     std::cout << "timer scheduled" << std::endl;
 
     // TODO: How to stop this?
+
+
     // TODO: Before pushing onto queue check somehow if the service at the given
     //       servicename was already Registered!
+
+    // -- Put this into function (TODO: Remember that now we have a threadsafe queue - it could simplify this logic!) ---
+    // First: swap manual queue synchronization with threadsafeqeue
+    // Second: Try to get rid of queue synchronization/threadsafe queue here
+    // We have message passing now in tests, so just take the LinkedList that mDNS C API
+    // returns, and make this as std::list and send.
+    // App would just implement a callback that would copy the contents into their list
 
     std::unique_lock lk(this->GetDiscoveryQueueMutex());
     this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
@@ -106,10 +115,16 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 
     // if active => maybe check the message queue
     this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
+    // Why are we waiting? just put another async task, it will block at DNSServiceProcessResult
+    // We honestly can get rid of the ASIO here.
+    // Although, it is very easily stopped, by stopping the ioContext.
+    // This could be a while (isBrowsingActive) ...
     this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
     {
         this->ProcessDNSServiceBrowseResult();
     });
+
+    // -- Put this into function --
 
     return BVStatus::BVSTATUS_OK;
 }

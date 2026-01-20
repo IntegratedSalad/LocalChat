@@ -1,6 +1,10 @@
 #### For now, keep this in a separate file
 # Architecture
 Every Component in Application needs a coordinated and well defined matter in which it operates. Without it, we will not be able to manage jobs, start up, shut down and ensure a safe way of sharing data between threads.
+
+**TODO:** Make diagram of every flow in the program.
+How App reacts? What is being passed? How it is packed etc...
+
 ## Components interaction
 The three components - Discovery, Service and App have to know how to interact with each other (perform tasks) in a way that doesn't introduce data races on data they share.
 Discovery can start and stop - it has to listen to App demand.
@@ -15,19 +19,24 @@ Each piece of mutable state, so a component and its data, has exactly one owning
 **What Discovery does (who produces the items to be put on queue)**
 Discovery polls the DNS-SD results and appends it to a queue.
 Discovery should not directly (not in a non thread-safe manner) push to the queue.
+**Important**
+When there is message passing, we can directly include the list in the
+message! Should we really need a queue right now?
+Queue was needed, when there wans't any message passing and just notifying that the queue has been updated.
 
 **Problem?**
 Isn't bonjour discovery component blocked when there's no browsed instances?
 How will it react to the shutdown? It has to shutdown gracefully ie do the whole procedure
 of deallocating the dnsRef
 How the components simultaneously wait on queue and do things?
-^ This is when asynchronous processing comes to play.
 
-<s> **I think it can be solved with two threads per each Component.** </s>
-**^ THIS IS VERY BAD IDEA**
-We do not want to create two threads per component, because we will need to synchronize
-them with each other.
-We have to somehow make use of ASIO framework, to manage async tasks that Discovery is making.
+**I think it can be solved with two threads per each Component.**
+
+*We do not want to create two threads per component, because we will need to synchronize*
+*them with each other.*
+*We have to somehow make use of ASIO framework, to manage async tasks that Discovery is making.*
+^ This is not that straightforward: test first.
+
 Discovery is very simple. It performs DNS-SD, and when it finds Services, it appends them to the discovery queue.
 It can then inform the Components which subscribe to the specific message.
 
@@ -88,6 +97,10 @@ that facilitate interactions:
 **member vars**:
 shared_ptr to ThreadSafeQueue outMailBox_p
 shared_ptr to ThreadSafeQueue inMailBox_p
+std::thread mailbox_thread;
+std::unordered_map of events and callbacks
+
+bool (atomic?) to see if we're processing the queue (and stop it).
 
 **member functions**:
 1. OnStart = abstract
@@ -104,6 +117,9 @@ shared_ptr to ThreadSafeQueue inMailBox_p
 
 Besides that, the concrete implementation of the Component also defines functions
 that "react" to the other messages.
+Think of maybe adding a functionHandler/Handler/FuncPointer to the type.
+The main thread of the component will publish messages to the outMailbox_p, as result
+of the logic it implements.
 
 ## Finite State Machine class
 
@@ -192,7 +208,7 @@ App requests Service Registration:
 
 **Discovery publishes a discovery event Sequence**
 
-## Thread Model
+## Thread Model (ASIO model)
 ### IO thread
 **Thread Name:**
 io_thread
@@ -230,7 +246,7 @@ avahi_thread
 **What data is allowed to mutate:**
 Discovery queue
 Discovered services list for the UI to utilize.
-(Maybe separate the data here - it's possible that this thread shouldn't modify the Discovery queue)
+(Maybe separate the data here - it's possible that this thread shouldn't modify the Discovery queue/ANY object assiociated with Discovery component)
 It probably should just post events to io_context and NOT modify the io_thread data.
 
 **Important**
@@ -254,29 +270,45 @@ It joins, wakes it and stops it.
 ### GUI thread
 **Thread Name:**
 gui_thread
+It will probably need to be the main thread
 
 ... (to be designed later)
-
 
 Maybe one thread which owns the io_context.
 Discovery thread (with io_context)
 
+## Thread Model (Message Passing model)
+
+**Thread name**
+
+which threads are lauching/joining which threads, what data are they holding, what data are they changing, if they mutate the data of other threads, and what work they do:
+
+
 ## Problems and Important Things To Address
-1. Two threads per blocking Component (Initial idea)
+1. Two threads per blocking Component, and Broker sending messages
 Blocking component is a component which requires some I/O operations.
 For Discovery, it is performing ProcessDNSServiceBrowseResult (waiting for daemon to answer),
 for App, it is taking input from the user and updating UI, text-based or GUI.
 This is not an ideal approach, because then two threads operate on one state.
 This was a solution for the Broker passing messages ('routing') - how to react upon a new message?
 *Have another one checking the messages and changing the behaviour, while the other performs other logic*
-**Solution: Probably find a way to post tasks tied to receiving a specific message to the execution loop**
-Another thread can post tasks
+**Solution: Probably find a way to post tasks tied to receiving a specific message to the execution loop with async model implemented in ASIO**
+Another thread can post tasks.
 
-2. Bonjour Discovery with a separate thread performing DNS-SD.
+1. Bonjour Discovery with a separate thread performing DNS-SD.
 **Solution: use ASIO for dispatching tasks and retrieving results with completion handlers**
 
 ## Good ideas
 Broker routing messages from component to components that subscribe to the messages.
 Broker should be only to route message->component and post the task onto loop.
-It should not be put on a separate thread.
+*It should not be put on a separate thread.*
 This is called event-driven model.
+
+## Architecture Verification and Notes about choosing the right architecture
+This whole dilemma above about architecture being bad is not entirely right.
+There's nothing wrong **inherently** about the two threads per component and synchronization of these threads.
+Implementation matters, but what's the most important is to write tests and verify if this architecture supports what it was created for. If the tests are done right, and by that we mean that every execution flow is tested, every function is covered and outputs what we want, then this should follow when implementing main logic itself with UI.
+
+We have to stop obsessing over architecture so much, because bad design and problems will come out with testing.
+
+Write functional tests to test functionality (message passing, message constructing, subscribing/unsubscribing, attaching/detaching) and execution flow tests, to ensure that every action is scheduled and executed as planned (starting/stopping discovery, discovery notifying App and sending discovery results, stopping everything).

@@ -11,7 +11,7 @@ class BVDiscovery
 {
 private:
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
-    bool isBrowsingActive = false;
+    bool isBrowsingActive = false; // rpbobably will have to be atomic, since second mailbox thread will change this
     LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
     // TODO: LinkedList_str should be wrapped in a unique ptr.
 
@@ -23,9 +23,12 @@ private:
     bool& isDiscoveryQueueReady;
 
     virtual void CreateConnectionContext(void) = 0; // private member function which actually starts
-    // void DestroyConnectionContext
+    // void DestroyConnectionContext <- TODO:
     virtual void Setup(void) = 0;
     virtual void run() = 0;
+
+    // TODO: From BVComponent, concrete implementation of BVDiscovery inherits Stop().
+    // override this in implementations
 
 protected:
     void PushBrowsedServicesToQueue(void)

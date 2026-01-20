@@ -24,6 +24,7 @@ private:
     uint8_t numOfSubscribersRegistered = 0;
     SubscriberID currentSubscriberId = 0;
 
+    // Do we put it in the separate thread?
     bool isRunning = true;
     void Run(void);
     BVStatus Stop(void);
