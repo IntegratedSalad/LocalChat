@@ -184,7 +184,7 @@ specific component queue based on the message type subscribed?
 ### Application Starts
 
 **Init Sequence (App OnStart())**
-Service put on separate thread.
+Service put on App main thread.
 Discovery put on separate thread.
 App on main thread.
 

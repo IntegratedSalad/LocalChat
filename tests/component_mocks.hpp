@@ -27,7 +27,9 @@ public:
                   boost::asio::io_context& _ioContext,
                   std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                   std::condition_variable& _discoveryQueueCV,
-                  bool& _isDiscoveryQueueReady);
+                  bool& _isDiscoveryQueueReady,
+                  std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                  std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
 
     ~MockDiscovery() override;
 
@@ -49,8 +51,10 @@ class MockService : public BVService,
 private:
 
 public:
-    MockService() :
-    BVService(std::string("mockhost"), std::string(".local"), PORT)
+    MockService(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+    BVService(std::string("mockhost"), std::string(".local"), PORT),
+    BVComponent(_outMbx, _inMbx)
     {}
 
     ~MockService() 
@@ -72,11 +76,14 @@ public:
     MockApp(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
             std::mutex& _discoveryQueueMutex,
             std::condition_variable& _discoveryQueueCV,
-            bool& _isDiscoveryQueueReady) :
+            bool& _isDiscoveryQueueReady,
+            std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+            std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
     BVApp(_discoveryQueue,
             _discoveryQueueMutex,
             _discoveryQueueCV,
-            _isDiscoveryQueueReady)
+            _isDiscoveryQueueReady),
+    BVComponent(_outMbx, _inMbx)
     {
     }
 

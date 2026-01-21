@@ -68,6 +68,12 @@ public:
         this->c_ll_p = LinkedList_str_Constructor(NULL);
     }
 
+    BVDiscovery(BVDiscovery&&) = default;
+    BVDiscovery& operator=(BVDiscovery&&) = default;
+
+    BVDiscovery(BVDiscovery &) = delete;
+    BVDiscovery& operator=(BVDiscovery &) = delete;
+
     virtual ~BVDiscovery()
     {
         LinkedList_str_Destructor(&this->GetLinkedList_p());

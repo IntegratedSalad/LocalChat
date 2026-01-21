@@ -1,18 +1,22 @@
 #include "component_mocks.hpp"
+#include <any>
 
 MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
                 std::mutex& _discoveryQueueMutex,
                 boost::asio::io_context& _ioContext,
                 std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                 std::condition_variable& _discoveryQueueCV,
-                bool& _isDiscoveryQueueReady) :
+                bool& _isDiscoveryQueueReady,
+                std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
     ioContext(_ioContext),
     discoveryTimer(_ioContext),
     BVDiscovery(_hostData, 
                 _discoveryQueueMutex,
                 _discoveryQueue,
                 _discoveryQueueCV,
-                _isDiscoveryQueueReady)
+                _isDiscoveryQueueReady),
+    BVComponent(_outMbx, _inMbx)
 {
     // // RegisterCallbacks for interesting events to Discovery
     // RegisterCallback(BVEventType::..., 
@@ -26,11 +30,42 @@ MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
 
     RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_START,
                      std::bind(&MockDiscovery::OnStart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_ECHO,
+        [this](std::unique_ptr<std::any> dp) -> BVStatus {
+
+            if (dp == nullptr)
+            {
+                std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_TEST_ECHO callback. " <<
+                             "No data has been passed into the callback!" << std::endl;
+                return BVStatus::BVSTATUS_FATAL_ERROR;
+            }
+            std::string s;
+            try
+            {
+                s = std::any_cast<std::string>(*dp);
+            }
+            catch(const std::bad_any_cast& e)
+            {
+                std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_TEST_ECHO callback. " 
+                          << e.what() << std::endl;
+                return BVStatus::BVSTATUS_FATAL_ERROR;
+            }
+            std::cout << "Echo! Event: BVEVENTTYPE_TEST_ECHO, payload from callback: " 
+                      << s << std::endl;
+            SendMessage(BVMessage(
+                    BVEventType::BVEVENTTYPE_TEST_ECHO, 
+                        std::make_unique<std::any>(
+                                std::make_any<std::string>(s))));
+            return BVStatus::BVSTATUS_OK;
+    });
+
+    CreateConnectionContext();
 }
 
 MockDiscovery::~MockDiscovery()
 {
-
+    this->isConnectionContextAlive = false;
 }
 
 void MockDiscovery::CreateConnectionContext(void)
@@ -43,6 +78,8 @@ void MockDiscovery::Setup(void)
 
 }
 
+// Maybe MockDiscovery::Run
+
 void MockDiscovery::run(void) // this is run in the main worker thread
 {
     // TODO: Think through what the MockDiscovery implementation will be doing to mock DNS-SD functionality
@@ -52,7 +89,7 @@ void MockDiscovery::run(void) // this is run in the main worker thread
     LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
     PushBrowsedServicesToQueue();
     SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_DISCOVERY_PUBLISHED_SERVICE, nullptr));
+                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
 
     // TODO: Important: can we just send a list now??? We don't need the synchronization on discoveryQueue
     // between app and discovery components, if we attach the list in message!
@@ -77,7 +114,7 @@ void MockDiscovery::run(void) // this is run in the main worker thread
     // at least for now remember that this is tied to an event!
     PushBrowsedServicesToQueue();
     SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_DISCOVERY_PUBLISHED_SERVICE, nullptr));
+                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
     LinkedList_str_ClearList(this->GetLinkedList_p());
 
     // Wait 2 s
@@ -94,7 +131,7 @@ void MockDiscovery::run(void) // this is run in the main worker thread
     LinkedList_str_AddElement(this->GetLinkedList_p(), lle8_p);
     PushBrowsedServicesToQueue();
     SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_DISCOVERY_PUBLISHED_SERVICE, nullptr));
+                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
     LinkedList_str_ClearList(this->GetLinkedList_p());
 
     // Wait 2 s
@@ -115,7 +152,7 @@ void MockDiscovery::run(void) // this is run in the main worker thread
         LinkedList_str_AddElement(this->GetLinkedList_p(), llen_p);
         PushBrowsedServicesToQueue();
         SendMessage(BVMessage(
-                        BVEventType::BVEVENTTYPE_DISCOVERY_PUBLISHED_SERVICE, nullptr));
+                        BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
         LinkedList_str_ClearList(this->GetLinkedList_p());
         serviceNum++;
     }
@@ -124,6 +161,7 @@ void MockDiscovery::run(void) // this is run in the main worker thread
 BVStatus MockDiscovery::OnStart(std::unique_ptr<std::any> dp) // test passing dp
 {
     this->SetIsBrowsingActive(true);
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus MockDiscovery::OnShutdown(std::unique_ptr<std::any>)
@@ -133,6 +171,7 @@ BVStatus MockDiscovery::OnShutdown(std::unique_ptr<std::any>)
 
     this->SetIsBrowsingActive(false);
     //Get MailBoxThread  // this->mailbox_thread.join(); // when not listening to mailbox, thread should terminate naturally
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus MockDiscovery::OnRestart(std::unique_ptr<std::any>)

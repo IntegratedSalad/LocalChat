@@ -64,6 +64,19 @@ target_link_libraries(
 	${Boost_LIBRARIES}
 )
 
+add_executable(
+  component_test_Discovery_Basic
+  component_test_Discovery_Basic.cpp
+  component_mocks.cpp
+)
+
+target_link_libraries(
+  component_test_Discovery_Basic
+  GTest::gtest_main
+  linked_list
+	${Boost_LIBRARIES}
+)
+
 # cmake -S . -B build -DUSE_ASAN=ON -> enable ASan
 
 option(USE_ASAN "Enable AddressSanitizer" OFF)

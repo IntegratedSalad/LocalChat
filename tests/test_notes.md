@@ -13,7 +13,7 @@ to check if they're behaving in an expected way.
 
 ## Simulating Component Behaviour (Behavioral tests)
 Simulate receiving some event amidst some action.
-Simulate without Broker
+Simulate without Broker.
 
 ### Simulating BVService
 

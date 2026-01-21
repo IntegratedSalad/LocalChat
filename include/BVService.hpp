@@ -11,6 +11,12 @@ struct BVServiceHostData
     std::string hostname;
     std::string domain;
     std::string regtype;
+
+    // BVServiceHostData(BVServiceHostData&&) = default;
+    // BVServiceHostData& operator=(BVServiceHostData&&) = default;
+
+    // BVServiceHostData(BVServiceHostData &) = delete;
+    // BVServiceHostData& operator=(BVServiceHostData &) = delete;
 };
 
 class BVService

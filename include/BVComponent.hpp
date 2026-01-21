@@ -43,7 +43,12 @@ private:
         {
             if (!inMailBox_p->empty())
             {
-                std::shared_ptr<BVMessage> msg = inMailBox_p->try_pop();
+                std::shared_ptr<BVMessage> msg = inMailBox_p->wait_and_pop();
+                if (msg->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL)
+                {
+                    isListeningToMail = false;
+                    continue;
+                }
                 try
                 {
                     callback_m.at(msg->event_t);
@@ -51,10 +56,16 @@ private:
                 catch(const std::out_of_range& ex)
                 {
                     std::cerr << "[BVComponent]::ListenToMail, mailbox_thread for " 
-                     << " out_of_range::what(): " << ex.what() << std::endl;
-                     exit(-1);
+                              << " out_of_range::what(): " << ex.what() << std::endl;
+                    const std::string err_s("No callback to handle event for Subscriber ID: ", id);
+                    throw std::runtime_error(err_s);
                 }
-                callback_m[msg->event_t](std::move(msg->data_p));
+                const BVStatus callback_status = callback_m[msg->event_t](std::move(msg->data_p));
+                if (callback_status != BVStatus::BVSTATUS_OK) 
+                {
+                    const std::string err_s("Callback failed with Subscriber ID: " + std::to_string(id));
+                    throw std::runtime_error(err_s);
+                }
             }
             // if shutdown: isListeningToMail = false -> main thread will join
         }
@@ -72,10 +83,26 @@ protected:
         return BVStatus::BVSTATUS_OK;
     }
 
+
 public:
-    BVComponent() {};
+    BVComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx )
+                : outMailBox_p(_outMbx), inMailBox_p(_inMbx) {};
 
     virtual ~BVComponent() {};
+
+    void StartListeningOnMailbox(void)
+    {
+        this->isListeningToMail = true;
+        mailbox_thread = std::thread([this] {
+            this->ListenToMail();
+        });
+    }
+
+    std::thread& GetMailBoxThread(void)
+    {
+        return this->mailbox_thread;
+    }
 
     // These are initialized when attaching to a broker
     void SetId(const SubscriberID _id)
