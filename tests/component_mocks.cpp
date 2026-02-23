@@ -106,71 +106,92 @@ void MockDiscovery::RunOnce(void) // this is run in the main worker thread
     // LinkedList_str_ClearList(this->GetLinkedList_p());
 }
 
+void MockDiscovery::RunNTimes(const int n)
+{
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    for (int i = 0; i < n; i++)
+    {
+        std::string s("TESTSERVICE" + std::to_string(i));
+        LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)s.c_str(), NULL);
+        LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
+        BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+        SendMessage(BVMessage(
+                        BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
+                            std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+        LinkedList_str_ClearList(this->GetLinkedList_p());
+    }
+}
+
+void MockDiscovery::RunContinuously(void) // this is run in the main worker thread
+{
+    run();
+}
+
 void MockDiscovery::run(void) // this is run in the main worker thread
 {
     // Append one Service
-    LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE1", NULL);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
-    PushBrowsedServicesToQueue();
-    SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
+    // LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE1", NULL);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
+    // PushBrowsedServicesToQueue();
+    // SendMessage(BVMessage(
+    //                 BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
 
-    // TODO: Important: can we just send a list now??? We don't need the synchronization on discoveryQueue
-    // between app and discovery components, if we attach the list in message!
+    // // TODO: Important: can we just send a list now??? We don't need the synchronization on discoveryQueue
+    // // between app and discovery components, if we attach the list in message!
 
-    // Yes, this is a next thing to focus on. Because the previous
-    // async model hasn't have defined a communication method (message passing now), App and Discovery communicated on
-    // a shared, non-threadsafe queue. Now we can just send a list of discovery results over mailbox (broker passes)
-    // message about a topic that App subscribed to 'BVEVENTTYPE_APP_PUBLISHED_SERVICE'
-    LinkedList_str_ClearList(this->GetLinkedList_p());
+    // // Yes, this is a next thing to focus on. Because the previous
+    // // async model hasn't have defined a communication method (message passing now), App and Discovery communicated on
+    // // a shared, non-threadsafe queue. Now we can just send a list of discovery results over mailbox (broker passes)
+    // // message about a topic that App subscribed to 'BVEVENTTYPE_APP_PUBLISHED_SERVICE'
+    // LinkedList_str_ClearList(this->GetLinkedList_p());
 
-    // TODO: ^ do entire linked_list putting and pushing to queue, and notifying the App component
-    // Probably we have to create a test abstraction for the App component, as it is not connected
-    // in functional tests (or just append to queue and consume outside in the mocked app thread)
+    // // TODO: ^ do entire linked_list putting and pushing to queue, and notifying the App component
+    // // Probably we have to create a test abstraction for the App component, as it is not connected
+    // // in functional tests (or just append to queue and consume outside in the mocked app thread)
 
-    // Wait 2 s
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    // // Wait 2 s
+    // std::this_thread::sleep_for(std::chrono::seconds(2));
 
-    // Append three Services
-    LinkedListElement_str* lle2_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE2", NULL);
-    LinkedListElement_str* lle3_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE3", NULL);
-    LinkedListElement_str* lle4_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE4", NULL);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle2_p);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle3_p);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle4_p);
+    // // Append three Services
+    // LinkedListElement_str* lle2_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE2", NULL);
+    // LinkedListElement_str* lle3_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE3", NULL);
+    // LinkedListElement_str* lle4_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE4", NULL);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle2_p);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle3_p);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle4_p);
 
-    // This should be embedded with announcing to the broker that we pushed a service
-    // at least for now remember that this is tied to an event!
-    PushBrowsedServicesToQueue();
-    SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
-    LinkedList_str_ClearList(this->GetLinkedList_p());
+    // // This should be embedded with announcing to the broker that we pushed a service
+    // // at least for now remember that this is tied to an event!
+    // PushBrowsedServicesToQueue();
+    // SendMessage(BVMessage(
+    //                 BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
+    // LinkedList_str_ClearList(this->GetLinkedList_p());
 
-    // Wait 2 s
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    // // Wait 2 s
+    // std::this_thread::sleep_for(std::chrono::seconds(2));
     
-    // Append four Services
-    LinkedListElement_str* lle5_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE5", NULL);
-    LinkedListElement_str* lle6_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE6", NULL);
-    LinkedListElement_str* lle7_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE7", NULL);
-    LinkedListElement_str* lle8_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE8", NULL);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle5_p);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle6_p);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle7_p);
-    LinkedList_str_AddElement(this->GetLinkedList_p(), lle8_p);
-    PushBrowsedServicesToQueue();
-    SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
-    LinkedList_str_ClearList(this->GetLinkedList_p());
+    // // Append four Services
+    // LinkedListElement_str* lle5_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE5", NULL);
+    // LinkedListElement_str* lle6_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE6", NULL);
+    // LinkedListElement_str* lle7_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE7", NULL);
+    // LinkedListElement_str* lle8_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE8", NULL);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle5_p);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle6_p);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle7_p);
+    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle8_p);
+    // PushBrowsedServicesToQueue();
+    // SendMessage(BVMessage(
+    //                 BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
+    // LinkedList_str_ClearList(this->GetLinkedList_p());
 
-    // Wait 2 s
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+    // // Wait 2 s
+    // std::this_thread::sleep_for(std::chrono::seconds(2));
 
     int serviceNum = 0;
     while (this->GetIsBrowsingActive())
     {
-        // wait 10 s 
-        std::this_thread::sleep_for(std::chrono::seconds(10));
+        // wait 3 s 
+        std::this_thread::sleep_for(std::chrono::seconds(3));
         char str[4+11] = "TESTSERVICE";
         str[14] = '\0';
         char numstr[4];

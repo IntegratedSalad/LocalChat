@@ -44,7 +44,7 @@ private:
             if (!inMailBox_p->empty())
             {
                 std::shared_ptr<BVMessage> msg = inMailBox_p->wait_and_pop();
-                if (msg->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL)
+                if (msg->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL) // stop worker thread!!! (maybe a callback? (OnShutdown))
                 {
                     isListeningToMail = false;
                     continue;

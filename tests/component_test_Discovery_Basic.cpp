@@ -18,7 +18,7 @@ protected:
     boost::asio::io_context ioContext;
     bool isDiscoveryQueueReady = false;
 
-    std::thread worker_thread; // thread for 'business' Discovery logic
+    std::thread worker_thread; // thread for 'business' Discovery logic. Probably should be as a member function in Discovery
     
     std::unique_ptr<MockDiscovery> discovery_mock_p;
 
@@ -140,14 +140,62 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingOneServiceFromMockDiscoveryWorke
 
     BVServiceBrowseInstance bI = responseFromDiscovery.back();
     ASSERT_EQ(bI.serviceName, "TESTSERVICE1");
+
+    ASSERT_TRUE(inMailBox_p->empty());
+    ASSERT_TRUE(outMailBox_p->empty());
 }
 
-TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleServicesFromMockDiscoveryWorkerThread)
+TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleMessagesFromMockDiscoveryWorkerThread)
 {
+    // Simulate Discovery putting multiple messages ahead of consumer processing them.
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    const int n = 5;
+    const BVEventType expectedEventType = BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE;
 
+    worker_thread = std::thread([&] {
+        discovery_mock_p->RunNTimes(n);
+    });
+
+    worker_thread.join(); // wait for the thread to finish
+
+    std::shared_ptr<BVMessage> responseFromDiscoveryMsg;
+    BVEventType responseFromDiscoveryEType;
+    std::list<BVServiceBrowseInstance> responseFromDiscovery;
+    int n_loop = 0;
+    while (!outMailBox_p->empty())
+    {
+        responseFromDiscoveryMsg = outMailBox_p->wait_and_pop();
+        responseFromDiscoveryEType = responseFromDiscoveryMsg->event_t;
+        try
+        {
+            responseFromDiscovery = std::any_cast<std::list<BVServiceBrowseInstance>>(*responseFromDiscoveryMsg->data_p);
+            // there should be 'n' messages with one element each
+            ASSERT_EQ(responseFromDiscovery.size(), 1);
+            BVServiceBrowseInstance bI = responseFromDiscovery.front(); responseFromDiscovery.pop_front();
+            const std::string nameToCheck("TESTSERVICE" + std::to_string(n_loop));
+            ASSERT_EQ(bI.serviceName, nameToCheck);
+        }
+        catch(const std::bad_any_cast& ex)
+        {
+            std::cerr << ex.what() << std::endl;
+            FAIL();
+        }
+        n_loop++;
+    }
+    ASSERT_TRUE(inMailBox_p->empty());
+    ASSERT_TRUE(outMailBox_p->empty());
+}
+
+TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleMessagesWithMultipleElementsFromMockDiscoveryWorkerThread)
+{
+    
 }
 
 TEST_F(DiscoveryMockBasicFixture, CheckReceivingContinuousServiceMockDiscoveryResults)
 {
-
+    // 1. Start listening on the mailbox
+    // 2. Start worker thread 'Run' job
+    // 3. After 3-5 received TESTSERVICES terminate MockDiscovery (send BVEventType::BVEVENTTYPE_TERMINATE_ALL):
+    //  3.1 Terminate mailbox thread (it should be joined by Discovery object!)
+    //  3.2 Terminate worker thread.
 }

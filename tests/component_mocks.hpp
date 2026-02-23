@@ -39,6 +39,8 @@ public:
     }
 
     void RunOnce(void);
+    void RunContinuously(void);
+    void RunNTimes(const int n);
 
     // Define callbacks for other events
 

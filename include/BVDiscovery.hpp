@@ -82,7 +82,7 @@ protected:
             bI.regType = regType;
             bI.replyDomain = replyDomain;
             bI.serviceName = serviceName;
-            l.push_front(bI);
+            l.push_back(bI);
             lle_p = lle_p->next_p;
         }
         return l;
