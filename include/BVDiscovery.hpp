@@ -2,6 +2,7 @@
 #include <string>
 #include <chrono>
 #include <queue>
+#include <list>
 #include <boost/asio.hpp>
 #include "linked_list.h"
 #include "const.h"
@@ -17,10 +18,15 @@ private:
 
     const BVServiceHostData hostData; // for service data
 
+    // ---
+    // We can get rid of the manual synchronization of the queue and use threadsafequeue
+    // We can also not use queue to hold discovery results in a queue - we can send
+    // list in a message and let the consumer deal with handling it.   
     std::mutex& discoveryQueueMutex;
     std::condition_variable& discoveryQueueCV;
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
     bool& isDiscoveryQueueReady;
+    // ---
 
     virtual void CreateConnectionContext(void) = 0; // private member function which actually starts
     // void DestroyConnectionContext <- TODO:
@@ -29,6 +35,8 @@ private:
 
     // TODO: From BVComponent, concrete implementation of BVDiscovery inherits Stop().
     // override this in implementations
+
+    // std::thread worker_thread?
 
 protected:
     void PushBrowsedServicesToQueue(void)
@@ -51,6 +59,33 @@ protected:
             this->discoveryQueue_p->push(bI);
             lle_p = lle_p->next_p;
         }
+    }
+
+    std::list<BVServiceBrowseInstance> ReturnListFromBrowseResults(void)
+    {
+        std::list<BVServiceBrowseInstance> l;
+        for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
+            lle_p != NULL;)
+        {
+            BVServiceBrowseInstance bI; // put on heap? No, STL containers have elements allocated on heap.
+            std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
+            std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
+            std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
+
+            regType.erase(std::remove(regType.begin(), regType.end(), ' '), regType.end());
+            replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), ' '), replyDomain.end());
+            serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), ' '), serviceName.end());
+            regType.erase(std::remove(regType.begin(), regType.end(), '\0'), regType.end());
+            replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), '\0'), replyDomain.end());
+            serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), '\0'), serviceName.end());
+
+            bI.regType = regType;
+            bI.replyDomain = replyDomain;
+            bI.serviceName = serviceName;
+            l.push_front(bI);
+            lle_p = lle_p->next_p;
+        }
+        return l;
     }
 
 public:

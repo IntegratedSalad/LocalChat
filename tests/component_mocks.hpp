@@ -38,6 +38,8 @@ public:
         return isConnectionContextAlive;
     }
 
+    void RunOnce(void);
+
     // Define callbacks for other events
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;

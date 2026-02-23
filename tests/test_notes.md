@@ -11,6 +11,14 @@ to check if they're behaving in an expected way.
 
 ### Broker
 
+maybe broker_test_General in which we test:
+1. Attaching to the broker
+2. Detaching from the broker
+3. Subscribing to an event type
+4. Unsubscribing from an event type
+5. Subscribing to a collection of event types
+6. Unsubscribing from a collection of event types
+
 ## Simulating Component Behaviour (Behavioral tests)
 Simulate receiving some event amidst some action.
 Simulate without Broker.

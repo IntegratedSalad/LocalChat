@@ -78,12 +78,36 @@ void MockDiscovery::Setup(void)
 
 }
 
-// Maybe MockDiscovery::Run
+void MockDiscovery::RunOnce(void) // this is run in the main worker thread
+{
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE1", NULL);
+    LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
+    BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+    SendMessage(BVMessage(
+                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
+                        std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+    LinkedList_str_ClearList(this->GetLinkedList_p());
+
+    // Should we just in the BVMessage's body of event type BVEVENTTYPE_APP_PUBLISHED_SERVICE pass
+    // a newly created std::list from C linked list?
+
+    // This whole logic is used to sync the queue...
+    // std::unique_lock lk(this->GetDiscoveryQueueMutex());
+    // this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
+
+    // this->PushBrowsedServicesToQueue(); // critical section
+
+    // this->SetIsDiscoveryQueueReady(true);
+    // lk.unlock();
+    // this->GetDiscoveryQueueCV().notify_one();
+
+    // // Clear list after appending to queue.
+    // LinkedList_str_ClearList(this->GetLinkedList_p());
+}
 
 void MockDiscovery::run(void) // this is run in the main worker thread
 {
-    // TODO: Think through what the MockDiscovery implementation will be doing to mock DNS-SD functionality
-
     // Append one Service
     LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE1", NULL);
     LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
@@ -93,6 +117,11 @@ void MockDiscovery::run(void) // this is run in the main worker thread
 
     // TODO: Important: can we just send a list now??? We don't need the synchronization on discoveryQueue
     // between app and discovery components, if we attach the list in message!
+
+    // Yes, this is a next thing to focus on. Because the previous
+    // async model hasn't have defined a communication method (message passing now), App and Discovery communicated on
+    // a shared, non-threadsafe queue. Now we can just send a list of discovery results over mailbox (broker passes)
+    // message about a topic that App subscribed to 'BVEVENTTYPE_APP_PUBLISHED_SERVICE'
     LinkedList_str_ClearList(this->GetLinkedList_p());
 
     // TODO: ^ do entire linked_list putting and pushing to queue, and notifying the App component

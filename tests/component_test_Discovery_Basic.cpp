@@ -44,6 +44,8 @@ protected:
 
     void TearDown() override {
         // worker_thread.join();
+        if (worker_thread.joinable())
+            worker_thread.join();
         discovery_mock_p.reset(nullptr);
     }
 };
@@ -57,7 +59,7 @@ TEST_F(DiscoveryMockBasicFixture, CheckInit)
     ASSERT_EQ(discovery_mock_p->GetIsconnectionContextAlive(), true);
 }
 
-// First check maybe Component listening to mailbox first,
+// Check Component listening to mailbox first,
 // so only component mailbox thread
 TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryMockListeningOnMailbox)
 {
@@ -77,7 +79,6 @@ TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryMockListeningOnMailbox)
 
     try
     {
-        /* code */
         responseFromDiscoveryMsg = std::any_cast<std::string>(*responseFromDiscovery->data_p);
     }
     catch(const std::bad_any_cast& ex)
@@ -92,4 +93,61 @@ TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryMockListeningOnMailbox)
     inMailBox_p->push(
         BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});
     discovery_mock_p->GetMailBoxThread().join();
+
+    ASSERT_TRUE(inMailBox_p->empty());
+    ASSERT_TRUE(outMailBox_p->empty());
+}
+
+TEST_F(DiscoveryMockBasicFixture, CheckReceivingOneServiceFromMockDiscoveryWorkerThread)
+{
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    // At this point, maybe try to change from manual synchronization on std::queue to 
+    // threadsafequeue
+    // If succeeds:
+    // Use throughout the product a threadsafequeue for sending the bvservice results
+    // on the discoveryQueue => so just change the discoveryQueue to threadsafequeue
+    // Maybe then we can actually get rid of the queue for this and send this in
+    // message data.
+    
+    // 1. Launch discovery worker thread
+    // 2. Listen to the BVEVENTTYPE_APP_PUBLISHED_SERVICE
+    // 3. Retrieve the list from the outMailBox_p on receiving the message with above even type (topic)
+
+    // the worker thread should be available, stopped and joined from the Discovery.
+    const BVEventType expectedEventType = BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE;
+
+    worker_thread = std::thread([&] {
+        discovery_mock_p->RunOnce();
+    });
+
+    std::shared_ptr<BVMessage> responseFromDiscoveryMsg = outMailBox_p->wait_and_pop();
+    const BVEventType responseFromDiscoveryEType = responseFromDiscoveryMsg->event_t;
+    std::list<BVServiceBrowseInstance> responseFromDiscovery;
+
+    try
+    {
+        responseFromDiscovery = std::any_cast<std::list<BVServiceBrowseInstance>>(*responseFromDiscoveryMsg->data_p);
+    }
+    catch(const std::bad_any_cast& ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        FAIL();
+    }
+
+    // verify that list contains 1 element - BVServiceBrowseInstance with serviceName==TESTSERVICE1
+
+    ASSERT_EQ(responseFromDiscovery.size(), 1);
+
+    BVServiceBrowseInstance bI = responseFromDiscovery.back();
+    ASSERT_EQ(bI.serviceName, "TESTSERVICE1");
+}
+
+TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleServicesFromMockDiscoveryWorkerThread)
+{
+
+}
+
+TEST_F(DiscoveryMockBasicFixture, CheckReceivingContinuousServiceMockDiscoveryResults)
+{
+
 }
