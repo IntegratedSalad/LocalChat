@@ -41,6 +41,7 @@ public:
     void RunOnce(void);
     void RunContinuously(void);
     void RunNTimes(const int n);
+    void RunNTimesWithKElements(const int n, const int k);
 
     // Define callbacks for other events
 

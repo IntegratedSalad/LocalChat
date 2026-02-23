@@ -106,6 +106,7 @@ void MockDiscovery::RunOnce(void) // this is run in the main worker thread
     // LinkedList_str_ClearList(this->GetLinkedList_p());
 }
 
+// Send n Messages with lists of size==1
 void MockDiscovery::RunNTimes(const int n)
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
@@ -115,6 +116,27 @@ void MockDiscovery::RunNTimes(const int n)
         LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)s.c_str(), NULL);
         LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
         BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+        SendMessage(BVMessage(
+                        BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
+                            std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+        LinkedList_str_ClearList(this->GetLinkedList_p());
+    }
+}
+
+// Send n messages with lists of size==k
+void MockDiscovery::RunNTimesWithKElements(const int n, const int k)
+{
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    for (int i = 0; i < n; i++)
+    {
+        BVServiceBrowseInstanceList browseInstanceList;
+        for (int j = 0; j < k; j++)
+        {
+            std::string s("TESTSERVICE" + std::to_string(j));
+            LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)s.c_str(), NULL);
+            LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
+        }
+        browseInstanceList = ReturnListFromBrowseResults();
         SendMessage(BVMessage(
                         BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
                             std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
@@ -192,14 +214,19 @@ void MockDiscovery::run(void) // this is run in the main worker thread
     {
         // wait 3 s 
         std::this_thread::sleep_for(std::chrono::seconds(3));
+
+        // replace with std::to_string
         char str[4+11] = "TESTSERVICE";
         str[14] = '\0';
         char numstr[4];
         numstr[3] = '\0';
         snprintf(numstr, 3, "%d", serviceNum);
         strncat(str, numstr, 3);
+
         LinkedListElement_str* llen_p = LinkedListElement_str_Constructor(numstr, NULL);
         LinkedList_str_AddElement(this->GetLinkedList_p(), llen_p);
+        // add multiple elements
+
         PushBrowsedServicesToQueue();
         SendMessage(BVMessage(
                         BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));

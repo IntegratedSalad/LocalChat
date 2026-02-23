@@ -100,7 +100,6 @@ TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryMockListeningOnMailbox)
 
 TEST_F(DiscoveryMockBasicFixture, CheckReceivingOneServiceFromMockDiscoveryWorkerThread)
 {
-    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
     // At this point, maybe try to change from manual synchronization on std::queue to 
     // threadsafequeue
     // If succeeds:
@@ -136,6 +135,7 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingOneServiceFromMockDiscoveryWorke
 
     // verify that list contains 1 element - BVServiceBrowseInstance with serviceName==TESTSERVICE1
 
+    ASSERT_EQ(responseFromDiscoveryEType, expectedEventType);
     ASSERT_EQ(responseFromDiscovery.size(), 1);
 
     BVServiceBrowseInstance bI = responseFromDiscovery.back();
@@ -148,7 +148,6 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingOneServiceFromMockDiscoveryWorke
 TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleMessagesFromMockDiscoveryWorkerThread)
 {
     // Simulate Discovery putting multiple messages ahead of consumer processing them.
-    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
     const int n = 5;
     const BVEventType expectedEventType = BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE;
 
@@ -170,6 +169,7 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleMessagesFromMockDiscover
         {
             responseFromDiscovery = std::any_cast<std::list<BVServiceBrowseInstance>>(*responseFromDiscoveryMsg->data_p);
             // there should be 'n' messages with one element each
+            ASSERT_EQ(responseFromDiscoveryEType, expectedEventType);
             ASSERT_EQ(responseFromDiscovery.size(), 1);
             BVServiceBrowseInstance bI = responseFromDiscovery.front(); responseFromDiscovery.pop_front();
             const std::string nameToCheck("TESTSERVICE" + std::to_string(n_loop));
@@ -188,14 +188,56 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleMessagesFromMockDiscover
 
 TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleMessagesWithMultipleElementsFromMockDiscoveryWorkerThread)
 {
+    const int n = 5;
+    const int k = 10;
+    const BVEventType expectedEventType = BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE;
+
+    worker_thread = std::thread([&] {
+        discovery_mock_p->RunNTimesWithKElements(n, k);
+    });
+
+    worker_thread.join(); // wait for the thread to finish
     
+    std::shared_ptr<BVMessage> responseFromDiscoveryMsg;
+    BVEventType responseFromDiscoveryEType;
+    std::list<BVServiceBrowseInstance> responseFromDiscovery;
+    int n_loop = 0;
+    int k_element = 0;
+    
+    while (!outMailBox_p->empty())
+    {
+        responseFromDiscoveryMsg = outMailBox_p->wait_and_pop();
+        responseFromDiscoveryEType = responseFromDiscoveryMsg->event_t;
+        try
+        {
+            responseFromDiscovery = std::any_cast<std::list<BVServiceBrowseInstance>>(*responseFromDiscoveryMsg->data_p);
+            // there should be 'n' messages with one element each
+            ASSERT_EQ(responseFromDiscoveryEType, expectedEventType);
+            ASSERT_EQ(responseFromDiscovery.size(), k);
+            for (auto& bI : responseFromDiscovery)
+            {
+                const std::string nameToCheck("TESTSERVICE" + std::to_string(k_element));
+                ASSERT_EQ(bI.serviceName, nameToCheck);
+                k_element++;
+            }
+            responseFromDiscovery.clear();
+            k_element = 0;
+        }
+        catch(const std::bad_any_cast& ex)
+        {
+            std::cerr << ex.what() << std::endl;
+            FAIL();
+        }
+        n_loop++;
+    }
 }
 
 TEST_F(DiscoveryMockBasicFixture, CheckReceivingContinuousServiceMockDiscoveryResults)
 {
     // 1. Start listening on the mailbox
     // 2. Start worker thread 'Run' job
-    // 3. After 3-5 received TESTSERVICES terminate MockDiscovery (send BVEventType::BVEVENTTYPE_TERMINATE_ALL):
+    // 3. After 10-15 received TESTSERVICES terminate MockDiscovery (send BVEventType::BVEVENTTYPE_TERMINATE_ALL):
     //  3.1 Terminate mailbox thread (it should be joined by Discovery object!)
     //  3.2 Terminate worker thread.
+    // 4. Check if mailboxes are empty
 }
