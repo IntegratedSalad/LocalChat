@@ -27,10 +27,11 @@ private:
 
     SubscriberID id;
 
-    // Callbacks
+    // Callbacks?
     virtual BVStatus OnStart(std::unique_ptr<std::any>) = 0;
     virtual BVStatus OnShutdown(std::unique_ptr<std::any>) = 0;
     virtual BVStatus OnRestart(std::unique_ptr<std::any>) = 0;
+    virtual BVStatus OnPause(std::unique_ptr<std::any>) = 0;
 
     // BVStatus React(void); // Check State and react
 
@@ -44,11 +45,6 @@ private:
             if (!inMailBox_p->empty())
             {
                 std::shared_ptr<BVMessage> msg = inMailBox_p->wait_and_pop();
-                if (msg->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL) // stop worker thread!!! (maybe a callback? (OnShutdown))
-                {
-                    isListeningToMail = false;
-                    continue;
-                }
                 try
                 {
                     callback_m.at(msg->event_t);
@@ -83,7 +79,6 @@ protected:
         return BVStatus::BVSTATUS_OK;
     }
 
-
 public:
     BVComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                 std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx )
@@ -102,6 +97,24 @@ public:
     std::thread& GetMailBoxThread(void)
     {
         return this->mailbox_thread;
+    }
+
+    void TryJoinMailBoxThread(void)
+    {
+        if (this->GetMailBoxThread().joinable())
+        {
+            this->GetMailBoxThread().join();
+        }
+    }
+
+    bool GetIsListeningToMail(void)
+    {
+        return this->isListeningToMail;
+    }
+
+    void SetIsListeningToMail(const bool val)
+    {
+        this->isListeningToMail = val;
     }
 
     // These are initialized when attaching to a broker

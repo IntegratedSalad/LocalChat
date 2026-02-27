@@ -46,8 +46,9 @@ public:
     // Define callbacks for other events
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
-    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
 };
 
 class MockService : public BVService,

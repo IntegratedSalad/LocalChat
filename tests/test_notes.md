@@ -5,13 +5,18 @@ These will be probably integration tests.
 Functional tests will test member functions of the classes, especially those who operate on containers,
 to check if they're behaving in an expected way.
 
+## Model
+Mocks strip down the Components of their I/O tasks (querying the mdns daemon, polling the avahi loop or UI reading from stdin), and simulate their behavior to be tested for concrete execution flow.
+
 ## Setup tests
+Setup tests are carried out in component tests
 
 ### Component
+#### Discovery
+TODO: Describe each tests
 
 ### Broker
-
-maybe broker_test_General in which we test:
+maybe broker_test_Basic in which we test:
 1. Attaching to the broker
 2. Detaching from the broker
 3. Subscribing to an event type
@@ -19,6 +24,7 @@ maybe broker_test_General in which we test:
 5. Subscribing to a collection of event types
 6. Unsubscribing from a collection of event types
 
+NEEDED?
 ## Simulating Component Behaviour (Behavioral tests)
 Simulate receiving some event amidst some action.
 Simulate without Broker.
@@ -28,17 +34,22 @@ Simulate without Broker.
 ### Simulating BVDiscovery
 
 ### Simulating BVApp
+NEEDED?
 
 ## Communication tests (One Component / Multiple Components)
 ### Scenarios
 We need to test scenarios that are possible and their suspected outcome.
+This is utilized with a Broker (needs to be tested).
 
-## Integration tests?
+#### Discovery and App
+For example App requests Shutdown/Restart when Discovery is continuously working.
+App updates its list of the services
+
+## Validation tests?
 Check if the Component has subscribed to one event, only this event is passed to it and handled by it!
 So Subscribe() to event and evoke many many other events and this specific. Only this specific should be forwarded to the susbcriber.
 
-## Model
-Mocks strip down the Components of their I/O tasks (querying the mdns daemon, polling the avahi loop or UI reading from stdin), and simulate their behavior to be tested for concrete execution flow.
+
 
 ## System tests
 They should check if flow of the application is working:

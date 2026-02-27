@@ -25,11 +25,20 @@ MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
     //         return BVStatus::BVSTATUS_OK;
     // }); 
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN, 
-                     std::bind(&MockDiscovery::OnShutdown, this, std::placeholders::_1));
-
     RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_START,
                      std::bind(&MockDiscovery::OnStart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
+                     std::bind(&MockDiscovery::OnPause, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&MockDiscovery::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_SHUTDOWN,
+                     std::bind(&MockDiscovery::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+                     std::bind(&MockDiscovery::OnRestart, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_ECHO,
         [this](std::unique_ptr<std::any> dp) -> BVStatus {
@@ -59,8 +68,7 @@ MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
                                 std::make_any<std::string>(s))));
             return BVStatus::BVSTATUS_OK;
     });
-
-    CreateConnectionContext();
+    Setup();
 }
 
 MockDiscovery::~MockDiscovery()
@@ -75,12 +83,14 @@ void MockDiscovery::CreateConnectionContext(void)
 
 void MockDiscovery::Setup(void)
 {
-
+    // TODO: this maybe has to be tied with the creation and start of the worker thread
+    this->CreateConnectionContext();
 }
 
 void MockDiscovery::RunOnce(void) // this is run in the main worker thread
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    this->SetIsBrowsingActive(true);
     LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE1", NULL);
     LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
     BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
@@ -110,6 +120,7 @@ void MockDiscovery::RunOnce(void) // this is run in the main worker thread
 void MockDiscovery::RunNTimes(const int n)
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    this->SetIsBrowsingActive(true);
     for (int i = 0; i < n; i++)
     {
         std::string s("TESTSERVICE" + std::to_string(i));
@@ -127,6 +138,7 @@ void MockDiscovery::RunNTimes(const int n)
 void MockDiscovery::RunNTimesWithKElements(const int n, const int k)
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    this->SetIsBrowsingActive(true);
     for (int i = 0; i < n; i++)
     {
         BVServiceBrowseInstanceList browseInstanceList;
@@ -146,6 +158,7 @@ void MockDiscovery::RunNTimesWithKElements(const int n, const int k)
 
 void MockDiscovery::RunContinuously(void) // this is run in the main worker thread
 {
+    this->SetIsBrowsingActive(true);
     run();
 }
 
@@ -208,36 +221,44 @@ void MockDiscovery::run(void) // this is run in the main worker thread
 
     // // Wait 2 s
     // std::this_thread::sleep_for(std::chrono::seconds(2));
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
 
     int serviceNum = 0;
+
     while (this->GetIsBrowsingActive())
     {
-        // wait 3 s 
+        // wait 3 s - simulate waiting for daemon response
         std::this_thread::sleep_for(std::chrono::seconds(3));
 
         // replace with std::to_string
-        char str[4+11] = "TESTSERVICE";
-        str[14] = '\0';
-        char numstr[4];
-        numstr[3] = '\0';
-        snprintf(numstr, 3, "%d", serviceNum);
-        strncat(str, numstr, 3);
-
-        LinkedListElement_str* llen_p = LinkedListElement_str_Constructor(numstr, NULL);
+        std::string s("TESTSERVICE" + std::to_string(serviceNum));
+        LinkedListElement_str* llen_p = LinkedListElement_str_Constructor((char*)s.c_str(), NULL);
         LinkedList_str_AddElement(this->GetLinkedList_p(), llen_p);
-        // add multiple elements
-
-        PushBrowsedServicesToQueue();
-        SendMessage(BVMessage(
-                        BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
-        LinkedList_str_ClearList(this->GetLinkedList_p());
         serviceNum++;
+        {
+            // Add second element
+            std::string s("TESTSERVICE" + std::to_string(serviceNum));
+            LinkedListElement_str* llen_p = LinkedListElement_str_Constructor((char*)s.c_str(), NULL);
+            LinkedList_str_AddElement(this->GetLinkedList_p(), llen_p);
+            serviceNum++;
+        }
+        // PushBrowsedServicesToQueue(); // deprecated!
+        BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+        SendMessage(BVMessage(
+                        BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
+                            std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+        LinkedList_str_ClearList(this->GetLinkedList_p());
     }
+}
+
+BVStatus MockDiscovery::OnPause(std::unique_ptr<std::any> dp)
+{
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus MockDiscovery::OnStart(std::unique_ptr<std::any> dp) // test passing dp
 {
-    this->SetIsBrowsingActive(true);
+    Setup();
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -246,13 +267,15 @@ BVStatus MockDiscovery::OnShutdown(std::unique_ptr<std::any>)
     // TODO: Think through what the MockDiscovery implementation will be doing to mock DNS-SD functionality
     // and write a queue push procedure
 
+    // Remember that this is still mailbox thread if it is called from within mailbox thread!
     this->SetIsBrowsingActive(false);
-    //Get MailBoxThread  // this->mailbox_thread.join(); // when not listening to mailbox, thread should terminate naturally
+    this->SetIsListeningToMail(false);
     return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus MockDiscovery::OnRestart(std::unique_ptr<std::any>)
 {
+    // clear everything and start
 }
 
 // void AddServiceToList(LinkedList_str* ll_p, const char* str)

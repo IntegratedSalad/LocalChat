@@ -15,6 +15,8 @@ Maybe it is put on the same thread as Discovery.
 ## Key rules
 Each piece of mutable state, so a component and its data, has exactly one owning thread.
 
+
+**TODO:** : No longer a queue, update this
 ### Discovery queue handling
 **What Discovery does (who produces the items to be put on queue)**
 Discovery polls the DNS-SD results and appends it to a queue.
@@ -120,6 +122,7 @@ that "react" to the other messages.
 Think of maybe adding a functionHandler/Handler/FuncPointer to the type.
 The main thread of the component will publish messages to the outMailbox_p, as result
 of the logic it implements.
+In conclusion, Component class manages the state of the BVX object.
 
 ## Finite State Machine class
 
@@ -208,81 +211,41 @@ App requests Service Registration:
 
 **Discovery publishes a discovery event Sequence**
 
-## Thread Model (ASIO model)
-### IO thread
-**Thread Name:**
-io_thread
-
-**What data is allowed to mutate:**
-Discovery queue.
-Text UI:
-Various text on screen
-Discovered services list for the UI to utilize.
-Service state (registered/deregistered)
-
-**What runs the loop (wx main loop / io_context.run() / avahi_simple_poll_loop)**
-Bonjour:
-io_context.run()
-
-**What it is allowed to do:**
-Bonjour:
-Perform DNS-SD functionality, and append results to the queue.
-Text UI:
-Take stdin file descriptor and process user input.
-Update text ui.
-
-**How to schedule work onto it:**
-UI upon user input event can schedule start/stop discovery (either permanently or pause)
-UI upon user input event can schedule start/stop service (being able to be discovered/shutdown).
-Discovery upon services_found event can send services in queue for the UI to consume.
-
-**Lifetime (Who creates it what wakes it, who joins it, who stops it):**
-Main thread creates it, it is awaken throughout the application, main thread joins it and stops it.
-
-### Avahi thread
-**Thread Name:**
-avahi_thread
-
-**What data is allowed to mutate:**
-Discovery queue
-Discovered services list for the UI to utilize.
-(Maybe separate the data here - it's possible that this thread shouldn't modify the Discovery queue/ANY object assiociated with Discovery component)
-It probably should just post events to io_context and NOT modify the io_thread data.
-
-**Important**
-Do not share the queue from now on. Maybe send just a snapshot (copy) of newly discovered services?
-
-**What runs the loop (wx main loop / io_context.run() / avahi_simple_poll_loop)**
-avahi_simple_poll_loop
-
-**What it is allowed to do:**
-Execute Avahi API calls.
-These calls should somehow request changes/something for the Discovery object.
-
-**How to schedule work onto it:**
-Probably IO thread upon receiving a message to stop, avahi_simple_poll_quit() will be executed.
-If IO thread requests start, start simple_poll.
-
-**Lifetime (Who creates it what wakes it, who joins it, who stops it):**
-io_thread creates it, if it is Linux.
-It joins, wakes it and stops it.
-
-### GUI thread
-**Thread Name:**
-gui_thread
-It will probably need to be the main thread
-
-... (to be designed later)
-
-Maybe one thread which owns the io_context.
-Discovery thread (with io_context)
-
 ## Thread Model (Message Passing model)
+Which threads are lauching/joining which threads, what data are they holding, what data are they changing, if they mutate the data of other threads, and what work they do:
 
 **Thread name**
+Main thread
 
-which threads are lauching/joining which threads, what data are they holding, what data are they changing, if they mutate the data of other threads, and what work they do:
+**Thread created by**
 
+**Thread joined when**
+
+**Thread joined by**
+
+**Thread terminated when**
+
+**Thread name**
+Discovery worker thread
+
+**Thread created by**
+
+**Thread joined when**
+
+**Thread joined by**
+
+**Thread terminated when**
+
+**Thread name**
+Discovery mailbox thread
+
+**Thread created by**
+
+**Thread joined when**
+
+**Thread joined by**
+
+**Thread terminated when**
 
 ## Problems and Important Things To Address
 1. Two threads per blocking Component, and Broker sending messages

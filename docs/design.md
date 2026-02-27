@@ -86,6 +86,8 @@ This class embeds the DNS-SD Service Discovery functionality:
 How will discovery results from BVDiscovery be used?
 Should they be stored in queue for consumption?
 Who will consume them?
+
+**TODO: Update this**
 ### Discovery Queue
 BVDiscovery main goal is to populate a discoveryQueue
 (non-priority queue, with thread-safe operations)
@@ -101,12 +103,23 @@ is not managed *per se* by Discovery component, but it can 'query' a thread-safe
 Now - if Discovery thread and main thread should not share any data (discovery queue cannot be just passed to two objects), what should consume the queue and in what matter?
 
 ### Discovery Thread
+Called internally a *worker thread*.
 Discovery object ?should? run in a separate thread as it will need to block waiting for the response from the daemon about a new service being discovered.
+Worker thread does not join unless Discovery executes OnShutdown procedure.
+
+### Start procedure
+
+### Pause procedure
+At pause, the worker thread is joined.
+
+### Restart procedure
+
 ### Shutdown procedure
 We have to make sure that the shutdown of the discovery object,
 either permanent (user closing the application) or momentary
 (user toggling the discovery off) is announced, synchronized and
 executed with the consumer in
+At shutdown, the worker thread is joined.
 
 How many bytes were transmitted?
 How much hosts were discovered etc.

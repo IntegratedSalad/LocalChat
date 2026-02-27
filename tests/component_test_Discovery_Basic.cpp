@@ -11,12 +11,14 @@ protected:
     std::shared_ptr<threadsafe_queue<BVMessage>> outMailBox_p; // Component writes to it
     std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p; // Component reads from it
 
+    // not needed
     std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
     std::mutex discoveryQueueMutex;
     std::mutex messageQueueMutex;
     std::condition_variable discoveryQueueCV;
     boost::asio::io_context ioContext;
     bool isDiscoveryQueueReady = false;
+    // not needed
 
     std::thread worker_thread; // thread for 'business' Discovery logic. Probably should be as a member function in Discovery
     
@@ -92,7 +94,7 @@ TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryMockListeningOnMailbox)
 
     inMailBox_p->push(
         BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});
-    discovery_mock_p->GetMailBoxThread().join();
+    discovery_mock_p->TryJoinMailBoxThread();
 
     ASSERT_TRUE(inMailBox_p->empty());
     ASSERT_TRUE(outMailBox_p->empty());
@@ -230,14 +232,111 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingMultipleMessagesWithMultipleElem
         }
         n_loop++;
     }
+    ASSERT_TRUE(inMailBox_p->empty());
+    ASSERT_TRUE(outMailBox_p->empty());
 }
 
 TEST_F(DiscoveryMockBasicFixture, CheckReceivingContinuousServiceMockDiscoveryResults)
 {
     // 1. Start listening on the mailbox
     // 2. Start worker thread 'Run' job
-    // 3. After 10-15 received TESTSERVICES terminate MockDiscovery (send BVEventType::BVEVENTTYPE_TERMINATE_ALL):
-    //  3.1 Terminate mailbox thread (it should be joined by Discovery object!)
-    //  3.2 Terminate worker thread.
-    // 4. Check if mailboxes are empty
+    //  2a. Worker waits 3s (simulating waiting for daemon response - someone registered)
+    //  2b. Worker populates the list with 2 TESTSERVICES and sends a message to outMailbox
+    // 3. 
+    // 4. After 10-15 received TESTSERVICES terminate MockDiscovery (send BVEventType::BVEVENTTYPE_TERMINATE_ALL):
+    //  4.1 Terminate mailbox thread (it should be joined by Discovery object!)
+    //  4.2 Terminate worker thread <- this always happens from within BVComponent,
+    //     an object that checks mailbox.
+    // 5. Check if mailboxes are empty
+    // 6. Check if isListeningToMail and isBrowsingActive are false.
+
+    /*
+        This is a very important test that looks at the Discovery object
+        as an object performing Discovery ('business' logic) and listening to mailbox.
+    */
+
+    // This has to be started within Discovery, as this is something that happens on start,
+    // and later restart if requested.
+    // Also - we have to make sure that every flag/Setup is carried out in BVDiscovery
+    const BVEventType expectedEventType = BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE;
+
+    discovery_mock_p->StartListeningOnMailbox();
+    worker_thread = std::thread([&] {
+        discovery_mock_p->RunContinuously();
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // wait for IsBrowsingActive to be set by the worker thread
+    ASSERT_TRUE(discovery_mock_p->GetIsBrowsingActive());
+
+    // we aren't checking here pushing multiple messages
+
+    int receivedServicesNum = 0;
+    const int maxToReceiveServicesNum = 15;
+    std::shared_ptr<BVMessage> responseFromDiscoveryMsg;
+    BVEventType responseFromDiscoveryEType;
+    std::list<BVServiceBrowseInstance> responseFromDiscovery;
+    
+    while (receivedServicesNum < maxToReceiveServicesNum)
+    {
+        if (!outMailBox_p->empty())
+        {
+            responseFromDiscoveryMsg = outMailBox_p->wait_and_pop();
+            responseFromDiscoveryEType = responseFromDiscoveryMsg->event_t;
+            ASSERT_EQ(responseFromDiscoveryEType, expectedEventType);
+            try
+            {
+                responseFromDiscovery = std::any_cast<std::list<BVServiceBrowseInstance>>(*responseFromDiscoveryMsg->data_p);
+                ASSERT_EQ(responseFromDiscovery.size(), 2);
+                for (auto& bI : responseFromDiscovery)
+                {
+                    const std::string nameToCheck("TESTSERVICE" + std::to_string(receivedServicesNum));
+                    ASSERT_EQ(bI.serviceName, nameToCheck);
+                    receivedServicesNum++;
+                }
+                responseFromDiscovery.clear();
+            }
+            catch(const std::bad_any_cast& ex)
+            {
+                std::cerr << ex.what() << std::endl;
+                FAIL();
+            }
+        }
+    }
+
+    inMailBox_p->push(
+        BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});
+    discovery_mock_p->TryJoinMailBoxThread();
+    ASSERT_FALSE(discovery_mock_p->GetIsListeningToMail());
+    ASSERT_FALSE(discovery_mock_p->GetIsBrowsingActive());
+
+    ASSERT_TRUE(inMailBox_p->empty());
+    ASSERT_TRUE(outMailBox_p->empty());
 }
+
+// Below tests are still without Broker - to test callbacks/functions 
+
+TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryStartRequested)
+{
+    // Test that you cannot start twice - or that should be from FSM?
+
+    ASSERT_FALSE(discovery_mock_p->GetIsBrowsingActive());
+    ASSERT_FALSE(discovery_mock_p->GetIsListeningToMail());
+    
+    
+}
+
+TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryPauseRequested)
+{
+
+}
+
+TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryShutdownRequested)
+{
+
+}
+
+TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryRestartRequested)
+{
+
+}
+

@@ -12,7 +12,7 @@ class BVDiscovery
 {
 private:
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
-    bool isBrowsingActive = false; // rpbobably will have to be atomic, since second mailbox thread will change this
+    std::atomic<bool> isBrowsingActive = false; // rpbobably will have to be atomic, since second mailbox thread will change this
     LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
     // TODO: LinkedList_str should be wrapped in a unique ptr.
 
@@ -39,7 +39,7 @@ private:
     // std::thread worker_thread?
 
 protected:
-    void PushBrowsedServicesToQueue(void)
+    [[deprecated]] void PushBrowsedServicesToQueue(void)
     {
         for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
             lle_p != NULL;)
@@ -136,19 +136,19 @@ public:
         this->isDiscoveryQueueReady = f;
     }
 
-    bool& GetIsBrowsingActive(void)
+    bool GetIsBrowsingActive(void)
     {
         return this->isBrowsingActive;
+    }
+
+    void SetIsBrowsingActive(const bool f)
+    {
+        this->isBrowsingActive = f;
     }
 
     std::condition_variable& GetDiscoveryQueueCV(void)
     {
         return this->discoveryQueueCV;
-    }
-
-    void SetIsBrowsingActive(const bool& f)
-    {
-        this->isBrowsingActive = f;
     }
 
     BVServiceHostData GetHostData(void) const
