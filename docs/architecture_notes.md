@@ -15,7 +15,6 @@ Maybe it is put on the same thread as Discovery.
 ## Key rules
 Each piece of mutable state, so a component and its data, has exactly one owning thread.
 
-
 **TODO:** : No longer a queue, update this
 ### Discovery queue handling
 **What Discovery does (who produces the items to be put on queue)**

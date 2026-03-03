@@ -118,9 +118,14 @@ public:
     }
 
     // These are initialized when attaching to a broker
-    void SetId(const SubscriberID _id)
+    void SetSubscriberId(const SubscriberID _id)
     {
         this->id = _id;
+    }
+
+    SubscriberID GetSubscriberId(void) const
+    {
+        return this->id;
     }
 
     void SetOutMailBox(std::shared_ptr<threadsafe_queue<BVMessage>> _outMailBox)

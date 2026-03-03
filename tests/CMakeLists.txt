@@ -55,6 +55,7 @@ add_executable(
   broker_test_Basic
   broker_test_Basic.cpp
   component_mocks.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
 )
 
 target_link_libraries(

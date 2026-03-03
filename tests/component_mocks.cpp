@@ -117,7 +117,7 @@ void MockDiscovery::RunOnce(void) // this is run in the main worker thread
 }
 
 // Send n Messages with lists of size==1
-void MockDiscovery::RunNTimes(const int n)
+void MockDiscovery::RunNTimes(const int n) // this is run in the main worker thread
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
     this->SetIsBrowsingActive(true);
@@ -135,7 +135,7 @@ void MockDiscovery::RunNTimes(const int n)
 }
 
 // Send n messages with lists of size==k
-void MockDiscovery::RunNTimesWithKElements(const int n, const int k)
+void MockDiscovery::RunNTimesWithKElements(const int n, const int k) // this is run in the main worker thread
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
     this->SetIsBrowsingActive(true);
@@ -162,65 +162,8 @@ void MockDiscovery::RunContinuously(void) // this is run in the main worker thre
     run();
 }
 
-void MockDiscovery::run(void) // this is run in the main worker thread
+void MockDiscovery::run(void)
 {
-    // Append one Service
-    // LinkedListElement_str* lle1_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE1", NULL);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle1_p);
-    // PushBrowsedServicesToQueue();
-    // SendMessage(BVMessage(
-    //                 BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
-
-    // // TODO: Important: can we just send a list now??? We don't need the synchronization on discoveryQueue
-    // // between app and discovery components, if we attach the list in message!
-
-    // // Yes, this is a next thing to focus on. Because the previous
-    // // async model hasn't have defined a communication method (message passing now), App and Discovery communicated on
-    // // a shared, non-threadsafe queue. Now we can just send a list of discovery results over mailbox (broker passes)
-    // // message about a topic that App subscribed to 'BVEVENTTYPE_APP_PUBLISHED_SERVICE'
-    // LinkedList_str_ClearList(this->GetLinkedList_p());
-
-    // // TODO: ^ do entire linked_list putting and pushing to queue, and notifying the App component
-    // // Probably we have to create a test abstraction for the App component, as it is not connected
-    // // in functional tests (or just append to queue and consume outside in the mocked app thread)
-
-    // // Wait 2 s
-    // std::this_thread::sleep_for(std::chrono::seconds(2));
-
-    // // Append three Services
-    // LinkedListElement_str* lle2_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE2", NULL);
-    // LinkedListElement_str* lle3_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE3", NULL);
-    // LinkedListElement_str* lle4_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE4", NULL);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle2_p);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle3_p);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle4_p);
-
-    // // This should be embedded with announcing to the broker that we pushed a service
-    // // at least for now remember that this is tied to an event!
-    // PushBrowsedServicesToQueue();
-    // SendMessage(BVMessage(
-    //                 BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
-    // LinkedList_str_ClearList(this->GetLinkedList_p());
-
-    // // Wait 2 s
-    // std::this_thread::sleep_for(std::chrono::seconds(2));
-    
-    // // Append four Services
-    // LinkedListElement_str* lle5_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE5", NULL);
-    // LinkedListElement_str* lle6_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE6", NULL);
-    // LinkedListElement_str* lle7_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE7", NULL);
-    // LinkedListElement_str* lle8_p = LinkedListElement_str_Constructor((char*)"TESTSERVICE8", NULL);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle5_p);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle6_p);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle7_p);
-    // LinkedList_str_AddElement(this->GetLinkedList_p(), lle8_p);
-    // PushBrowsedServicesToQueue();
-    // SendMessage(BVMessage(
-    //                 BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, nullptr));
-    // LinkedList_str_ClearList(this->GetLinkedList_p());
-
-    // // Wait 2 s
-    // std::this_thread::sleep_for(std::chrono::seconds(2));
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
 
     int serviceNum = 0;
@@ -251,14 +194,24 @@ void MockDiscovery::run(void) // this is run in the main worker thread
     }
 }
 
-BVStatus MockDiscovery::OnPause(std::unique_ptr<std::any> dp)
+BVStatus MockDiscovery::OnStart(std::unique_ptr<std::any> dp) // test passing dp
 {
+    // In real implementation starting probably means putting worker thread to work.
+    if (this->GetIsBrowsingActive()) // cannot start twice
+    {
+        return BVStatus::BVSTATUS_NOK;
+    }
+    Setup();
+    // I think that in real implementation this should start the worker thread.
     return BVStatus::BVSTATUS_OK;
 }
 
-BVStatus MockDiscovery::OnStart(std::unique_ptr<std::any> dp) // test passing dp
+BVStatus MockDiscovery::OnPause(std::unique_ptr<std::any> dp)
 {
-    Setup();
+    this->isConnectionContextAlive = false;
+    this->SetIsBrowsingActive(false);
+
+    // TODO: if this is mailbox thread, should we join worker thread here?
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -268,8 +221,12 @@ BVStatus MockDiscovery::OnShutdown(std::unique_ptr<std::any>)
     // and write a queue push procedure
 
     // Remember that this is still mailbox thread if it is called from within mailbox thread!
+    this->isConnectionContextAlive = false;
     this->SetIsBrowsingActive(false);
+    // Complete shutdown - we don't want to listen to mail anymore
     this->SetIsListeningToMail(false);
+
+    // in real implementation either join here or outside.
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -278,7 +235,83 @@ BVStatus MockDiscovery::OnRestart(std::unique_ptr<std::any>)
     // clear everything and start
 }
 
-// void AddServiceToList(LinkedList_str* ll_p, const char* str)
-// {
+TestHeartbeatComponent::TestHeartbeatComponent(std::vector<BVEventType> _eventTypesOfInterest,
+                        std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                        std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+                        boost::asio::io_context& _iocontext,
+                        const int _hid,
+                        const size_t _heartbeatMs) :
+BVComponent(_outMbx, _inMbx),
+eventTypesOfInterest(_eventTypesOfInterest),
+ioContext(_iocontext),
+timer(_iocontext),
+hid(_hid),
+heartbeatMs(_heartbeatMs)
+{
+    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_START,
+                     std::bind(&TestHeartbeatComponent::OnStart, this, std::placeholders::_1));
 
-// }
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
+                     std::bind(&TestHeartbeatComponent::OnPause, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&TestHeartbeatComponent::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_SHUTDOWN,
+                     std::bind(&TestHeartbeatComponent::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+                     std::bind(&TestHeartbeatComponent::OnRestart, this, std::placeholders::_1));
+
+    Setup();
+}
+
+void TestHeartbeatComponent::Setup(void)
+{
+}
+
+void TestHeartbeatComponent::LaunchWorkerThread(void)
+{
+    worker_thread = std::thread([&] {
+        this->StartAnnouncingHeartbeat();
+    });
+}
+
+void TestHeartbeatComponent::StartAnnouncingHeartbeat(void)
+{
+    // send message after x ms
+    this->timer.expires_after(std::chrono::milliseconds(this->heartbeatMs));
+    this->timer.async_wait([this](const boost::system::error_code& /*e*/) {this->Beat();});
+    this->ioContext.run();
+}
+
+void TestHeartbeatComponent::Beat(void)
+{
+    if (this->working)
+    {
+        SendMessage(BVMessage(
+                    BVEventType::BVEVENTTYPE_TEST_HEARBTEAT, 
+                        std::make_unique<std::any>(std::make_any<int>(this->hid))));
+    }
+    this->timer.expires_after(std::chrono::milliseconds(this->heartbeatMs));
+    this->timer.async_wait([this](const boost::system::error_code& /*e*/) {this->Beat();});
+}
+
+BVStatus TestHeartbeatComponent::OnStart(std::unique_ptr<std::any>)
+{
+    this->LaunchWorkerThread(); // this should be launched by the main thread
+}
+
+BVStatus TestHeartbeatComponent::OnShutdown(std::unique_ptr<std::any>)
+{
+    this->working = false;
+}
+
+BVStatus TestHeartbeatComponent::OnRestart(std::unique_ptr<std::any>)
+{
+
+}
+
+BVStatus TestHeartbeatComponent::OnPause(std::unique_ptr<std::any>)
+{
+}

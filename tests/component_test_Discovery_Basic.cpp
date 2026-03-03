@@ -261,6 +261,7 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingContinuousServiceMockDiscoveryRe
     const BVEventType expectedEventType = BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE;
 
     discovery_mock_p->StartListeningOnMailbox();
+    // Shouldn't this be started by a message? and shouldn't worker thread be in Discovery?
     worker_thread = std::thread([&] {
         discovery_mock_p->RunContinuously();
     });
@@ -314,15 +315,13 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingContinuousServiceMockDiscoveryRe
 }
 
 // Below tests are still without Broker - to test callbacks/functions 
+// Maybe do them later - the most important test is CheckReceivingContinuousServiceMockDiscoveryResults
 
 TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryStartRequested)
 {
     // Test that you cannot start twice - or that should be from FSM?
-
     ASSERT_FALSE(discovery_mock_p->GetIsBrowsingActive());
     ASSERT_FALSE(discovery_mock_p->GetIsListeningToMail());
-    
-    
 }
 
 TEST_F(DiscoveryMockBasicFixture, CheckDiscoveryPauseRequested)

@@ -7,6 +7,7 @@
 #include "const.h"
 #include "linked_list.h"
 #include "stdio.h"
+#include <boost/asio.hpp>
 
 class MockDiscovery : public BVDiscovery, 
                       public BVComponent
@@ -18,16 +19,20 @@ private:
     void Setup(void) override;
     void run(void) override;
 
+    // not needed
     boost::asio::steady_timer discoveryTimer; // regular timer
     boost::asio::io_context& ioContext;
+    // not needed
 
 public:
     MockDiscovery(const BVServiceHostData _hostData,
+                  // TODO: to delete
                   std::mutex& _discoveryQueueMutex,
                   boost::asio::io_context& _ioContext,
                   std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
                   std::condition_variable& _discoveryQueueCV,
                   bool& _isDiscoveryQueueReady,
+                  // to delete
                   std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                   std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
 
@@ -106,4 +111,76 @@ public:
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
+};
+
+// General, abstract Component implementation.
+// Every x ms it announces that it lives on a separate thread.
+// (Producer)
+class TestHeartbeatComponent : public BVComponent
+{
+private:
+    int hid;
+    size_t heartbeatMs;
+    std::vector<BVEventType> eventTypesOfInterest;
+    std::thread worker_thread;
+
+    boost::asio::steady_timer timer;
+    boost::asio::io_context& ioContext;
+
+    bool working = true;
+
+public:
+    TestHeartbeatComponent(std::vector<BVEventType> _eventTypesOfInterest,
+                           std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                           std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+                           boost::asio::io_context& _iocontext,
+                           const int _hid,
+                           const size_t _heartbeatMs);
+
+    ~TestHeartbeatComponent() override
+    {}
+
+    void Setup(void);
+    void LaunchWorkerThread(void);
+    void StartAnnouncingHeartbeat(void); // TODO: Announce with id of the TestHeartbeatComponent
+    void Beat(void);
+
+    int GetHid(void) const
+    {
+        return this->hid;
+    }
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
+};
+
+// Listener to BVEVENTTYPE_TEST_HOLLOW_HEARTBEAT
+// (Consumer)
+class TestHeartbeatListenerComponent : public BVComponent
+{
+private:
+    std::thread workerThread;
+    int id;
+
+
+
+public:
+    TestHeartbeatListenerComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                                   std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+    BVComponent(_outMbx, _inMbx)
+    {
+    }
+
+    ~TestHeartbeatListenerComponent() override
+    {}
+
+    void StartListening(void);
+    void Setup(void);
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
 };

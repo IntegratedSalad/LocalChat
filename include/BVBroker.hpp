@@ -11,13 +11,13 @@
 
 // typedef uint8_t SubscriberID;
 
-// should BVBroker be a Component?
+// should BVBroker be a Component? <- no
 // class BVComponent;
 class BVBroker
 {
 private:
     std::map<SubscriberID, 
-        std::shared_ptr<threadsafe_queue<BVMessage>>> mailbox_m;
+        std::shared_ptr<threadsafe_queue<BVMessage>>> mailbox_m; // out mailboxes
     std::map<BVEventType, std::vector<SubscriberID>> subs_m;
     std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p;
 
@@ -38,8 +38,20 @@ public:
     BVBroker(const BVBroker& other) = delete;
     BVBroker& operator=(const BVBroker& other) = delete;
 
+    std::shared_ptr<threadsafe_queue<BVMessage>> GetInMailBoxP(void)
+    {
+        return this->inMailBox_p;
+    }
+
+    std::shared_ptr<threadsafe_queue<BVMessage>> GetOutMailBoxAtSubId(const SubscriberID sid)
+    {
+        return this->mailbox_m[sid];
+    }
+
+    BVStatus Route(const std::shared_ptr<BVMessage> msg);
+
     // Registers a subscriberID. Used at the setup.
-    // This will be handy when TCPConnection, which is dynamically
+    // This will be handy when TCPConnection which is dynamically
     // created/deleted is implemented
     [[nodiscard]] BVStatus Attach(BVComponent& component);
     // Remove this subID from map. OR remove the queue
@@ -50,5 +62,5 @@ public:
     [[nodiscard]] BVStatus Unsubscribe(const SubscriberID sid, const BVEventType event);
     [[nodiscard]] BVStatus Unsubscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
 
-    void CycleCurrentSubscriberId(void);
+    bool CycleCurrentSubscriberId(void);
 };

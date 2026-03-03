@@ -72,6 +72,9 @@ Next we will be resolving the discovered services.
 Question: How to make sure that the service with the specific hostname is not registered twice?
 Is it done on the mDNS level?
 Maybe we can detect that instance of LocalChat is already running with some OS mechanism?
+This component **is not put on a separate thread**.
+It just registers a callback for shutting down, restart and start
+TODO: Test it with the tests that engage Broker and multiple components.
 
 ## Component 'BVDiscovery'
 Description:

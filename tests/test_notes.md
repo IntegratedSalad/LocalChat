@@ -39,16 +39,17 @@ NEEDED?
 ## Communication tests (One Component / Multiple Components)
 ### Scenarios
 We need to test scenarios that are possible and their suspected outcome.
-This is utilized with a Broker (needs to be tested).
+This is utilized with a Broker (TODO: needs to be tested first as a standalone object).
 
 #### Discovery and App
 For example App requests Shutdown/Restart when Discovery is continuously working.
 App updates its list of the services
 
+### Discovery and App and Service
+
 ## Validation tests?
 Check if the Component has subscribed to one event, only this event is passed to it and handled by it!
 So Subscribe() to event and evoke many many other events and this specific. Only this specific should be forwarded to the susbcriber.
-
 
 
 ## System tests
