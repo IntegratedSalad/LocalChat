@@ -248,19 +248,19 @@ timer(_iocontext),
 hid(_hid),
 heartbeatMs(_heartbeatMs)
 {
-    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_START,
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_START,
                      std::bind(&TestHeartbeatComponent::OnStart, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE, 
                      std::bind(&TestHeartbeatComponent::OnPause, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
                      std::bind(&TestHeartbeatComponent::OnShutdown, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_SHUTDOWN,
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN,
                      std::bind(&TestHeartbeatComponent::OnShutdown, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART,
                      std::bind(&TestHeartbeatComponent::OnRestart, this, std::placeholders::_1));
 
     Setup();
@@ -290,7 +290,7 @@ void TestHeartbeatComponent::Beat(void)
     if (this->working)
     {
         SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_TEST_HEARBTEAT, 
+                    BVEventType::BVEVENTTYPE_TEST_HEARTBEAT, 
                         std::make_unique<std::any>(std::make_any<int>(this->hid))));
     }
     this->timer.expires_after(std::chrono::milliseconds(this->heartbeatMs));

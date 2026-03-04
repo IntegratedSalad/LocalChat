@@ -48,6 +48,18 @@ public:
         return this->mailbox_m[sid];
     }
 
+    std::vector<SubscriberID> GetSubscriberIDVectorFromEventType(const BVEventType et)
+    {
+        std::vector<SubscriberID> v{};
+        try
+        { 
+            v = this->subs_m.at(et);
+        } catch (const std::out_of_range& ex)
+        {
+        }
+        return v;
+    }
+
     BVStatus Route(const std::shared_ptr<BVMessage> msg);
 
     // Registers a subscriberID. Used at the setup.

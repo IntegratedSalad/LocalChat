@@ -68,11 +68,6 @@ private:
     }
 
 protected:
-    void RegisterCallback(BVEventType event_type, MessageHandler msg_handler)
-    {
-        this->callback_m[event_type] = msg_handler;
-    }
-
     virtual BVStatus SendMessage(BVMessage&& msg) noexcept
     {
         this->outMailBox_p->push(std::move(msg));
@@ -85,6 +80,11 @@ public:
                 : outMailBox_p(_outMbx), inMailBox_p(_inMbx) {};
 
     virtual ~BVComponent() {};
+
+    void RegisterCallback(BVEventType event_type, MessageHandler msg_handler)
+    {
+        this->callback_m[event_type] = msg_handler;
+    }
 
     void StartListeningOnMailbox(void)
     {

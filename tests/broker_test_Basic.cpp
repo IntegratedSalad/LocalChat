@@ -157,22 +157,107 @@ TEST_F(BrokerBasicFixture, CheckDetachingComponents)
 
 TEST_F(BrokerBasicFixture, CheckSubscribingToEvent)
 {
+    boost::asio::io_context io_context;
+    TestHeartbeatComponent tc{std::vector<BVEventType>{},
+                              std::make_shared<threadsafe_queue<BVMessage>>(),
+                              inMailBox_p,
+                              io_context,
+                              0,
+                              200};
+    TestHeartbeatComponent tc1{std::vector<BVEventType>{},
+                            std::make_shared<threadsafe_queue<BVMessage>>(),
+                            inMailBox_p,
+                            io_context,
+                            0,
+                            200}; // to test subscribing to the same event
+    BVStatus attachStatusTc1 = broker_p->Attach(tc);
+    BVStatus attachStatusTc2 = broker_p->Attach(tc1);
+    BVStatus subStatus1 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus subStatus2 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    BVStatus subStatus3 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    BVStatus subStatus4 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    BVStatus subStatus5 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART);
+    BVStatus subStatus6 = broker_p->Subscribe(tc1.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus subStatus7 = broker_p->Subscribe(tc1.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    BVStatus subStatus8 = broker_p->Subscribe(tc1.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    BVStatus subStatus9 = broker_p->Subscribe(tc1.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    BVStatus subStatus10 = broker_p->Subscribe(tc1.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART);
 
+    ASSERT_EQ(subStatus1, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus2, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus3, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus4, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus5, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus6, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus7, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus8, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus9, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus10, BVStatus::BVSTATUS_OK);
+
+    std::vector<SubscriberID> sidStart_v = broker_p->GetSubscriberIDVectorFromEventType(BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    std::vector<SubscriberID> sidPause_v = broker_p->GetSubscriberIDVectorFromEventType(BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    std::vector<SubscriberID> sidAll_v = broker_p->GetSubscriberIDVectorFromEventType(BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    std::vector<SubscriberID> sidShutdown_v = broker_p->GetSubscriberIDVectorFromEventType(BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    std::vector<SubscriberID> sidRestart_v = broker_p->GetSubscriberIDVectorFromEventType(BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART);
+
+    ASSERT_EQ(sidStart_v.size(), 2);
+    ASSERT_EQ(sidPause_v.size(), 2);
+    ASSERT_EQ(sidAll_v.size(), 2);
+    ASSERT_EQ(sidShutdown_v.size(), 2);
+    ASSERT_EQ(sidRestart_v.size(), 2);
+
+    ASSERT_EQ(sidStart_v[0], tc.GetSubscriberId());
+    ASSERT_EQ(sidStart_v[1], tc1.GetSubscriberId());
+    ASSERT_EQ(sidPause_v[0], tc.GetSubscriberId());
+    ASSERT_EQ(sidPause_v[1], tc1.GetSubscriberId());
+    ASSERT_EQ(sidAll_v[0], tc.GetSubscriberId());
+    ASSERT_EQ(sidAll_v[1], tc1.GetSubscriberId());
+    ASSERT_EQ(sidShutdown_v[0], tc.GetSubscriberId());
+    ASSERT_EQ(sidShutdown_v[1], tc1.GetSubscriberId());
+    ASSERT_EQ(sidRestart_v[0], tc.GetSubscriberId());
+    ASSERT_EQ(sidRestart_v[1], tc1.GetSubscriberId());
 }
 
 TEST_F(BrokerBasicFixture, CheckSubscribingToMultipleEvents)
 {
-
+    // later
 }
 
 TEST_F(BrokerBasicFixture, CheckUnsubscribingToEvent)
 {
+    boost::asio::io_context io_context;
+    TestHeartbeatComponent tc{std::vector<BVEventType>{},
+                              std::make_shared<threadsafe_queue<BVMessage>>(),
+                              inMailBox_p,
+                              io_context,
+                              0,
+                              200};
+    TestHeartbeatComponent tc1{std::vector<BVEventType>{},
+                            std::make_shared<threadsafe_queue<BVMessage>>(),
+                            inMailBox_p,
+                            io_context,
+                            0,
+                            200}; // to test subscribing to the same event
+    BVStatus attachStatusTc1 = broker_p->Attach(tc);
+    BVStatus attachStatusTc2 = broker_p->Attach(tc1);
+    BVStatus subStatus1 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus subStatus2 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
 
+    BVStatus unsubStatus1 = broker_p->Unsubscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus unsubStatus2 = broker_p->Unsubscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+
+    ASSERT_EQ(unsubStatus1, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(unsubStatus2, BVStatus::BVSTATUS_OK);
+
+    std::vector<SubscriberID> sidStart_v = broker_p->GetSubscriberIDVectorFromEventType(BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    std::vector<SubscriberID> sidPause_v = broker_p->GetSubscriberIDVectorFromEventType(BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    ASSERT_EQ(sidStart_v.size(), 0);
+    ASSERT_EQ(sidPause_v.size(), 0);
 }
 
 TEST_F(BrokerBasicFixture, CheckUnsubscribingToMultipleEvents)
 {
-
+    // later
 }
 
 TEST_F(BrokerBasicFixture, CheckBasicRouting)
