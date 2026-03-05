@@ -43,36 +43,36 @@ public:
         return this->inMailBox_p;
     }
 
-    std::shared_ptr<threadsafe_queue<BVMessage>> GetOutMailBoxAtSubId(const SubscriberID sid)
+    std::shared_ptr<threadsafe_queue<BVMessage>> GetOutMailBoxAtSubId(SubscriberID sid)
     {
-        return this->mailbox_m[sid];
+        auto it = mailbox_m.find(sid);
+        return (it != mailbox_m.end()) ? it->second : nullptr;
     }
 
     std::vector<SubscriberID> GetSubscriberIDVectorFromEventType(const BVEventType et)
     {
-        std::vector<SubscriberID> v{};
-        try
-        { 
-            v = this->subs_m.at(et);
-        } catch (const std::out_of_range& ex)
-        {
-        }
-        return v;
+        auto it = subs_m.find(et);
+        return (it != subs_m.end()) ? it->second : std::vector<SubscriberID>{};
     }
 
-    BVStatus Route(const std::shared_ptr<BVMessage> msg);
+    BVStatus Route(const std::shared_ptr<BVMessage>& msg);
 
     // Registers a subscriberID. Used at the setup.
     // This will be handy when TCPConnection which is dynamically
     // created/deleted is implemented
+    // But these are shared resource between multiple threads.
+    // So they have to be synced.
+    // MAYBE. At the start of APP allocate max (255) 
+    // TCP Connections as components. deallocate (terminate)
+    // only when user exits the application.
     [[nodiscard]] BVStatus Attach(BVComponent& component);
     // Remove this subID from map. OR remove the queue
     [[nodiscard]] BVStatus Detach(const SubscriberID id);
 
     [[nodiscard]] BVStatus Subscribe(const SubscriberID sid, const BVEventType event);
-    [[nodiscard]] BVStatus Subscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
+    [[nodiscard]] BVStatus Subscribe(const SubscriberID sid, const std::vector<BVEventType>& events_v);
     [[nodiscard]] BVStatus Unsubscribe(const SubscriberID sid, const BVEventType event);
-    [[nodiscard]] BVStatus Unsubscribe(const SubscriberID sid, const std::vector<BVEventType> events_v);
+    [[nodiscard]] BVStatus Unsubscribe(const SubscriberID sid, const std::vector<BVEventType>& events_v);
 
     bool CycleCurrentSubscriberId(void);
 };

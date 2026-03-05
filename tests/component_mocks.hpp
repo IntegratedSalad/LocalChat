@@ -134,7 +134,7 @@ public:
                            std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                            std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
                            boost::asio::io_context& _iocontext,
-                           const int _hid,
+                           const int _hid, // produces heartbeat for this id
                            const size_t _heartbeatMs);
 
     ~TestHeartbeatComponent() override
@@ -162,16 +162,12 @@ class TestHeartbeatListenerComponent : public BVComponent
 {
 private:
     std::thread workerThread;
-    int id;
-
-
+    int hid; // listens for hearbeat with this hid
 
 public:
     TestHeartbeatListenerComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
-                                   std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
-    BVComponent(_outMbx, _inMbx)
-    {
-    }
+                                   std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+                                   const int _hid);
 
     ~TestHeartbeatListenerComponent() override
     {}

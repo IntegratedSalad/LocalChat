@@ -265,7 +265,22 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
 
 }
 
+TEST_F(BrokerBasicFixture, CheckTheSameMessageBeingDeliveredToMultipleSubscribers)
+{
+
+}
+
 TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterUnsubscribing)
+{
+
+}
+
+TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterDetaching)
+{
+
+}
+
+TEST_F(BrokerBasicFixture, CheckReceivingMessageNotSubscribedTo)
 {
 
 }

@@ -65,7 +65,7 @@ MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
             SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_TEST_ECHO, 
                         std::make_unique<std::any>(
-                                std::make_any<std::string>(s))));
+                            std::make_any<std::string>(s))));
             return BVStatus::BVSTATUS_OK;
     });
     Setup();
@@ -314,4 +314,80 @@ BVStatus TestHeartbeatComponent::OnRestart(std::unique_ptr<std::any>)
 
 BVStatus TestHeartbeatComponent::OnPause(std::unique_ptr<std::any>)
 {
+}
+
+TestHeartbeatListenerComponent::TestHeartbeatListenerComponent(
+                                   std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                                   std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+                                   const int _hid) :
+BVComponent(_outMbx, _inMbx),
+hid(_hid)
+{
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_START,
+                     std::bind(&TestHeartbeatListenerComponent::OnStart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE, 
+                     std::bind(&TestHeartbeatListenerComponent::OnPause, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&TestHeartbeatListenerComponent::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN,
+                     std::bind(&TestHeartbeatListenerComponent::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART,
+                     std::bind(&TestHeartbeatListenerComponent::OnRestart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_HEARTBEAT,
+                        [this](std::unique_ptr<std::any> dp) -> BVStatus {
+
+                        // unpack hid
+                        int _hid;
+                        try
+                        {
+                            _hid = std::any_cast<int>(*dp);
+                        } catch(const std::bad_any_cast& e)
+                        {
+                            std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_TEST_HEARTBEAT callback. " 
+                                    << e.what() << std::endl;
+                            return BVStatus::BVSTATUS_FATAL_ERROR;
+                        }
+
+                        SendMessage(BVMessage(
+                            BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK, 
+                                std::make_unique<std::any>(
+                                    std::make_any<int>(_hid))));
+
+                        return BVStatus::BVSTATUS_OK;
+                    });
+}
+
+void TestHeartbeatListenerComponent::StartListening(void)
+{
+
+}
+
+void TestHeartbeatListenerComponent::Setup(void)
+{
+
+}
+
+BVStatus TestHeartbeatListenerComponent::OnStart(std::unique_ptr<std::any>)
+{
+
+}
+
+BVStatus TestHeartbeatListenerComponent::OnShutdown(std::unique_ptr<std::any>)
+{
+
+}
+
+BVStatus TestHeartbeatListenerComponent::OnRestart(std::unique_ptr<std::any>)
+{
+
+}
+
+BVStatus TestHeartbeatListenerComponent::OnPause(std::unique_ptr<std::any>)
+{
+
 }

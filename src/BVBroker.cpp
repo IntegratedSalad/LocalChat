@@ -31,121 +31,157 @@ void BVBroker::Run(void)
 // Maybe Broker should be just an object having shared pointer to mailboxes.
 // If Broker is put in a separate thread, we need to synchronize access, which
 // is probably redundant, as this is just a simple router msg -> mailbox
-BVStatus BVBroker::Route(const std::shared_ptr<BVMessage> msg_p)
+BVStatus BVBroker::Route(const std::shared_ptr<BVMessage>& msg_p)
 {
     const BVEventType etype = msg_p->event_t;
-    const std::vector<SubscriberID> subscribers_v = subs_m[etype];
-    for (auto& sub : subscribers_v)
-    {
-        mailbox_m[sub]->push(msg_p);
-    }
-}
+    auto it = subs_m.find(etype);
+    if (it == subs_m.end() || it->second.empty())
+        return BVStatus::BVSTATUS_OK; // or BVStatus::NoSubscribers
 
-
-BVStatus BVBroker::Stop(void)
-{
-    for (const auto& [k, v] : this->mailbox_m)
+    const auto& subscribers_v = it->second; // no copy
+    for (SubscriberID sid : subscribers_v)
     {
-        this->mailbox_m[k] = nullptr;
+        auto mit = mailbox_m.find(sid);
+        if (mit != mailbox_m.end() && mit->second)
+            mit->second->push(msg_p);
+        // else: stale subscription / detached subscriber; optionally clean up
     }
-    this->inMailBox_p = nullptr;
     return BVStatus::BVSTATUS_OK;
 }
 
+BVStatus BVBroker::Stop()
+{
+    for (auto& [sid, q] : mailbox_m)
+        q.reset();
+
+    mailbox_m.clear();
+    subs_m.clear();
+
+    // Consider NOT resetting inMailBox_p here; or reset only after
+    // all components are stopped/joined.
+    // inMailBox_p.reset();
+
+    return BVStatus::BVSTATUS_OK;
+}
+
+// Every component sends msgs to the broker, so
+// sets this mailbox as their out box.
+// but the Broker ISN'T put in a separate thread.
+// It just holds pointers to the mailboxes of every component that
+// is active and listens
 BVStatus BVBroker::Attach(BVComponent& component)
 {
-    if (numOfSubscribersRegistered == UINT8_MAX)
-    {
+    if (numOfSubscribersRegistered >= UINT8_MAX + 1u) // if you allow 256
         return BVStatus::BVSTATUS_MAX_COMPONENTS;
+
+    // ensure currentSubscriberId points to a free slot
+    if (mailbox_m.find(currentSubscriberId) != mailbox_m.end() &&
+        mailbox_m[currentSubscriberId] != nullptr)
+    {
+        if (!CycleCurrentSubscriberId())
+            return BVStatus::BVSTATUS_MAX_COMPONENTS;
     }
+
     component.SetSubscriberId(currentSubscriberId);
-
-    // their out mail box is our in mail box
-    // Every component sends msgs to the broker, so
-    // sets this mailbox as their out box.
-    // but the Broker ISN'T put in a separate thread.
-    // It just holds pointers to the mailboxes of every component that
-    // is active and listens
-    component.SetOutMailBox(this->inMailBox_p); 
-
     // their in mail box is our mail box at their SubscriberID
-    this->mailbox_m[currentSubscriberId] = 
-        std::make_shared<threadsafe_queue<BVMessage>>();
-    component.SetInMailBox(this->mailbox_m[currentSubscriberId]);
+    // their out mail box is our in mail box
+    component.SetOutMailBox(inMailBox_p);
 
-    numOfSubscribersRegistered += 1;
+    auto q = std::make_shared<threadsafe_queue<BVMessage>>();
+    mailbox_m[currentSubscriberId] = q;
+    component.SetInMailBox(q);
 
-    if (!this->CycleCurrentSubscriberId())
-    {
-        return BVStatus::BVSTATUS_MAX_COMPONENTS;
-    }
+    ++numOfSubscribersRegistered;
+
+    // prepare next id for the *next* Attach, but don’t fail this Attach
+    CycleCurrentSubscriberId();
 
     return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus BVBroker::Detach(const SubscriberID sid)
 {
-    try
-    {
-        this->mailbox_m.at(sid);
-    } catch (const std::out_of_range& ex)
-    {
-        std::cerr << "[BVBroker]::Detach for " << sid 
-                  << " out_of_range::what(): " << ex.what() << std::endl;
+    auto it = mailbox_m.find(sid);
+    if (it == mailbox_m.end() || !it->second)
         return BVStatus::BVSTATUS_FATAL_ERROR;
-    }
-    if (this->mailbox_m.at(sid) == nullptr)
+
+    it->second.reset();
+    --numOfSubscribersRegistered;
+
+    // remove sid from all events
+    for (auto iter = subs_m.begin(); iter != subs_m.end(); )
     {
-        return BVStatus::BVSTATUS_FATAL_ERROR;
+        auto& vec = iter->second;
+        vec.erase(std::remove(vec.begin(), vec.end(), sid), vec.end());
+        if (vec.empty()) iter = subs_m.erase(iter);
+        else ++iter;
     }
-    this->mailbox_m[sid] = nullptr;
-    numOfSubscribersRegistered -= 1;
+
     return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus BVBroker::Subscribe(const SubscriberID sid, const BVEventType event)
 {
-    try
-    {
-        this->subs_m.at(event);
-    } catch (const std::out_of_range& ex)
-    {
-        // new event registerd
-        std::vector<SubscriberID> subV;
-        subV.push_back(sid);
-        this->subs_m.emplace(std::make_pair(event, subV));
-        return BVStatus::BVSTATUS_OK;
-    }
-    this->subs_m[event].push_back(sid);
+    auto mit = mailbox_m.find(sid);
+    if (mit == mailbox_m.end() || !mit->second)
+        return BVStatus::BVSTATUS_FATAL_ERROR; // pick your enum
+
+    auto& vec = subs_m[event];
+
+    if (std::find(vec.begin(), vec.end(), sid) == vec.end())
+        vec.push_back(sid);
+
     return BVStatus::BVSTATUS_OK;
 }
 
-BVStatus BVBroker::Subscribe(const SubscriberID sid, const std::vector<BVEventType> events_v)
+BVStatus BVBroker::Subscribe(const SubscriberID sid, const std::vector<BVEventType>& events_v)
 {
+    auto mit = mailbox_m.find(sid);
+    if (mit == mailbox_m.end() || !mit->second)
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+
     for (const auto& ev : events_v)
     {
-        subs_m[ev].push_back(sid); 
+        auto& vec = subs_m[ev];
+        if (std::find(vec.begin(), vec.end(), sid) == vec.end())
+            vec.push_back(sid);
     }
+
     return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus BVBroker::Unsubscribe(const SubscriberID sid, const BVEventType event)
 {
-    auto& v = subs_m[event];
-    v.erase(std::remove(v.begin(), v.end(), sid), v.end());
+    auto it = subs_m.find(event);
+    if (it == subs_m.end())
+        return BVStatus::BVSTATUS_OK;
+
+    auto& vec = it->second;
+    vec.erase(std::remove(vec.begin(), vec.end(), sid), vec.end());
+
+    if (vec.empty())
+        subs_m.erase(it);
+
     return BVStatus::BVSTATUS_OK;
 }
 
-BVStatus BVBroker::Unsubscribe(const SubscriberID sid, const std::vector<BVEventType> events_v)
+BVStatus BVBroker::Unsubscribe(const SubscriberID sid, const std::vector<BVEventType>& events_v)
 {
     for (const auto& ev : events_v)
     {
-        auto& v = subs_m[ev];
-        v.erase(std::remove(v.begin(), v.end(), sid), v.end());
+        auto it = subs_m.find(ev);
+        if (it == subs_m.end())
+            continue;
+
+        auto& vec = it->second;
+        vec.erase(std::remove(vec.begin(), vec.end(), sid), vec.end());
+
+        if (vec.empty())
+            subs_m.erase(it);
     }
+
     return BVStatus::BVSTATUS_OK;
 }
-
 // Cycle through mailbox to find a subscriber id with nullptr mailbox
 // (the one that haven't had any mailbox, or their mailbox was freed).
 bool BVBroker::CycleCurrentSubscriberId()

@@ -23,7 +23,8 @@ enum class BVAppEvent_e
  * an application that user interacts with.
  * Behavior is simply a reaction to an event.
  * What event does a user do, that is abstract of a particular GUI lib.
- * They want to send a message, pause 
+ * This is put on the main thread. So anything that happens on the main thread,
+ * happens 
  *
 */
 class BVApp
