@@ -9,22 +9,20 @@ BVBroker::BVBroker(std::shared_ptr<threadsafe_queue<BVMessage >> _inMailBox_p)
     }
 }
 
-void BVBroker::Run(void)
+void BVBroker::Run()
 {
-    while (this->isRunning) // should this be on a separate thread?
+    while (this->isRunning)
     {
-       std::shared_ptr<BVMessage> message_p = this->inMailBox_p->try_pop();
-       const BVEventType etype = message_p->event_t;
-       if (etype == BVEventType::BVEVENTTYPE_TERMINATE_ALL)
-       {
-           this->isRunning = false;
-       }
-       // everyone should be subscribed to BVEVENTTYPE_TERMINATE_ALL
-       const std::vector<SubscriberID> subscribers = subs_m[etype];
-       for (auto& sub : subscribers)
-       {
-           mailbox_m[sub]->push(message_p);
-       }
+        std::shared_ptr<BVMessage> msg_p = this->inMailBox_p->wait_and_pop();
+        if (!msg_p)
+        {
+            continue;
+        }
+        if (msg_p->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL)
+        {
+            this->isRunning = false;
+        }
+        this->Route(msg_p);
     }
 }
 
@@ -36,7 +34,7 @@ BVStatus BVBroker::Route(const std::shared_ptr<BVMessage>& msg_p)
     const BVEventType etype = msg_p->event_t;
     auto it = subs_m.find(etype);
     if (it == subs_m.end() || it->second.empty())
-        return BVStatus::BVSTATUS_OK; // or BVStatus::NoSubscribers
+        return BVStatus::BVSTATUS_OK; // BVNO_SUBSCRIBERS?
 
     const auto& subscribers_v = it->second; // no copy
     for (SubscriberID sid : subscribers_v)
@@ -44,7 +42,7 @@ BVStatus BVBroker::Route(const std::shared_ptr<BVMessage>& msg_p)
         auto mit = mailbox_m.find(sid);
         if (mit != mailbox_m.end() && mit->second)
             mit->second->push(msg_p);
-        // else: stale subscription / detached subscriber; optionally clean up
+        // else: stale subscription
     }
     return BVStatus::BVSTATUS_OK;
 }
@@ -124,7 +122,7 @@ BVStatus BVBroker::Subscribe(const SubscriberID sid, const BVEventType event)
 {
     auto mit = mailbox_m.find(sid);
     if (mit == mailbox_m.end() || !mit->second)
-        return BVStatus::BVSTATUS_FATAL_ERROR; // pick your enum
+        return BVStatus::BVSTATUS_FATAL_ERROR;
 
     auto& vec = subs_m[event];
 

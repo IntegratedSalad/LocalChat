@@ -127,7 +127,7 @@ private:
     boost::asio::steady_timer timer;
     boost::asio::io_context& ioContext;
 
-    bool working = true;
+    std::atomic<bool> working{true};
 
 public:
     TestHeartbeatComponent(std::vector<BVEventType> _eventTypesOfInterest,
@@ -144,6 +144,10 @@ public:
     void LaunchWorkerThread(void);
     void StartAnnouncingHeartbeat(void); // TODO: Announce with id of the TestHeartbeatComponent
     void Beat(void);
+    void JoinWorkerThread(void)
+    {
+        this->worker_thread.join();
+    }
 
     int GetHid(void) const
     {
@@ -161,7 +165,7 @@ public:
 class TestHeartbeatListenerComponent : public BVComponent
 {
 private:
-    std::thread workerThread;
+    std::thread worker_thread;
     int hid; // listens for hearbeat with this hid
 
 public:
@@ -174,6 +178,32 @@ public:
 
     void StartListening(void);
     void Setup(void);
+    void JoinWorkerThread(void)
+    {
+        this->worker_thread.join();
+    }
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
+};
+
+class TCComponent : public BVComponent
+{
+private:
+    bool ack = false;
+public:
+    TCComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
+
+    ~TCComponent() override
+    {}
+
+    BVStatus CheckAck(void)
+    {
+        return ack ? BVStatus::BVSTATUS_OK : BVStatus::BVSTATUS_NOK;
+    }
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;

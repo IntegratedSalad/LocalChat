@@ -263,6 +263,9 @@ heartbeatMs(_heartbeatMs)
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART,
                      std::bind(&TestHeartbeatComponent::OnRestart, this, std::placeholders::_1));
 
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&TestHeartbeatComponent::OnShutdown, this, std::placeholders::_1));
+
     Setup();
 }
 
@@ -270,6 +273,7 @@ void TestHeartbeatComponent::Setup(void)
 {
 }
 
+// this has to be on another thread just to simulate another component working
 void TestHeartbeatComponent::LaunchWorkerThread(void)
 {
     worker_thread = std::thread([&] {
@@ -305,6 +309,7 @@ BVStatus TestHeartbeatComponent::OnStart(std::unique_ptr<std::any>)
 BVStatus TestHeartbeatComponent::OnShutdown(std::unique_ptr<std::any>)
 {
     this->working = false;
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus TestHeartbeatComponent::OnRestart(std::unique_ptr<std::any>)
@@ -329,14 +334,14 @@ hid(_hid)
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE, 
                      std::bind(&TestHeartbeatListenerComponent::OnPause, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
-                     std::bind(&TestHeartbeatListenerComponent::OnShutdown, this, std::placeholders::_1));
-
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN,
                      std::bind(&TestHeartbeatListenerComponent::OnShutdown, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART,
                      std::bind(&TestHeartbeatListenerComponent::OnRestart, this, std::placeholders::_1));
+                                          
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&TestHeartbeatListenerComponent::OnShutdown, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_HEARTBEAT,
                         [this](std::unique_ptr<std::any> dp) -> BVStatus {
@@ -379,7 +384,7 @@ BVStatus TestHeartbeatListenerComponent::OnStart(std::unique_ptr<std::any>)
 
 BVStatus TestHeartbeatListenerComponent::OnShutdown(std::unique_ptr<std::any>)
 {
-
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus TestHeartbeatListenerComponent::OnRestart(std::unique_ptr<std::any>)
@@ -390,4 +395,47 @@ BVStatus TestHeartbeatListenerComponent::OnRestart(std::unique_ptr<std::any>)
 BVStatus TestHeartbeatListenerComponent::OnPause(std::unique_ptr<std::any>)
 {
 
+}
+
+TCComponent::TCComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+BVComponent(_outMbx, _inMbx)
+{
+    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_START,
+                     std::bind(&TCComponent::OnStart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
+                     std::bind(&TCComponent::OnPause, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&TCComponent::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_SHUTDOWN,
+                     std::bind(&TCComponent::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+                     std::bind(&TCComponent::OnRestart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK,
+        [this](std::unique_ptr<std::any> dp) -> BVStatus {
+            ack = true;
+            return BVStatus::BVSTATUS_OK;
+        });
+}
+
+BVStatus TCComponent::OnStart(std::unique_ptr<std::any>)
+{
+}
+
+BVStatus TCComponent::OnShutdown(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus TCComponent::OnRestart(std::unique_ptr<std::any>)
+{
+}
+
+BVStatus TCComponent::OnPause(std::unique_ptr<std::any>)
+{
 }

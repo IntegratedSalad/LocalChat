@@ -29,6 +29,8 @@ private:
     void Run(void);
     BVStatus Stop(void);
 
+    std::thread worker_thread;
+
     // BVStatus SendMessage(BVMessage message,
                         //  const std::shared_ptr<threadsafe_queue<BVMessage >> mailbox_p);
 public:
@@ -56,6 +58,21 @@ public:
     }
 
     BVStatus Route(const std::shared_ptr<BVMessage>& msg);
+
+    void LaunchWorkerThread(void)
+    {
+        worker_thread = std::thread([&] {
+            this->Run();
+        });
+    }
+
+    void TryJoinWorkerThread(void)
+    {
+        if (worker_thread.joinable())
+        {
+            worker_thread.join();
+        }
+    }
 
     // Registers a subscriberID. Used at the setup.
     // This will be handy when TCPConnection which is dynamically

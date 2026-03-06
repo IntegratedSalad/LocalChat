@@ -23,15 +23,18 @@
 
 // std::shared_ptr<threadsafe_queue<BVMessage>> outMailBox_p; <- Component writes to it
 // std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p;  <- Component reads from it
+// BVBroker shares 
 class BrokerBasicFixture : public ::testing::Test
 {
 protected:
     std::unique_ptr<BVBroker> broker_p;
     std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p;
+    std::shared_ptr<threadsafe_queue<BVMessage>> outMailbox_p;
 
     void SetUp() override
     {
         inMailBox_p = std::make_shared<threadsafe_queue<BVMessage>>();
+        outMailbox_p = std::make_shared<threadsafe_queue<BVMessage>>();
         broker_p = std::make_unique<BVBroker>(inMailBox_p);
     }
 
@@ -262,7 +265,76 @@ TEST_F(BrokerBasicFixture, CheckUnsubscribingToMultipleEvents)
 
 TEST_F(BrokerBasicFixture, CheckBasicRouting)
 {
+    boost::asio::io_context io_context;
+    TestHeartbeatComponent tc{std::vector<BVEventType>{},
+                                std::make_shared<threadsafe_queue<BVMessage>>(),
+                                std::make_shared<threadsafe_queue<BVMessage>>(),
+                                io_context,
+                                0,
+                                200};
+    TestHeartbeatListenerComponent tcl{std::make_shared<threadsafe_queue<BVMessage>>(),
+                                       std::make_shared<threadsafe_queue<BVMessage>>(), // does inMailBox need to be shared?
+                                       0};
+    TCComponent tcComponent{std::make_shared<threadsafe_queue<BVMessage>>(),
+                            std::make_shared<threadsafe_queue<BVMessage>>()};
+    // We can subscribe to Broker. TestHeartbeatListenerComponent can send ack
+    BVStatus attachStatusTc = broker_p->Attach(tc);
+    BVStatus attachStatusTcl = broker_p->Attach(tcl);
+    BVStatus attachStatusTcComponent = broker_p->Attach(tcComponent);
+    ASSERT_EQ(attachStatusTcl, BVStatus::BVSTATUS_OK);
 
+    // make sure that the TCComponent has corresponding callbacks for this messages!
+    // Producer
+    BVStatus subStatus1 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    BVStatus subStatus2 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus subStatus3 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    BVStatus subStatus4 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESUME);
+    BVStatus subStatus5 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART);
+    BVStatus subStatus6 = broker_p->Subscribe(tc.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+
+    // Listener (Consumer)
+    BVStatus subStatus7 = broker_p->Subscribe(tcl.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    BVStatus subStatus8 = broker_p->Subscribe(tcl.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus subStatus9 = broker_p->Subscribe(tcl.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    BVStatus subStatus10 = broker_p->Subscribe(tcl.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESUME);
+    BVStatus subStatus11 = broker_p->Subscribe(tcl.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART);
+    BVStatus subStatus12 = broker_p->Subscribe(tcl.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_HEARTBEAT);
+    BVStatus subStatus13 = broker_p->Subscribe(tcl.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+
+    // This thread (test) component
+    BVStatus subStatus14 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    BVStatus subStatus15 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus subStatus16 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    BVStatus subStatus17 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESUME);
+    BVStatus subStatus18 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART);
+    BVStatus subStatus19 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK);
+    BVStatus subStatus20 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+
+    // ASSERT_EQ all above
+
+    broker_p->LaunchWorkerThread();
+
+    tc.StartListeningOnMailbox();
+    tc.LaunchWorkerThread();
+
+    tcl.StartListeningOnMailbox();
+    tcComponent.StartListeningOnMailbox();
+
+    // wait for tc Component to have ack
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    // std::this_thread::sleep_for(std::chrono::seconds(300));
+    ASSERT_EQ(BVStatus::BVSTATUS_OK, tcComponent.CheckAck()); 
+
+    // send a terminate message
+    inMailBox_p->push(
+        BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});
+
+    // join all
+    tc.TryJoinMailBoxThread();
+    tcl.TryJoinMailBoxThread();
+    tc.JoinWorkerThread();
+    tcl.JoinWorkerThread();
+    broker_p->TryJoinWorkerThread();
 }
 
 TEST_F(BrokerBasicFixture, CheckTheSameMessageBeingDeliveredToMultipleSubscribers)
