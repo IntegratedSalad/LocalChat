@@ -296,9 +296,12 @@ void TestHeartbeatComponent::Beat(void)
         SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_TEST_HEARTBEAT, 
                         std::make_unique<std::any>(std::make_any<int>(this->hid))));
+        this->timer.expires_after(std::chrono::milliseconds(this->heartbeatMs));
+        this->timer.async_wait([this](const boost::system::error_code& e) {
+            if (e != boost::asio::error::operation_aborted)
+                this->Beat();
+        });
     }
-    this->timer.expires_after(std::chrono::milliseconds(this->heartbeatMs));
-    this->timer.async_wait([this](const boost::system::error_code& /*e*/) {this->Beat();});
 }
 
 BVStatus TestHeartbeatComponent::OnStart(std::unique_ptr<std::any>)
@@ -309,6 +312,8 @@ BVStatus TestHeartbeatComponent::OnStart(std::unique_ptr<std::any>)
 BVStatus TestHeartbeatComponent::OnShutdown(std::unique_ptr<std::any>)
 {
     this->working = false;
+    this->timer.cancel();
+    this->ioContext.stop();
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -345,7 +350,6 @@ hid(_hid)
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_HEARTBEAT,
                         [this](std::unique_ptr<std::any> dp) -> BVStatus {
-
                         // unpack hid
                         int _hid;
                         try
@@ -357,19 +361,15 @@ hid(_hid)
                                     << e.what() << std::endl;
                             return BVStatus::BVSTATUS_FATAL_ERROR;
                         }
-
-                        SendMessage(BVMessage(
-                            BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK, 
-                                std::make_unique<std::any>(
-                                    std::make_any<int>(_hid))));
-
+                        if (this->hid == _hid)
+                        {
+                            SendMessage(BVMessage(
+                                BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK, 
+                                    std::make_unique<std::any>(
+                                        std::make_any<int>(_hid))));
+                        }
                         return BVStatus::BVSTATUS_OK;
                     });
-}
-
-void TestHeartbeatListenerComponent::StartListening(void)
-{
-
 }
 
 void TestHeartbeatListenerComponent::Setup(void)

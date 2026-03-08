@@ -160,12 +160,13 @@ public:
     BVStatus OnPause(std::unique_ptr<std::any>) override;
 };
 
-// Listener to BVEVENTTYPE_TEST_HOLLOW_HEARTBEAT
+// Listener to BVEVENTTYPE_TEST_HEARTBEAT
 // (Consumer)
+// Its role is to send ACK/NACK upon receiving BVEVENTTYPE_TEST_HEARTBEAT
+// with an HID corresponding to the one, that TestHeartbeatListenerComponent is listening to.
 class TestHeartbeatListenerComponent : public BVComponent
 {
 private:
-    std::thread worker_thread;
     int hid; // listens for hearbeat with this hid
 
 public:
@@ -176,12 +177,11 @@ public:
     ~TestHeartbeatListenerComponent() override
     {}
 
-    void StartListening(void);
     void Setup(void);
-    void JoinWorkerThread(void)
-    {
-        this->worker_thread.join();
-    }
+    // void JoinWorkerThread(void)
+    // {
+    //     this->worker_thread.join();
+    // }
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;

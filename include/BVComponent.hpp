@@ -42,28 +42,30 @@ private:
         // If there's a message, Dispatch a handler
         while (isListeningToMail)
         {
-            if (!inMailBox_p->empty())
+            std::shared_ptr<BVMessage> msg = inMailBox_p->wait_and_pop();
+            try
             {
-                std::shared_ptr<BVMessage> msg = inMailBox_p->wait_and_pop();
-                try
-                {
-                    callback_m.at(msg->event_t);
-                }
-                catch(const std::out_of_range& ex)
-                {
-                    std::cerr << "[BVComponent]::ListenToMail, mailbox_thread for " 
-                              << " out_of_range::what(): " << ex.what() << std::endl;
-                    const std::string err_s("No callback to handle event for Subscriber ID: ", id);
-                    throw std::runtime_error(err_s);
-                }
-                const BVStatus callback_status = callback_m[msg->event_t](std::move(msg->data_p));
-                if (callback_status != BVStatus::BVSTATUS_OK) 
-                {
-                    const std::string err_s("Callback failed with Subscriber ID: " + std::to_string(id));
-                    throw std::runtime_error(err_s);
-                }
+                callback_m.at(msg->event_t);
+            }
+            catch(const std::out_of_range& ex)
+            {
+                std::cerr << "[BVComponent]::ListenToMail, mailbox_thread for " 
+                            << " out_of_range::what(): " << ex.what() << std::endl;
+                const std::string err_s("No callback to handle event for Subscriber ID: ", id);
+                throw std::runtime_error(err_s);
+            }
+            const BVStatus callback_status = callback_m[msg->event_t](std::move(msg->data_p));
+            if (callback_status != BVStatus::BVSTATUS_OK) 
+            {
+                const std::string err_s("Callback failed with Subscriber ID: " + std::to_string(id));
+                throw std::runtime_error(err_s);
             }
             // if shutdown: isListeningToMail = false -> main thread will join
+            if (msg->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL || 
+                msg->event_t == BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN) // || or other
+            {
+                return;
+            }
         }
     }
 

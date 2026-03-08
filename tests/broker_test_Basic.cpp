@@ -322,18 +322,20 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
 
     // wait for tc Component to have ack
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
-    // std::this_thread::sleep_for(std::chrono::seconds(300));
     ASSERT_EQ(BVStatus::BVSTATUS_OK, tcComponent.CheckAck()); 
 
     // send a terminate message
     inMailBox_p->push(
         BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});
 
+    // What if the mailbox thread starts and joins the worker thread?
+    // It is shutdown first. Then, the worker thread stops.
+
     // join all
-    tc.TryJoinMailBoxThread();
-    tcl.TryJoinMailBoxThread();
+    tcComponent.TryJoinMailBoxThread();
+    tc.TryJoinMailBoxThread(); // please check if messages are really copied or just moved! how's the broadcast doing?
     tc.JoinWorkerThread();
-    tcl.JoinWorkerThread();
+    tcl.TryJoinMailBoxThread();
     broker_p->TryJoinWorkerThread();
 }
 
