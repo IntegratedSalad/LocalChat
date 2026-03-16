@@ -201,6 +201,11 @@ public:
         return ack ? BVStatus::BVSTATUS_OK : BVStatus::BVSTATUS_NOK;
     }
 
+    BVStatus ResetAck(void)
+    {
+        this->ack = false;
+    }
+
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;

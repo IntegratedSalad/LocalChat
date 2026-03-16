@@ -50,7 +50,9 @@ private:
             catch(const std::out_of_range& ex)
             {
                 std::cerr << "[BVComponent]::ListenToMail, mailbox_thread for " 
-                            << " out_of_range::what(): " << ex.what() << std::endl;
+                            << "out_of_range::what(): " << ex.what() << std::endl;
+                std::cerr << "[BVComponent]::ListenToMail, probably no handler for a message!"
+                            << std::endl;
                 const std::string err_s("No callback to handle event for Subscriber ID: ", id);
                 throw std::runtime_error(err_s);
             }

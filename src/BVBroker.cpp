@@ -97,6 +97,8 @@ BVStatus BVBroker::Attach(BVComponent& component)
     return BVStatus::BVSTATUS_OK;
 }
 
+// This should be done ALWAYS after terminating the component
+// It doesn't make sense that we detach a living component (we stop routing messages to it)
 BVStatus BVBroker::Detach(const SubscriberID sid)
 {
     auto it = mailbox_m.find(sid);

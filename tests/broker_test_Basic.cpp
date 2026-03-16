@@ -273,7 +273,7 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
                                 0,
                                 200};
     TestHeartbeatListenerComponent tcl{std::make_shared<threadsafe_queue<BVMessage>>(),
-                                       std::make_shared<threadsafe_queue<BVMessage>>(), // does inMailBox need to be shared?
+                                       std::make_shared<threadsafe_queue<BVMessage>>(),
                                        0};
     TCComponent tcComponent{std::make_shared<threadsafe_queue<BVMessage>>(),
                             std::make_shared<threadsafe_queue<BVMessage>>()};
@@ -389,12 +389,90 @@ TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterUnsubscribing)
     broker_p->TryJoinWorkerThread();
 }
 
+// This test doesn't make sense, because we will not Detach 
+
 TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterDetaching)
 {
+    // 1. Attach Component
+    // 2. Subscribe to a message type
+    // 3. Route - verify successful routing
+    // 4. Detach
+    // 5. Route - verify message not being routed
+    TCComponent tcComponent{std::make_shared<threadsafe_queue<BVMessage>>(),
+                            std::make_shared<threadsafe_queue<BVMessage>>()};
 
+    BVStatus attachStatusTcComponent = broker_p->Attach(tcComponent);
+    BVStatus subStatus1 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    BVStatus subStatus2 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_START);
+    BVStatus subStatus3 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE);
+    BVStatus subStatus4 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESUME);
+    BVStatus subStatus5 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART);
+    BVStatus subStatus6 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK);
+    BVStatus subStatus7 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    
+    ASSERT_EQ(BVStatus::BVSTATUS_NOK, tcComponent.CheckAck());
+
+    broker_p->LaunchWorkerThread();
+    tcComponent.StartListeningOnMailbox();
+    
+    std::shared_ptr<BVMessage> msg_p = 
+        std::make_shared<BVMessage>(
+            BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK, nullptr);
+
+    broker_p->GetInMailBoxP()->push(msg_p);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // wait a bit
+    ASSERT_EQ(BVStatus::BVSTATUS_OK, tcComponent.CheckAck()); // confirm working
+
+    tcComponent.ResetAck();
+    ASSERT_EQ(BVStatus::BVSTATUS_NOK, tcComponent.CheckAck());
+
+    // Request shutdown IMPORTANT! Detaching is ALWAYS after shutdown.
+    // It doesn't make sense that we detach a living component (we stop routing messages to it)
+    // Although TCComponent doesn't have any worker threads, if there are present - they should be joined before detaching.
+    std::shared_ptr<BVMessage> msg0_p = 
+        std::make_shared<BVMessage>(
+            BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN, nullptr); // this will stop TCComponent listening on mailbox
+    broker_p->GetInMailBoxP()->push(msg0_p);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // wait a bit
+
+    // join TCComponent!
+    tcComponent.TryJoinMailBoxThread();
+
+    // Detach
+    BVStatus dstatus = broker_p->Detach(tcComponent.GetSubscriberId());
+    ASSERT_EQ(dstatus, BVStatus::BVSTATUS_OK);
+
+    // Send message again
+    std::shared_ptr<BVMessage> msg1_p = 
+        std::make_shared<BVMessage>(
+            BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK, nullptr);
+
+    broker_p->GetInMailBoxP()->push(msg1_p);
+    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // wait a bit
+    ASSERT_EQ(BVStatus::BVSTATUS_NOK, tcComponent.CheckAck());
+
+    // Send termination message
+    std::shared_ptr<BVMessage> tmsg_p = 
+        std::make_shared<BVMessage>(
+            BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr);
+    broker_p->GetInMailBoxP()->push(tmsg_p);
+
+    // join broker
+    broker_p->TryJoinWorkerThread();
 }
 
-TEST_F(BrokerBasicFixture, CheckReceivingMessageNotSubscribedTo)
-{
+// TEST_F(BrokerBasicFixture, CheckReceivingMessageNotSubscribedTo)
+// {
 
-}
+// }
+
+// TEST_F(BrokerBasicFixture, CheckComponentBeingDetachedMidAction)
+// {
+    // 1. Attach and Subscribe components:
+    // 1a. TestHeartbeatComponent
+    // 1b. TestHeartbeatListenerComponent
+    // 1c. TCComponent
+    //     These will perform operations in CheckBasicRouring for X times.
+    // 2.  After X times, detach TestHeartbeatListenerComponent
+    // 3. Verify no fault
+// }

@@ -401,19 +401,19 @@ TCComponent::TCComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                          std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
 BVComponent(_outMbx, _inMbx)
 {
-    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_START,
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_START,
                      std::bind(&TCComponent::OnStart, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_PAUSE, 
                      std::bind(&TCComponent::OnPause, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
                      std::bind(&TCComponent::OnShutdown, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_SHUTDOWN,
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN,
                      std::bind(&TCComponent::OnShutdown, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+    RegisterCallback(BVEventType::BVEVENTTYPE_TEST_REQUEST_RESTART,
                      std::bind(&TCComponent::OnRestart, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK,
