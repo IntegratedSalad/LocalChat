@@ -40,6 +40,7 @@ public:
     BVBroker(const BVBroker& other) = delete;
     BVBroker& operator=(const BVBroker& other) = delete;
 
+    // Get inMailBox_p on which the broker listens to incoming messages from components
     std::shared_ptr<threadsafe_queue<BVMessage>> GetInMailBoxP(void)
     {
         return this->inMailBox_p;

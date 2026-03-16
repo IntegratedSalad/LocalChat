@@ -310,13 +310,12 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
     BVStatus subStatus19 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK);
     BVStatus subStatus20 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
 
-    // ASSERT_EQ all above
+    // TODO: ASSERT_EQ all above
 
+    // start all
     broker_p->LaunchWorkerThread();
-
     tc.StartListeningOnMailbox();
     tc.LaunchWorkerThread();
-
     tcl.StartListeningOnMailbox();
     tcComponent.StartListeningOnMailbox();
 
@@ -326,27 +325,68 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
 
     // send a terminate message
     inMailBox_p->push(
-        BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});
+        BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});  // please check if messages are really copied or just moved! how's the broadcast doing?
 
-    // What if the mailbox thread starts and joins the worker thread?
+    // IMPORTANT TODO: What if the mailbox thread starts and joins the worker thread?
     // It is shutdown first. Then, the worker thread stops.
+
+    // TODO: STANDARDIZE SHUTDOWN AND STARTUP PROCEDURE - At least try to summarize what needs to be done no matter the implementation
 
     // join all
     tcComponent.TryJoinMailBoxThread();
-    tc.TryJoinMailBoxThread(); // please check if messages are really copied or just moved! how's the broadcast doing?
+    tc.TryJoinMailBoxThread();
     tc.JoinWorkerThread();
     tcl.TryJoinMailBoxThread();
     broker_p->TryJoinWorkerThread();
 }
 
-TEST_F(BrokerBasicFixture, CheckTheSameMessageBeingDeliveredToMultipleSubscribers)
-{
-
-}
+// This is checked when sending a terminate message
+// TEST_F(BrokerBasicFixture, CheckTheSameMessageBeingDeliveredToMultipleSubscribers)
+// {
+//     // Utilize multiple TestHeartbeatComponent and TestHeartbeatListenerComponent
+// }
 
 TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterUnsubscribing)
 {
+    TCComponent tcComponent{std::make_shared<threadsafe_queue<BVMessage>>(),
+                            std::make_shared<threadsafe_queue<BVMessage>>()};
+    
+    BVStatus attachStatusTcComponent = broker_p->Attach(tcComponent);
+    ASSERT_EQ(attachStatusTcComponent, BVStatus::BVSTATUS_OK);
 
+    BVStatus subStatus = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK);
+    BVStatus subStatus14 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN);
+    BVStatus subStatus20 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    ASSERT_EQ(subStatus, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(BVStatus::BVSTATUS_NOK, tcComponent.CheckAck());
+
+    // start all
+    broker_p->LaunchWorkerThread();
+    tcComponent.StartListeningOnMailbox();
+
+    // unsubscribe
+    BVStatus unSubStatus = broker_p->Unsubscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK);
+    ASSERT_EQ(unSubStatus, BVStatus::BVSTATUS_OK);
+
+    // send heartbeat_ack - route manually
+    std::shared_ptr<BVMessage> msg_p = 
+        std::make_shared<BVMessage>(
+            BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK, nullptr);
+    broker_p->GetInMailBoxP()->push(msg_p);
+    std::this_thread::sleep_for(std::chrono::milliseconds(500)); // wait a bit
+
+    // verify nothing's changed
+    ASSERT_EQ(BVStatus::BVSTATUS_NOK, tcComponent.CheckAck());
+
+    // Send termination message
+    std::shared_ptr<BVMessage> tmsg_p = 
+        std::make_shared<BVMessage>(
+            BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr);
+    broker_p->GetInMailBoxP()->push(tmsg_p);
+
+    // join all
+    tcComponent.TryJoinMailBoxThread();
+    broker_p->TryJoinWorkerThread();
 }
 
 TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterDetaching)

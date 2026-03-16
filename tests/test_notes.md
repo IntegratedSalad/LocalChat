@@ -8,12 +8,28 @@ to check if they're behaving in an expected way.
 ## Model
 Mocks strip down the Components of their I/O tasks (querying the mdns daemon, polling the avahi loop or UI reading from stdin), and simulate their behavior to be tested for concrete execution flow.
 
+## Mocks
+MockDiscovery
+MockApp
+
+## Helper Components
+TestHeartbeatComponent
+TestHeartbeatListenerComponent
+TCComponent
+
 ## Setup tests
 Setup tests are carried out in component tests
 
-### Component
-#### Discovery
-TODO: Describe each tests
+## Component Tests
+
+### Simulating BVService
+TODO: Needed? as Service is just essentialy a flag.
+
+### Simulating BVDiscovery
+Done. MockDiscovery
+
+### Simulating BVApp
+Needed, will be tested in Communication test
 
 ### Broker
 maybe broker_test_Basic in which we test:
@@ -24,33 +40,26 @@ maybe broker_test_Basic in which we test:
 5. Subscribing to a collection of event types
 6. Unsubscribing from a collection of event types
 
-NEEDED?
-## Simulating Component Behaviour (Behavioral tests)
-Simulate receiving some event amidst some action.
-Simulate without Broker.
-
-### Simulating BVService
-
-### Simulating BVDiscovery
-
-### Simulating BVApp
-NEEDED?
-
 ## Communication tests (One Component / Multiple Components)
 ### Scenarios
 We need to test scenarios that are possible and their suspected outcome.
-This is utilized with a Broker (TODO: needs to be tested first as a standalone object).
+This is utilized with a Broker, which needs to be tested first.
 
 #### Discovery and App
+This is a very important set of tests.
+This integrates two crucial Components and represents them as Mocks,
+and tests it with the Broker working.
+
 For example App requests Shutdown/Restart when Discovery is continuously working.
 App updates its list of the services
 
 ### Discovery and App and Service
+TODO: Needed? as Service is just essentialy a flag.
+TODO: Check if Avahi model requires Service to be put on another thread.
 
 ## Validation tests?
 Check if the Component has subscribed to one event, only this event is passed to it and handled by it!
 So Subscribe() to event and evoke many many other events and this specific. Only this specific should be forwarded to the susbcriber.
-
 
 ## System tests
 They should check if flow of the application is working:
@@ -64,7 +73,9 @@ They should check if parts of the system are working as intended:
 - Pushing results to queue and consuming them
 -
 
-## Stability tests?
+## Routing performance tests?
+Test Components do something with a strict timing. Heartbeat must be acked within a short window or something
+
 
 ## Live
 # VM

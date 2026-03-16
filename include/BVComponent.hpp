@@ -62,7 +62,7 @@ private:
             }
             // if shutdown: isListeningToMail = false -> main thread will join
             if (msg->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL || 
-                msg->event_t == BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN) // || or other
+                msg->event_t == BVEventType::BVEVENTTYPE_TEST_REQUEST_SHUTDOWN) // !! TODO: || or other
             {
                 return;
             }
