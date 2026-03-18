@@ -95,12 +95,7 @@ int main(int argc, char** argv)
     // Create a discovery object, that periodically performs DNS-SD functionality.
     std::shared_ptr<const BVService_Bonjour> service_p =
         std::make_shared<const BVService_Bonjour>(service);
-    BVDiscovery_Bonjour discovery{service.GetHostData(),
-                                  discoveryQueueMutex,
-                                  ioContext,
-                                  discoveryQueue_p,
-                                  discoveryQueueCV,
-                                  isDiscoveryQueueReady}; // TODO: Pass messageQueue
+    BVDiscovery_Bonjour discovery{service.GetHostData()};
 #endif
 #if __linux__
     auto data = service.TransferClient();

@@ -1,19 +1,7 @@
 #include "BVDiscovery_Bonjour.hpp"
 
-BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceHostData _hostData,
-                                         std::mutex& _discoveryQueueMutex,
-                                         boost::asio::io_context& _ioContext,
-                                         std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                                         std::condition_variable& _discoveryQueueCV,
-                                         bool& _isDiscoveryQueueReady) :
-    ioContext(_ioContext),
-    discoveryTimer(_ioContext),
-    BVDiscovery(_hostData, 
-                _discoveryQueueMutex,
-                _discoveryQueue,
-                _discoveryQueueCV,
-                _isDiscoveryQueueReady)
-
+BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceHostData _hostData) :
+BVDiscovery(_hostData)
 {
     this->dnsRef = nullptr;
 }
@@ -84,7 +72,7 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
         return BVStatus::BVSTATUS_NOK; // setup a flag maybe?
     }
 
-    std::cout << "timer scheduled" << std::endl;
+    // std::cout << "timer scheduled" << std::endl;
 
     // TODO: How to stop this?
 
@@ -99,14 +87,14 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     // returns, and make this as std::list and send.
     // App would just implement a callback that would copy the contents into their list
 
-    std::unique_lock lk(this->GetDiscoveryQueueMutex());
-    this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
+    // std::unique_lock lk(this->GetDiscoveryQueueMutex());
+    // this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
 
-    this->PushBrowsedServicesToQueue(); // critical section
+    // this->PushBrowsedServicesToQueue(); // critical section
 
-    this->SetIsDiscoveryQueueReady(true);
-    lk.unlock();
-    this->GetDiscoveryQueueCV().notify_one();
+    // this->SetIsDiscoveryQueueReady(true);
+    // lk.unlock();
+    // this->GetDiscoveryQueueCV().notify_one();
     // We could send a message to the thread now.
     // Upon receiving the message, the application could consume the queue and update its data.
 
@@ -114,15 +102,15 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     LinkedList_str_ClearList(this->GetLinkedList_p());
 
     // if active => maybe check the message queue
-    this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
+    // this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
     // Why are we waiting? just put another async task, it will block at DNSServiceProcessResult
     // We honestly can get rid of the ASIO here.
     // Although, it is very easily stopped, by stopping the ioContext.
     // This could be a while (isBrowsingActive) ...
-    this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
-    {
-        this->ProcessDNSServiceBrowseResult();
-    });
+    // this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
+    // {
+    //     this->ProcessDNSServiceBrowseResult();
+    // });
 
     // -- Put this into function --
 
@@ -135,13 +123,13 @@ void BVDiscovery_Bonjour::run()
     this->CreateConnectionContext();
 
     std::cout << "timer scheduled" << std::endl;
-    this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
-    this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
-    {
-        this->ProcessDNSServiceBrowseResult();
-    });
+    // this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
+    // this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
+    // {
+    //     this->ProcessDNSServiceBrowseResult();
+    // });
 
-    this->ioContext.run();
+    // this->ioContext.run();
 
     // Define a timer (5s)
     // Schedule this timer over and over while performing Discovery

@@ -34,15 +34,7 @@ private:
     void Setup(void) override;
     void run() override;
 
-    boost::asio::steady_timer discoveryTimer;
-    boost::asio::io_context& ioContext;
-
 public:
-    BVDiscovery_Bonjour(const BVServiceHostData _hostData,
-                        std::mutex& _discoveryQueueMutex,
-                        boost::asio::io_context& _ioContext,
-                        std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                        std::condition_variable& _discoveryQueueCV,
-                        bool& _isDiscoveryQueueReady);
+    BVDiscovery_Bonjour(const BVServiceHostData _hostData);
     ~BVDiscovery_Bonjour() override;
 };

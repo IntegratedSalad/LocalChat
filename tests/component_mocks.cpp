@@ -2,20 +2,9 @@
 #include <any>
 
 MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
-                std::mutex& _discoveryQueueMutex,
-                boost::asio::io_context& _ioContext,
-                std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                std::condition_variable& _discoveryQueueCV,
-                bool& _isDiscoveryQueueReady,
-                std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
-                std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
-    ioContext(_ioContext),
-    discoveryTimer(_ioContext),
-    BVDiscovery(_hostData, 
-                _discoveryQueueMutex,
-                _discoveryQueue,
-                _discoveryQueueCV,
-                _isDiscoveryQueueReady),
+                             std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                             std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+    BVDiscovery(_hostData),
     BVComponent(_outMbx, _inMbx)
 {
     // // RegisterCallbacks for interesting events to Discovery

@@ -11,15 +11,6 @@ protected:
     std::shared_ptr<threadsafe_queue<BVMessage>> outMailBox_p; // Component writes to it
     std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p; // Component reads from it
 
-    // not needed
-    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
-    std::mutex discoveryQueueMutex;
-    std::mutex messageQueueMutex;
-    std::condition_variable discoveryQueueCV;
-    boost::asio::io_context ioContext;
-    bool isDiscoveryQueueReady = false;
-    // not needed
-
     std::thread worker_thread; // thread for 'business' Discovery logic. Probably should be as a member function in Discovery
     
     std::unique_ptr<MockDiscovery> discovery_mock_p;
@@ -27,7 +18,6 @@ protected:
     void SetUp() override {
         inMailBox_p = std::make_shared<threadsafe_queue<BVMessage>>();
         outMailBox_p = std::make_shared<threadsafe_queue<BVMessage>>();
-        discoveryQueue_p = std::make_shared<std::queue<BVServiceBrowseInstance>>();
 
         BVServiceHostData hostDataMock{.port = PORT,
                                         .domain = ".local",
@@ -35,11 +25,6 @@ protected:
                                         .regtype = "_localchathost._tcp"};
         discovery_mock_p = 
             std::make_unique<MockDiscovery>(hostDataMock,
-                                            discoveryQueueMutex,
-                                            ioContext, // to delete
-                                            discoveryQueue_p, // to delete
-                                            discoveryQueueCV, // to delete
-                                            isDiscoveryQueueReady, // to delete
                                             outMailBox_p,
                                             inMailBox_p);
     }
@@ -56,7 +41,6 @@ TEST_F(DiscoveryMockBasicFixture, CheckInit)
 {   
     ASSERT_NE(outMailBox_p, nullptr);
     ASSERT_NE(inMailBox_p, nullptr);
-    ASSERT_NE(discoveryQueue_p, nullptr);
     ASSERT_NE(discovery_mock_p, nullptr);
     ASSERT_EQ(discovery_mock_p->GetIsconnectionContextAlive(), true);
 }

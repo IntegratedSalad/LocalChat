@@ -18,16 +18,6 @@ private:
 
     const BVServiceHostData hostData; // for service data
 
-    // ---
-    // We can get rid of the manual synchronization of the queue and use threadsafequeue
-    // We can also not use queue to hold discovery results in a queue - we can send
-    // list in a message and let the consumer deal with handling it.   
-    std::mutex& discoveryQueueMutex;
-    std::condition_variable& discoveryQueueCV;
-    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p;
-    bool& isDiscoveryQueueReady;
-    // ---
-
     virtual void CreateConnectionContext(void) = 0; // private member function which actually starts
     // void DestroyConnectionContext <- TODO:
     virtual void Setup(void) = 0;
@@ -39,27 +29,26 @@ private:
     // std::thread worker_thread?
 
 protected:
-    [[deprecated]] void PushBrowsedServicesToQueue(void)
-    {
-        for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
-            lle_p != NULL;)
-        {
-            BVServiceBrowseInstance bI; // put on heap? No, STL containers have elements allocated on heap.
-            std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
-            std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
-            std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
+    // [[deprecated]] void PushBrowsedServicesToQueue(void)
+    // {
+    //     for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
+    //         lle_p != NULL;)
+    //     {
+    //         BVServiceBrowseInstance bI; // put on heap? No, STL containers have elements allocated on heap.
+    //         std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
+    //         std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
+    //         std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
 
-            regType.erase(std::remove(regType.begin(), regType.end(), ' '), regType.end());
-            replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), ' '), replyDomain.end());
-            serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), ' '), serviceName.end());
+    //         regType.erase(std::remove(regType.begin(), regType.end(), ' '), regType.end());
+    //         replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), ' '), replyDomain.end());
+    //         serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), ' '), serviceName.end());
 
-            bI.regType = regType;
-            bI.replyDomain = replyDomain;
-            bI.serviceName = serviceName;
-            this->discoveryQueue_p->push(bI);
-            lle_p = lle_p->next_p;
-        }
-    }
+    //         bI.regType = regType;
+    //         bI.replyDomain = replyDomain;
+    //         bI.serviceName = serviceName;
+    //         lle_p = lle_p->next_p;
+    //     }
+    // }
 
     std::list<BVServiceBrowseInstance> ReturnListFromBrowseResults(void)
     {
@@ -89,16 +78,8 @@ protected:
     }
 
 public:
-    BVDiscovery(const BVServiceHostData _hostData,
-                std::mutex& _discoveryQueueMutex,
-                std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                std::condition_variable& _discoveryQueueCV,
-                bool& _isDiscoveryQueueReady) :
-    hostData(_hostData),
-    discoveryQueueMutex(_discoveryQueueMutex),
-    discoveryQueue_p(_discoveryQueue),
-    discoveryQueueCV(_discoveryQueueCV),
-    isDiscoveryQueueReady(_isDiscoveryQueueReady) 
+    BVDiscovery(const BVServiceHostData _hostData) :
+    hostData(_hostData)
     {
         this->c_ll_p = LinkedList_str_Constructor(NULL);
     }
@@ -121,21 +102,6 @@ public:
         this->run();
     }
 
-    std::mutex& GetDiscoveryQueueMutex(void)
-    {
-        return this->discoveryQueueMutex;
-    }
-
-    bool& GetIsDiscoveryQueueReady(void)
-    {
-        return this->isDiscoveryQueueReady;
-    }
-
-    void SetIsDiscoveryQueueReady(const bool& f)
-    {
-        this->isDiscoveryQueueReady = f;
-    }
-
     bool GetIsBrowsingActive(void)
     {
         return this->isBrowsingActive;
@@ -144,11 +110,6 @@ public:
     void SetIsBrowsingActive(const bool f)
     {
         this->isBrowsingActive = f;
-    }
-
-    std::condition_variable& GetDiscoveryQueueCV(void)
-    {
-        return this->discoveryQueueCV;
     }
 
     BVServiceHostData GetHostData(void) const
