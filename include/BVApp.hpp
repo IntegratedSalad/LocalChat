@@ -31,8 +31,8 @@ class BVApp
 {
 private:
     std::atomic<bool> isRunning = true;
-    BVActor actor;
-    std::thread listenerThread;
+    BVActor actor; // ?
+    std::thread worker_thread;
 
     // checking the serviceQueue
     // This can be implemented separately from any other
@@ -45,82 +45,76 @@ private:
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
-    std::mutex serviceVectorMutex;
-    // event queue?
+    // std::mutex serviceVectorMutex;
+    // // event queue?
 
-    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue;
-    std::mutex& discoveryQueueMutex;
-    std::condition_variable& discoveryQueueCV;
-    bool& isDiscoveryQueueReady;
+    // std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue;
+    // std::mutex& discoveryQueueMutex;
+    // std::condition_variable& discoveryQueueCV;
+    // bool& isDiscoveryQueueReady;
 
-    std::queue<BVAppEvent_e> eventQueue;
-    std::mutex eventQueueMutex;
-    std::condition_variable eventQueueCV;
+    // std::queue<BVAppEvent_e> eventQueue;
+    // std::mutex eventQueueMutex;
+    // std::condition_variable eventQueueCV;
 
+    // I think this is not needed.
+    // Upon receiving message, the service vector will be updated
+    // Either there will be a new service, or someone will close the application, so
     virtual void ListenForUpcomingServices(void)
     {
-        while (this->isRunning)
-        {
-            std::unique_lock lk(this->discoveryQueueMutex);
-            discoveryQueueCV.wait(lk, [this]{return this->isDiscoveryQueueReady;}); // maybe only check on event from discovery component?
+        // while (this->isRunning)
+        // {
+        //     std::unique_lock lk(this->discoveryQueueMutex);
+        //     discoveryQueueCV.wait(lk, [this]{return this->isDiscoveryQueueReady;}); // maybe only check on event from discovery component?
 
-            // question is... will the Discovery_Bonjour component modify isDiscoveryQueueReady boolean?
+        //     // question is... will the Discovery_Bonjour component modify isDiscoveryQueueReady boolean?
 
-            // funny thing -> we are now blocking the discovery component by app.
-            // if app decides to block the serviceVectorMutex and doesn't release quickly, now discoveryQueueMutex is locked too.
-            // if discovery component tries to update queue now, it cannot.
-            // Also - when shutting down we have to make sure that neither of the threads
-            // lock for eternity.
-            // Instead of locking next time we can notify some different queue (send a message)
-            std::unique_lock vlk(this->serviceVectorMutex);
-            while (!discoveryQueue->empty())
-            {
-                BVServiceBrowseInstance bI = discoveryQueue->front();
-                if (std::find(this->serviceV.begin(), this->serviceV.end(), bI) == serviceV.end())
-                {
-                    this->serviceV.push_back(bI);
-                }
-                discoveryQueue->pop(); // consume everything
-            }
+        //     // funny thing -> we are now blocking the discovery component by app.
+        //     // if app decides to block the serviceVectorMutex and doesn't release quickly, now discoveryQueueMutex is locked too.
+        //     // if discovery component tries to update queue now, it cannot.
+        //     // Also - when shutting down we have to make sure that neither of the threads
+        //     // lock for eternity.
+        //     // Instead of locking next time we can notify some different queue (send a message)
+        //     std::unique_lock vlk(this->serviceVectorMutex);
+        //     while (!discoveryQueue->empty())
+        //     {
+        //         BVServiceBrowseInstance bI = discoveryQueue->front();
+        //         if (std::find(this->serviceV.begin(), this->serviceV.end(), bI) == serviceV.end())
+        //         {
+        //             this->serviceV.push_back(bI);
+        //         }
+        //         discoveryQueue->pop(); // consume everything
+        //     }
 
-            vlk.unlock(); // main thread can now utilize vector
-            this->isDiscoveryQueueReady = false; // meaning - it's not ready, nothing should be in there, queue empty
-            lk.unlock();
-            this->discoveryQueueCV.notify_one(); // now Discovery component can enter critical section
-            this->HandleServicesDiscoveredUpdateEvent();
+        //     vlk.unlock(); // main thread can now utilize vector
+        //     this->isDiscoveryQueueReady = false; // meaning - it's not ready, nothing should be in there, queue empty
+        //     lk.unlock();
+        //     this->discoveryQueueCV.notify_one(); // now Discovery component can enter critical section
+        //     this->HandleServicesDiscoveredUpdateEvent();
 
-            // TODO: We have now an implementation of a thread safe queue.
-            // Maybe it can solve convoluted logic here?
-        }
-    }
-
-    void StartListenerThread(void)
-    {
-        this->listenerThread = std::thread([this](){this->ListenForUpcomingServices();});
+        //     // TODO: We have now an implementation of a thread safe queue.
+        //     // Maybe it can solve convoluted logic here?
+        // }
     }
 
 public:
-    BVApp(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-          std::mutex& _discoveryQueueMutex,
-          std::condition_variable& _discoveryQueueCV,
-          bool& _isDiscoveryQueueReady) :
-          discoveryQueue(_discoveryQueue),
-          discoveryQueueMutex(_discoveryQueueMutex),
-          discoveryQueueCV(_discoveryQueueCV),
-          isDiscoveryQueueReady(_isDiscoveryQueueReady)
-          {};
+    BVApp()
+    {};
 
     virtual ~BVApp()
+    {}
+
+    void StartWorkerThread(void)
     {
-        this->listenerThread.join();
+        this->worker_thread = std::thread([this](){this->Run();});
     }
 
-    virtual void Init(void) = 0;
-    virtual void Run(void) = 0;
-    virtual void Quit(void) = 0;
+    virtual void Init(void) = 0; // init procedure
+    virtual void Run(void) = 0; // start procedure
+    virtual void Quit(void) = 0; // shutdown procedure
 
-    virtual void HandleServicesDiscoveredUpdateEvent(void) = 0;
-    virtual void HandleUserKeyboardInput(void) = 0;
+    // virtual void HandleServicesDiscoveredUpdateEvent(void) = 0;
+    // virtual void HandleUserKeyboardInput(void) = 0;
 
     const std::atomic<bool>& GetIsRunning(void)
     {

@@ -108,10 +108,7 @@ int main(int argc, char** argv)
                                 service.GetHostData(),
                                 simple_poll_p}; // TODO: Pass messageQueue
 #endif
-    BVApp_ConsoleClient_Bonjour consoleClient{discoveryQueue_p,
-                                              discoveryQueueMutex,
-                                              discoveryQueueCV,
-                                              isDiscoveryQueueReady}; // TODO: Pass messageQueue
+    BVApp_ConsoleClient_Bonjour consoleClient{}; // TODO: Implement CLI
     
     std::thread td([&](){
         discovery();

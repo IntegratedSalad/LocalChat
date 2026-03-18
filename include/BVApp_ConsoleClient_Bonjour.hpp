@@ -38,14 +38,10 @@ class BVApp_ConsoleClient_Bonjour : private BVApp
 {
 private:
     std::mutex stdoutMutex; // mutex for internal worker threads, in this case printing.
-    std::thread stdinThread;
+    std::thread stdinThread; // worker thread? I don't think this is needed
 
 public:
-    BVApp_ConsoleClient_Bonjour(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                                std::mutex& _discoveryQueueMutex,
-                                std::condition_variable& _discoveryQueueCV,
-                                bool& _isDiscoveryQueueReady) :
-    BVApp(_discoveryQueue, _discoveryQueueMutex, _discoveryQueueCV, _isDiscoveryQueueReady)
+    BVApp_ConsoleClient_Bonjour()
     {
         this->Init();
     }
@@ -61,8 +57,8 @@ public:
     BVStatus PrintServices(void);
     void PrintAll(void);
 
-    void HandleServicesDiscoveredUpdateEvent(void) override;
-    void HandleUserKeyboardInput(void) override;
+    // void HandleServicesDiscoveredUpdateEvent(void) override;
+    // void HandleUserKeyboardInput(void) override;
 
     // -------------------------------------------------------
 

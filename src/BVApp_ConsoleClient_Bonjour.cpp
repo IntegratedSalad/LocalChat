@@ -5,7 +5,7 @@ void BVApp_ConsoleClient_Bonjour::Init(void)
 }
 void BVApp_ConsoleClient_Bonjour::Run(void)
 {
-    this->StartListenerThread();
+    // this->StartListenerThread();
     // Wow! Always make sure that you're not calling functions that lock resources
     // where they shouldn't be called
     // this->PrintAll();
@@ -43,31 +43,32 @@ void BVApp_ConsoleClient_Bonjour::PrintAll(void)
 
 BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void)
 {
-    std::lock_guard vlk(this->serviceVectorMutex);
-    BVStatus status = BVStatus::BVSTATUS_OK;
-    if (this->serviceV.size() == 0)
-    {
-        std::cout << "None available" << std::endl;
-    }
-    int i = 1;
-    for (BVServiceBrowseInstance& bI : this->serviceV)
-    {
-        std::cout << i++ << ":" << std::endl;
-        bI.print();
-        std::cout << "+-+-+-+-" << std::endl;
-    }
-    return status;
+    // TODO: Different implementation!
+    // std::lock_guard vlk(this->serviceVectorMutex);
+    // BVStatus status = BVStatus::BVSTATUS_OK;
+    // if (this->serviceV.size() == 0)
+    // {
+    //     std::cout << "None available" << std::endl;
+    // }
+    // int i = 1;
+    // for (BVServiceBrowseInstance& bI : this->serviceV)
+    // {
+    //     std::cout << i++ << ":" << std::endl;
+    //     bI.print();
+    //     std::cout << "+-+-+-+-" << std::endl;
+    // }
+    // return status;
 }
 
-void BVApp_ConsoleClient_Bonjour::HandleServicesDiscoveredUpdateEvent(void)
-{
-    this->PrintAll();
-}
+// void BVApp_ConsoleClient_Bonjour::HandleServicesDiscoveredUpdateEvent(void)
+// {
+//     this->PrintAll();
+// }
 
-void BVApp_ConsoleClient_Bonjour::HandleUserKeyboardInput(void)
-{
+// void BVApp_ConsoleClient_Bonjour::HandleUserKeyboardInput(void)
+// {
 
-}
+// }
 
 // BVStatus SendMessage(const asio::const_buffer);
 

@@ -72,16 +72,8 @@ class MockApp : public BVApp,
 private:
 
 public:
-    MockApp(std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-            std::mutex& _discoveryQueueMutex,
-            std::condition_variable& _discoveryQueueCV,
-            bool& _isDiscoveryQueueReady,
-            std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+    MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
             std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
-    BVApp(_discoveryQueue,
-            _discoveryQueueMutex,
-            _discoveryQueueCV,
-            _isDiscoveryQueueReady),
     BVComponent(_outMbx, _inMbx)
     {
     }
@@ -93,8 +85,8 @@ public:
     void Run(void) override;
     void Quit(void) override;
 
-    void HandleServicesDiscoveredUpdateEvent(void) override;
-    void HandleUserKeyboardInput(void) override;
+    // void HandleServicesDiscoveredUpdateEvent(void) override;
+    // void HandleUserKeyboardInput(void) override;
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
