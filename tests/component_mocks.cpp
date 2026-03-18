@@ -171,6 +171,7 @@ void MockDiscovery::run(void)
     while (this->GetIsBrowsingActive())
     {
         // wait 3 s - simulate waiting for daemon response
+        // TODO: maybe random interval 1-5s?
         std::this_thread::sleep_for(std::chrono::seconds(3));
 
         // replace with std::to_string

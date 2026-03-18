@@ -36,10 +36,10 @@ protected:
         discovery_mock_p = 
             std::make_unique<MockDiscovery>(hostDataMock,
                                             discoveryQueueMutex,
-                                            ioContext,
-                                            discoveryQueue_p,
-                                            discoveryQueueCV,
-                                            isDiscoveryQueueReady,
+                                            ioContext, // to delete
+                                            discoveryQueue_p, // to delete
+                                            discoveryQueueCV, // to delete
+                                            isDiscoveryQueueReady, // to delete
                                             outMailBox_p,
                                             inMailBox_p);
     }

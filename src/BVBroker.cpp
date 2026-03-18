@@ -16,6 +16,7 @@ void BVBroker::Run()
         std::shared_ptr<BVMessage> msg_p = this->inMailBox_p->wait_and_pop();
         if (!msg_p)
         {
+            // should not 
             continue;
         }
         if (msg_p->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL)
@@ -35,6 +36,7 @@ BVStatus BVBroker::Route(const std::shared_ptr<BVMessage>& msg_p)
     auto it = subs_m.find(etype);
     if (it == subs_m.end() || it->second.empty())
         return BVStatus::BVSTATUS_OK; // BVNO_SUBSCRIBERS?
+        // BVSTATUS_NOK
 
     const auto& subscribers_v = it->second; // no copy
     for (SubscriberID sid : subscribers_v)

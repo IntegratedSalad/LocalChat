@@ -14,7 +14,7 @@ class BVComponent
 private:
     using MessageHandler = std::function<BVStatus(std::unique_ptr<std::any>)>;
 
-    // This queue is shared with all components and the broker. Only to push to!
+    // This queue is shared with the broker. Only to push to!
     std::shared_ptr<threadsafe_queue<BVMessage>> outMailBox_p;
 
     // This queue is shared with the broker. Only to read from!

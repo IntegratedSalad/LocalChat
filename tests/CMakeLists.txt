@@ -78,6 +78,20 @@ target_link_libraries(
 	${Boost_LIBRARIES}
 )
 
+add_executable(
+  communication_test_Multiple_Components
+  communication_test_Multiple_Components.cpp
+  component_mocks.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
+)
+
+target_link_libraries(
+  communication_test_Multiple_Components
+  GTest::gtest_main
+  linked_list
+	${Boost_LIBRARIES}
+)
+
 # cmake -S . -B build -DUSE_ASAN=ON -> enable ASan
 
 option(USE_ASAN "Enable AddressSanitizer" OFF)

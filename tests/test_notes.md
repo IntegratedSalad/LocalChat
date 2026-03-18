@@ -55,7 +55,7 @@ App updates its list of the services
 
 ### Discovery and App and Service
 TODO: Needed? as Service is just essentialy a flag.
-TODO: Check if Avahi model requires Service to be put on another thread.
+TODO: Check if Avahi model requires Service to be put on another thread: No
 
 ## Validation tests?
 Check if the Component has subscribed to one event, only this event is passed to it and handled by it!

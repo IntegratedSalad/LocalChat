@@ -21,24 +21,23 @@
     // Test having N components trying to communicate with each other (push messages to their mailboxes)
 */
 
+// MailBoxes are NOT shared!
+// if this would be the case, components would pass every message to every component's mailbox
+// directly, not via broker.
 // std::shared_ptr<threadsafe_queue<BVMessage>> outMailBox_p; <- Component writes to it
 // std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p;  <- Component reads from it
-// BVBroker shares 
 class BrokerBasicFixture : public ::testing::Test
 {
 protected:
     std::unique_ptr<BVBroker> broker_p;
-    std::shared_ptr<threadsafe_queue<BVMessage>> inMailBox_p;
-    std::shared_ptr<threadsafe_queue<BVMessage>> outMailbox_p;
 
     void SetUp() override
     {
-        inMailBox_p = std::make_shared<threadsafe_queue<BVMessage>>();
-        outMailbox_p = std::make_shared<threadsafe_queue<BVMessage>>();
-        broker_p = std::make_unique<BVBroker>(inMailBox_p);
+        broker_p = std::make_unique<BVBroker>(std::make_shared<threadsafe_queue<BVMessage>>());
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         broker_p.reset(nullptr);
     }
 };
@@ -46,9 +45,8 @@ protected:
 TEST_F(BrokerBasicFixture, CheckInit)
 {
     ASSERT_NE(broker_p, nullptr);
-    ASSERT_NE(inMailBox_p, nullptr);
     ASSERT_NE(broker_p->GetInMailBoxP(), nullptr);
-    ASSERT_TRUE(inMailBox_p->empty());
+    ASSERT_TRUE(broker_p->GetInMailBoxP()->empty());
 }
 
 TEST_F(BrokerBasicFixture, CheckAttachingComponents)
@@ -60,28 +58,28 @@ TEST_F(BrokerBasicFixture, CheckAttachingComponents)
     int hid = 0;
     TestHeartbeatComponent tc1{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
     hid+=1;
     TestHeartbeatComponent tc2{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
     hid+=1;
     TestHeartbeatComponent tc3{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
     hid+=1;
     TestHeartbeatComponent tc4{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
@@ -112,28 +110,28 @@ TEST_F(BrokerBasicFixture, CheckDetachingComponents)
     int hid = 0;
     TestHeartbeatComponent tc1{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
     hid+=1;
     TestHeartbeatComponent tc2{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
     hid+=1;
     TestHeartbeatComponent tc3{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
     hid+=1;
     TestHeartbeatComponent tc4{std::vector<BVEventType>{},
                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                               inMailBox_p,
+                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                io_context,
                                hid,
                                200};
@@ -163,13 +161,13 @@ TEST_F(BrokerBasicFixture, CheckSubscribingToEvent)
     boost::asio::io_context io_context;
     TestHeartbeatComponent tc{std::vector<BVEventType>{},
                               std::make_shared<threadsafe_queue<BVMessage>>(),
-                              inMailBox_p,
+                              std::make_shared<threadsafe_queue<BVMessage>>(),
                               io_context,
                               0,
                               200};
     TestHeartbeatComponent tc1{std::vector<BVEventType>{},
                             std::make_shared<threadsafe_queue<BVMessage>>(),
-                            inMailBox_p,
+                            std::make_shared<threadsafe_queue<BVMessage>>(),
                             io_context,
                             0,
                             200}; // to test subscribing to the same event
@@ -231,13 +229,13 @@ TEST_F(BrokerBasicFixture, CheckUnsubscribingToEvent)
     boost::asio::io_context io_context;
     TestHeartbeatComponent tc{std::vector<BVEventType>{},
                               std::make_shared<threadsafe_queue<BVMessage>>(),
-                              inMailBox_p,
+                              std::make_shared<threadsafe_queue<BVMessage>>(),
                               io_context,
                               0,
                               200};
     TestHeartbeatComponent tc1{std::vector<BVEventType>{},
                             std::make_shared<threadsafe_queue<BVMessage>>(),
-                            inMailBox_p,
+                            std::make_shared<threadsafe_queue<BVMessage>>(),
                             io_context,
                             0,
                             200}; // to test subscribing to the same event
@@ -324,8 +322,9 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
     ASSERT_EQ(BVStatus::BVSTATUS_OK, tcComponent.CheckAck()); 
 
     // send a terminate message
-    inMailBox_p->push(
-        BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});  // please check if messages are really copied or just moved! how's the broadcast doing?
+    broker_p->GetInMailBoxP()->push(
+        BVMessage{BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr});
+    // please check if messages are really copied or just moved! how's the broadcast doing?
 
     // IMPORTANT TODO: What if the mailbox thread starts and joins the worker thread?
     // It is shutdown first. Then, the worker thread stops.
@@ -475,4 +474,6 @@ TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterDetaching)
     //     These will perform operations in CheckBasicRouring for X times.
     // 2.  After X times, detach TestHeartbeatListenerComponent
     // 3. Verify no fault
+
+    // SKIP THIS AND GO TO THE COMMUNICATION TESTS!
 // }
