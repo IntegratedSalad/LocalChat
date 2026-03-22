@@ -25,8 +25,7 @@ private:
 
     // TODO: From BVComponent, concrete implementation of BVDiscovery inherits Stop().
     // override this in implementations
-
-    // std::thread worker_thread?
+    std::thread worker_thread; // TODO: provide way to launching this thread
 
 protected:
     // [[deprecated]] void PushBrowsedServicesToQueue(void)
@@ -97,9 +96,30 @@ public:
 
     // Function that is called upon running the discovery functionality when being passed
     // as callable to a thread
+    // TODO: this is unnecessary
     void operator()(void)
     {
         this->run();
+    }
+
+    void LaunchWorkingThread(void)
+    {
+        this->worker_thread = std::thread([this] {
+            this->run();
+        });
+    }
+
+    void TryJoinWorkerThread(void)
+    {
+        if (this->worker_thread.joinable())
+        {
+            this->worker_thread.join();
+        }
+    }
+
+    std::thread& GetWorkerThread(void)
+    {
+        return this->worker_thread;
     }
 
     bool GetIsBrowsingActive(void)

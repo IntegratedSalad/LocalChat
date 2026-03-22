@@ -43,12 +43,12 @@ private:
 public:
     BVApp_ConsoleClient_Bonjour()
     {
-        this->Init();
+        // this->Init();
     }
 
-    void Init(void) override;
     void Run(void) override;
-    void Quit(void) override;
+
+    BVStatus HandlePublishedServices(std::unique_ptr<std::any> dp);
 
     BVStatus ParseAction(const std::string&);
     BVStatus SendMessage(const std::string&);

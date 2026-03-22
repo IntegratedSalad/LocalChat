@@ -70,27 +70,45 @@ class MockApp : public BVApp,
                 public BVComponent
 {
 private:
+    using TaskFunction = std::function<void(void)>;
+    // This is for delay simulation 
+    boost::asio::steady_timer announceTimer;
+    boost::asio::steady_timer pauseDiscoveryTimer;
+    // ...
+    boost::asio::io_context& ioContext;
+
+    // task queue - what will App do while running
+    // (simulate user behavior)
+    std::queue<TaskFunction> tasks_q; 
 
 public:
     MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
-            std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
-    BVComponent(_outMbx, _inMbx)
-    {
-    }
+            std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+            boost::asio::io_context& _ioContext);
 
     ~MockApp() override
     {}
-
-    void Init(void) override;
+    
+    // Constant work - put on the worker_thread
     void Run(void) override;
-    void Quit(void) override;
 
+    /* Tasks
+       Tasks are simulations of user input.
+    */  
+    // Announce registered services
+    void TaskAnnounce(void);
+    void TaskPauseDiscovery(void);
+    void TaskQuit(void);
+    // void 
+    
+    BVStatus HandlePublishedServices(std::unique_ptr<std::any>) override;
     // void HandleServicesDiscoveredUpdateEvent(void) override;
     // void HandleUserKeyboardInput(void) override;
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
 };
 
 // General, abstract Component implementation.
@@ -124,7 +142,7 @@ public:
     void LaunchWorkerThread(void);
     void StartAnnouncingHeartbeat(void); // TODO: Announce with id of the TestHeartbeatComponent
     void Beat(void);
-    void JoinWorkerThread(void)
+    void JoinWorkerThread(void) // TODO: Try join
     {
         this->worker_thread.join();
     }

@@ -42,6 +42,8 @@ private:
         // If there's a message, Dispatch a handler
         while (isListeningToMail)
         {
+            // think of a way that would force terminate a thread
+            // when hanging here
             std::shared_ptr<BVMessage> msg = inMailBox_p->wait_and_pop();
             try
             {

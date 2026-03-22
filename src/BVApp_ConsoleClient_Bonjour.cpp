@@ -1,8 +1,5 @@
 #include "BVApp_ConsoleClient_Bonjour.hpp"
 
-void BVApp_ConsoleClient_Bonjour::Init(void)
-{
-}
 void BVApp_ConsoleClient_Bonjour::Run(void)
 {
     // this->StartListenerThread();
@@ -19,10 +16,6 @@ void BVApp_ConsoleClient_Bonjour::Run(void)
         // It cannot read from this->isDiscoveryQueueReady without mutex!
         // Or other mutex => because use here doesn't concern the queue, it concerns the vector.
     }
-}
-void BVApp_ConsoleClient_Bonjour::Quit(void)
-{
-    // Also DeInit
 }
 
 // I think that any event that needs to draw something
@@ -59,6 +52,12 @@ BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void)
     // }
     // return status;
 }
+
+BVStatus BVApp_ConsoleClient_Bonjour::HandlePublishedServices(std::unique_ptr<std::any> dp)
+{
+    return BVStatus::BVSTATUS_OK;
+}
+
 
 // void BVApp_ConsoleClient_Bonjour::HandleServicesDiscoveredUpdateEvent(void)
 // {

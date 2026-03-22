@@ -330,6 +330,7 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
     // It is shutdown first. Then, the worker thread stops.
 
     // TODO: STANDARDIZE SHUTDOWN AND STARTUP PROCEDURE - At least try to summarize what needs to be done no matter the implementation
+    // TODO: These components are not detached at the end. Is this a mistake?
 
     // join all
     tcComponent.TryJoinMailBoxThread();
@@ -387,8 +388,6 @@ TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterUnsubscribing)
     tcComponent.TryJoinMailBoxThread();
     broker_p->TryJoinWorkerThread();
 }
-
-// This test doesn't make sense, because we will not Detach 
 
 TEST_F(BrokerBasicFixture, CheckMessageNotRoutedAfterDetaching)
 {

@@ -31,7 +31,7 @@ class BVApp
 {
 private:
     std::atomic<bool> isRunning = true;
-    BVActor actor; // ?
+    // BVActor actor; // ?
     std::thread worker_thread;
 
     // checking the serviceQueue
@@ -104,17 +104,29 @@ public:
     virtual ~BVApp()
     {}
 
-    void StartWorkerThread(void)
+    void LaunchWorkerThread(void)
     {
         this->worker_thread = std::thread([this](){this->Run();});
     }
 
-    virtual void Init(void) = 0; // init procedure
+    void TryJoinWorkerThread(void)
+    {
+        if (this->worker_thread.joinable())
+        {
+            this->worker_thread.join();
+        }
+    }
+
+    std::thread& GetWorkerThread(void)
+    {
+        return this->worker_thread;
+    }
+
     virtual void Run(void) = 0; // start procedure
-    virtual void Quit(void) = 0; // shutdown procedure
 
     // virtual void HandleServicesDiscoveredUpdateEvent(void) = 0;
     // virtual void HandleUserKeyboardInput(void) = 0;
+    virtual BVStatus HandlePublishedServices(std::unique_ptr<std::any>) = 0;
 
     const std::atomic<bool>& GetIsRunning(void)
     {

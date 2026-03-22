@@ -14,7 +14,7 @@ MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
     //         return BVStatus::BVSTATUS_OK;
     // }); 
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_START,
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_START,
                      std::bind(&MockDiscovery::OnStart, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
@@ -23,7 +23,7 @@ MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
     RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
                      std::bind(&MockDiscovery::OnShutdown, this, std::placeholders::_1));
 
-    RegisterCallback(BVEventType::BVEVENTTYPE_SERVICE_REQUEST_SHUTDOWN,
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN,
                      std::bind(&MockDiscovery::OnShutdown, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
@@ -145,6 +145,8 @@ void MockDiscovery::RunNTimesWithKElements(const int n, const int k) // this is 
     }
 }
 
+// TODO: Get rid of it.
+// update component_test_Discovery_Basic
 void MockDiscovery::RunContinuously(void) // this is run in the main worker thread
 {
     this->SetIsBrowsingActive(true);
@@ -155,6 +157,7 @@ void MockDiscovery::run(void)
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
 
+    this->SetIsBrowsingActive(true);
     int serviceNum = 0;
 
     while (this->GetIsBrowsingActive())
@@ -223,6 +226,87 @@ BVStatus MockDiscovery::OnShutdown(std::unique_ptr<std::any>)
 BVStatus MockDiscovery::OnRestart(std::unique_ptr<std::any>)
 {
     // clear everything and start
+}
+
+MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+        std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+        boost::asio::io_context& _ioContext) :
+    BVComponent(_outMbx, _inMbx),
+    ioContext(_ioContext),
+    announceTimer(_ioContext),
+    pauseDiscoveryTimer(_ioContext)
+{
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,
+                     std::bind(&MockApp::HandlePublishedServices, this, std::placeholders::_1));
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                    std::bind(&MockApp::OnShutdown, this, std::placeholders::_1));
+    // Maybe some messages that are announcements of failures?
+}
+
+// worker thread
+// App will announce their services 'at will',
+// and do other things.
+// This is implemented by processing the std::queue<BVEventType> tasks_q.
+
+void MockApp::Run(void)
+{
+    while (this->GetIsRunning())
+    {
+    }
+}
+
+BVStatus MockApp::HandlePublishedServices(std::unique_ptr<std::any> dp)
+{
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    if (dp == nullptr)
+    {
+        std::cerr << "Expected new services, got NULL" << std::endl;
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    BVServiceBrowseInstanceList newServicesList;
+    try
+    {
+        newServicesList = std::any_cast<BVServiceBrowseInstanceList>(*dp);    
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE callback. " 
+            << e.what() << std::endl;
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    // Update service vector.
+    // Does it need to be guarded? I think yes, because here we are modifying it.
+    // Mock client will periodically read it, but real user in the product implementation
+    // will try to read it and they might do it when this is updated here
+    for (auto& lElem : newServicesList)
+    {
+        if (!(std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
+        {
+            this->serviceV.push_back(lElem);
+        }
+    }
+}
+
+BVStatus MockApp::OnStart(std::unique_ptr<std::any> dp)
+{
+
+}
+
+BVStatus MockApp::OnShutdown(std::unique_ptr<std::any> dp)
+{
+    this->SetIsListeningToMail(false);
+    this->SetIsRunning(false);
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus MockApp::OnRestart(std::unique_ptr<std::any> dp)
+{
+    
+}
+
+BVStatus MockApp::OnPause(std::unique_ptr<std::any> dp)
+{
+
 }
 
 TestHeartbeatComponent::TestHeartbeatComponent(std::vector<BVEventType> _eventTypesOfInterest,

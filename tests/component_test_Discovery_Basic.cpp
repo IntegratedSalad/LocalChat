@@ -245,7 +245,7 @@ TEST_F(DiscoveryMockBasicFixture, CheckReceivingContinuousServiceMockDiscoveryRe
     const BVEventType expectedEventType = BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE;
 
     discovery_mock_p->StartListeningOnMailbox();
-    // Shouldn't this be started by a message? and shouldn't worker thread be in Discovery?
+    // TODO: Shouldn't this be started by a message? and shouldn't worker thread be in Discovery?
     worker_thread = std::thread([&] {
         discovery_mock_p->RunContinuously();
     });
