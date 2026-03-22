@@ -8,6 +8,7 @@
 #include "linked_list.h"
 #include "stdio.h"
 #include <boost/asio.hpp>
+#include "spdlog/spdlog.h"
 
 class MockDiscovery : public BVDiscovery, 
                       public BVComponent
@@ -79,12 +80,14 @@ private:
 
     // task queue - what will App do while running
     // (simulate user behavior)
-    std::queue<TaskFunction> tasks_q; 
+    std::queue<TaskFunction> tasks_q;
+    std::shared_ptr<spdlog::logger> fileLogger;
 
 public:
     MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
             std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
-            boost::asio::io_context& _ioContext);
+            boost::asio::io_context& _ioContext,
+            std::shared_ptr<spdlog::logger> _fileLogger);
 
     ~MockApp() override
     {}
@@ -95,11 +98,20 @@ public:
     /* Tasks
        Tasks are simulations of user input.
     */  
+
     // Announce registered services
+    // TODO: Think of utilizing a logging library spdlog
+    //       to verify announced 
     void TaskAnnounce(void);
     void TaskPauseDiscovery(void);
     void TaskQuit(void);
+    void TaskSleep(void);
     // void 
+
+    void SubmitTask(TaskFunction& f)
+    {
+        this->tasks_q.push(f);
+    }
     
     BVStatus HandlePublishedServices(std::unique_ptr<std::any>) override;
     // void HandleServicesDiscoveredUpdateEvent(void) override;
@@ -209,3 +221,31 @@ public:
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
 };
+
+// Listens for BVEVENTTYPE_TEST_APP_ANNOUNCE_SERVICES
+// class TCComponentCommunication : public BVComponent
+// {
+// private:
+//     bool ack = false;
+// public:
+//     TCComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+//                 std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
+
+//     ~TCComponent() override
+//     {}
+
+//     BVStatus CheckAck(void)
+//     {
+//         return ack ? BVStatus::BVSTATUS_OK : BVStatus::BVSTATUS_NOK;
+//     }
+
+//     BVStatus ResetAck(void)
+//     {
+//         this->ack = false;
+//     }
+
+//     BVStatus OnStart(std::unique_ptr<std::any>) override;
+//     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+//     BVStatus OnRestart(std::unique_ptr<std::any>) override;
+//     BVStatus OnPause(std::unique_ptr<std::any>) override;
+// };

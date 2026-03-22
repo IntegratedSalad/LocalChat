@@ -230,11 +230,13 @@ BVStatus MockDiscovery::OnRestart(std::unique_ptr<std::any>)
 
 MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
-        boost::asio::io_context& _ioContext) :
+        boost::asio::io_context& _ioContext,
+        std::shared_ptr<spdlog::logger> _fileLogger) :
     BVComponent(_outMbx, _inMbx),
     ioContext(_ioContext),
     announceTimer(_ioContext),
-    pauseDiscoveryTimer(_ioContext)
+    pauseDiscoveryTimer(_ioContext),
+    fileLogger(_fileLogger)
 {
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,
                      std::bind(&MockApp::HandlePublishedServices, this, std::placeholders::_1));
@@ -250,8 +252,12 @@ MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
 
 void MockApp::Run(void)
 {
-    while (this->GetIsRunning())
+    while (this->GetIsRunning() && !this->tasks_q.empty())
     {
+        // Wait a while
+        // process queue (launch a task)
+        // loop
+
     }
 }
 

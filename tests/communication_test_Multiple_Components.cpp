@@ -1,8 +1,13 @@
+#include <gtest/gtest.h>
+#include <filesystem>
 #include "component_mocks.hpp"
 #include "threadsafequeue.hpp"
 #include "BVBroker.hpp"
 #include "BVSubscriber.hpp"
-#include <gtest/gtest.h>
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
+
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
 
 class CommunicationFixture : public ::testing::Test
 {
@@ -21,8 +26,36 @@ protected:
     std::unique_ptr<MockApp> app_mock_p;
     boost::asio::io_context ioContext;
 
+    // Logging
+    std::shared_ptr<spdlog::logger> fileLogger;
+
     void SetUp() override
     {
+        // logging
+        namespace fs = std::filesystem;
+        const ::testing::TestInfo* test_info =
+            ::testing::UnitTest::GetInstance()->current_test_info();
+        spdlog::set_level(spdlog::level::trace);
+        try 
+        {
+            fs::path logDir = fs::path("tests") / "logs";
+            fs::create_directories(logDir);
+
+            std::string fileName = 
+                std::string(test_info->test_suite_name()) + "_" + test_info->name() + ".log";
+
+            fs::path logPath = logDir / fileName;
+
+            fileLogger = spdlog::basic_logger_mt(
+                "communication_test_Multiple_Components_Logger",
+                logPath.string());
+        }
+        catch (const spdlog::spdlog_ex &ex)
+        {
+            std::cout << "Log init failed: " << ex.what() << std::endl;
+            throw std::runtime_error("Cannot init logging handle...");
+        }
+
         BVServiceHostData hostDataMock{.port = PORT,
                                         .domain = ".local",
                                         .hostname = "mock",
@@ -36,7 +69,9 @@ protected:
 
         app_mock_p = std::make_unique<MockApp>(std::make_shared<threadsafe_queue<BVMessage>>(),
                                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                                               ioContext);
+                                               ioContext,
+                                               fileLogger);
+
     }
 
     void TearDown() override
@@ -45,6 +80,7 @@ protected:
         discovery_mock_p.reset(nullptr);
         app_mock_p.reset(nullptr);
         ioContext.stop();
+        fileLogger.reset();
     }
 };
 
@@ -117,21 +153,22 @@ TEST_F(CommunicationFixture, CheckInitAndDeInitSequences)
     ASSERT_FALSE(app_mock_p->GetWorkerThread().joinable());
 }
 
-TEST_F(CommunicationFixture, CheckBasicContinuousCommunicationAndDeinit)
+TEST_F(CommunicationFixture, CheckBasicContinuousCommunicationAndDeInit)
 {
-    // App
 }
+
+
+TEST_F(CommunicationFixture, CheckAppPausingDiscoveryAndResumingLater)
+{
+    // This cancels being able to be discovered.
+}
+
 
 TEST_F(CommunicationFixture, CheckAppShuttingDownDiscovery)
 {
     // This should never happen, as this means that Discovery will no longer
     // be able to listen to messages.
     // Hard reset later implemented maybe?
-}
-
-TEST_F(CommunicationFixture, CheckAppPausingDiscovery)
-{
-    // This cancels being able to be discovered.
 }
 
 TEST_F(CommunicationFixture, CheckAppRestartingDiscovery)

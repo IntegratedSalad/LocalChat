@@ -10,6 +10,10 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost)
 find_package(Threads REQUIRED)
 
+if(NOT TARGET spdlog)
+    find_package(spdlog REQUIRED)
+endif()
+
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wall -Wextra  -g -O0")
 
 include(FetchContent)
@@ -90,6 +94,7 @@ target_link_libraries(
   GTest::gtest_main
   linked_list
 	${Boost_LIBRARIES}
+  spdlog::spdlog
 )
 
 # cmake -S . -B build -DUSE_ASAN=ON -> enable ASan
