@@ -16,7 +16,6 @@ void BVBroker::Run()
         std::shared_ptr<BVMessage> msg_p = this->inMailBox_p->wait_and_pop();
         if (!msg_p)
         {
-            // should not 
             continue;
         }
         if (msg_p->event_t == BVEventType::BVEVENTTYPE_TERMINATE_ALL)

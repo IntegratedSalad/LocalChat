@@ -48,7 +48,8 @@ protected:
 
             fileLogger = spdlog::basic_logger_mt(
                 "communication_test_Multiple_Components_Logger",
-                logPath.string());
+                logPath.string(),
+                true);
             fileLogger->set_level(spdlog::level::trace);
             fileLogger->flush_on(spdlog::level::trace);
             SPDLOG_LOGGER_TRACE(this->fileLogger, "Logger set up.");
@@ -181,6 +182,7 @@ TEST_F(CommunicationFixture, CheckBasicContinuousCommunicationAndDeInit)
     */
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));

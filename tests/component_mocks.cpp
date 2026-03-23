@@ -164,7 +164,7 @@ void MockDiscovery::run(void)
     {
         // wait 3 s - simulate waiting for daemon response
         // TODO: maybe random interval 1-5s?
-        std::this_thread::sleep_for(std::chrono::seconds(3));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
         // replace with std::to_string
         std::string s("TESTSERVICE" + std::to_string(serviceNum));
@@ -295,16 +295,17 @@ BVStatus MockApp::HandlePublishedServices(std::unique_ptr<std::any> dp)
     std::lock_guard<std::mutex> l(this->serviceVectorMutex);
     for (auto& lElem : newServicesList)
     {
-        if (!(std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
+        if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
         {
             this->serviceV.push_back(lElem);
         }
     }
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus MockApp::OnStart(std::unique_ptr<std::any> dp)
 {
-
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus MockApp::OnShutdown(std::unique_ptr<std::any> dp)
@@ -316,12 +317,12 @@ BVStatus MockApp::OnShutdown(std::unique_ptr<std::any> dp)
 
 BVStatus MockApp::OnRestart(std::unique_ptr<std::any> dp)
 {
-    
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus MockApp::OnPause(std::unique_ptr<std::any> dp)
 {
-
+    return BVStatus::BVSTATUS_OK;
 }
 
 void MockApp::TaskAnnounce(void)

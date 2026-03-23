@@ -83,7 +83,7 @@ private:
     std::queue<TaskFunction> tasks_q;
     std::shared_ptr<spdlog::logger> fileLogger;
 
-    const int taskSleepMs = 450;
+    const int taskSleepMs = 1000;
 
 public:
     MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
