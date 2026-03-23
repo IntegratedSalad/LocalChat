@@ -187,6 +187,8 @@ void MockDiscovery::run(void)
     }
 }
 
+// TODO: Add helper function to populate more fields, other than serviceName
+
 BVStatus MockDiscovery::OnStart(std::unique_ptr<std::any> dp) // test passing dp
 {
     // In real implementation starting probably means putting worker thread to work.
@@ -248,8 +250,7 @@ MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
 // worker thread
 // App will announce their services 'at will',
 // and do other things.
-// This is implemented by processing the std::queue<BVEventType> tasks_q.
-
+// This is implemented by processing the std::queue<TaskFunction> tasks_q.
 void MockApp::Run(void)
 {
     while (this->GetIsRunning() && !this->tasks_q.empty())
@@ -257,7 +258,13 @@ void MockApp::Run(void)
         // Wait a while
         // process queue (launch a task)
         // loop
-
+        auto f = this->tasks_q.front();
+        f();
+        this->tasks_q.pop();
+    }
+    if (this->tasks_q.empty())
+    {
+        // notify main thread that it can go, but it will just sleep for now...
     }
 }
 
@@ -281,9 +288,11 @@ BVStatus MockApp::HandlePublishedServices(std::unique_ptr<std::any> dp)
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     // Update service vector.
-    // Does it need to be guarded? I think yes, because here we are modifying it.
+    // Does it need to be guarded? I think so, because here we are modifying it.
     // Mock client will periodically read it, but real user in the product implementation
     // will try to read it and they might do it when this is updated here
+
+    std::lock_guard<std::mutex> l(this->serviceVectorMutex);
     for (auto& lElem : newServicesList)
     {
         if (!(std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
@@ -313,6 +322,40 @@ BVStatus MockApp::OnRestart(std::unique_ptr<std::any> dp)
 BVStatus MockApp::OnPause(std::unique_ptr<std::any> dp)
 {
 
+}
+
+void MockApp::TaskAnnounce(void)
+{
+    // Guard the shared resource (serviceV)!
+    std::lock_guard<std::mutex> l(this->serviceVectorMutex);
+
+    std::string logTrace;
+    for (auto& lElem : this->serviceV)
+    {
+        logTrace = "App announces " + lElem.serviceName;
+        SPDLOG_LOGGER_TRACE(this->fileLogger, logTrace);
+        fileLogger->flush();
+    }
+}
+
+void MockApp::TaskPauseDiscovery(void)
+{
+    // TODO: send message
+}
+
+void MockApp::TaskQuit(void)
+{
+    SPDLOG_LOGGER_TRACE(this->fileLogger, "App quits.");
+    fileLogger->flush();
+    SendMessage(BVMessage(
+                BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr));
+}
+
+void MockApp::TaskSleep(void)
+{
+    SPDLOG_LOGGER_TRACE(this->fileLogger, "App sleeps...");
+    fileLogger->flush();
+    std::this_thread::sleep_for(std::chrono::milliseconds(this->taskSleepMs));
 }
 
 TestHeartbeatComponent::TestHeartbeatComponent(std::vector<BVEventType> _eventTypesOfInterest,

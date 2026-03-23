@@ -97,6 +97,10 @@ target_link_libraries(
   spdlog::spdlog
 )
 
+target_compile_definitions(
+  communication_test_Multiple_Components 
+  PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+
 # cmake -S . -B build -DUSE_ASAN=ON -> enable ASan
 
 option(USE_ASAN "Enable AddressSanitizer" OFF)

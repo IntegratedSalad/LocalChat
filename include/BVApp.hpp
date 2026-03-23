@@ -45,7 +45,7 @@ private:
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
-    // std::mutex serviceVectorMutex;
+    std::mutex serviceVectorMutex;
     // // event queue?
 
     // std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue;
@@ -122,10 +122,16 @@ public:
         return this->worker_thread;
     }
 
+    std::vector<BVServiceBrowseInstance> GetServiceVectorCopy(void)
+    {
+        return this->serviceV;
+    }
+
     virtual void Run(void) = 0; // start procedure
 
     // virtual void HandleServicesDiscoveredUpdateEvent(void) = 0;
     // virtual void HandleUserKeyboardInput(void) = 0;
+    // Probably has to be guarded with a mutex!
     virtual BVStatus HandlePublishedServices(std::unique_ptr<std::any>) = 0;
 
     const std::atomic<bool>& GetIsRunning(void)
