@@ -1,13 +1,16 @@
 #pragma once
+#include <mutex>
+#include <memory>
+#include <queue>
+#include <condition_variable>
+#include <boost/asio.hpp>
+#include <boost/asio/posix/stream_descriptor.hpp>
 #include "BV.hpp"
 #include "BVDiscovery.hpp"
 #include "BVComponent.hpp"
 #include "BVLoggable.hpp"
 #include "dns_sd.h"
-#include <mutex>
-#include <memory>
-#include <queue>
-#include <condition_variable>
+#include "BVLoggable.hpp"
 #include "linked_list.h"
 #include "bonjour_api.h"
 
@@ -32,7 +35,16 @@ private:
     // BVService_Bonjour component is alive in the main thread...
     // Probably not. Some manager class will have a pointer to the active service.
     DNSServiceRef dnsRef;
+    boost::asio::posix::stream_descriptor browseFD;
+    boost::asio::io_context& ioContext;
+    // This is a workaround for work_guard.
+    // The ioContext has to have a job scheduled, even if browsing is paused,
+    // and browseFD is not awaited for readiness (the task is not put on the context loop)
+    boost::asio::steady_timer pauseTimer;
+    const int16_t pauseTimerDelayS = 3600;
+
     BVStatus ProcessDNSServiceBrowseResult(void);
+    void AwaitFD(void);
 
     void CreateConnectionContext(void) override; // private member function which actually starts the Discovery service
     void Setup(void) override;
@@ -40,6 +52,7 @@ private:
 
 public:
     BVDiscovery_Bonjour(const BVServiceHostData _hostData,
+                        boost::asio::io_context& _ioContext,
                         std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
     ~BVDiscovery_Bonjour() override;

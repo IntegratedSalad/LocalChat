@@ -1,8 +1,12 @@
 #include "BVDiscovery_Bonjour.hpp"
 
 BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceHostData _hostData,
+                                         boost::asio::io_context& _ioContext,
                                          std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                                          std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+ioContext(_ioContext),
+browseFD(_ioContext),
+pauseTimer(_ioContext),
 BVDiscovery(_hostData),
 BVComponent(_outMbx, _inMbx)
 {
@@ -29,7 +33,7 @@ BVComponent(_outMbx, _inMbx)
 
 void BVDiscovery_Bonjour::Setup(void)
 {
-    
+    this->CreateConnectionContext();
 }
 
 BVStatus BVDiscovery_Bonjour::OnStart(std::unique_ptr<std::any>)
@@ -37,13 +41,42 @@ BVStatus BVDiscovery_Bonjour::OnStart(std::unique_ptr<std::any>)
     return BVStatus::BVSTATUS_OK;
 }
 
+// After pause timer, the browsing is resumed
 BVStatus BVDiscovery_Bonjour::OnPause(std::unique_ptr<std::any>)
 {
+    // Start timer
+    if (!this->GetIsBrowsingActive())
+    {
+        return BVStatus::BVSTATUS_OK; // this shouldn't happen, but don't do anything.
+    }
+    this->SetIsBrowsingActive(false);
+
+    boost::system::error_code ec;
+    browseFD.cancel(ec);
+
+    this->pauseTimer.expires_after(std::chrono::seconds(this->pauseTimerDelayS));
+    this->pauseTimer.async_wait([this](const boost::system::error_code& /*e*/)
+    {
+        this->OnResume(nullptr);
+    });
+
     return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus BVDiscovery_Bonjour::OnResume(std::unique_ptr<std::any>)
 {
+    // Cancel timer
+    const std::size_t opCancelledNum = this->pauseTimer.cancel();
+    if (opCancelledNum > 0)
+    {
+        LogTrace("Discovery: cancelled a pauseTimer.");
+    } 
+    else
+    {
+        LogTrace("Discovery: pauseTimer has timed out.");
+    } 
+    this->SetIsBrowsingActive(true);
+    AwaitFD();
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -54,6 +87,11 @@ BVStatus BVDiscovery_Bonjour::OnRestart(std::unique_ptr<std::any>)
 
 BVStatus BVDiscovery_Bonjour::OnShutdown(std::unique_ptr<std::any>)
 {
+    this->SetIsBrowsingActive(false);
+    this->browseFD.cancel();
+    this->pauseTimer.cancel();
+    this->ioContext.stop();
+    LogTrace("Discovery: Shutting down...");
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -64,110 +102,94 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
         Browsing goes indefinitely, until the DNSServiceRef is passed to
         DNSServiceRefDeallocate.
     */
-    if (!this->GetIsBrowsingActive())
+    const BVServiceHostData hd = this->GetHostData();
+    LogTrace("Discovery: Browsing for {}.{}", hd.regtype, hd.domain);
+    // std::cout << "Browsing for: ";
+    // std::cout << hd.regtype << ".";
+    // std::cout << hd.domain  << std::endl; // Do not pass the pointer to service
+    DNSServiceErrorType error = DNSServiceBrowse(&this->dnsRef,
+                                                0,
+                                                0,
+                                                hd.regtype.c_str(),
+                                                hd.domain.c_str(),
+                                                C_ServiceBrowseReply,
+                                                &this->GetLinkedList_p());
+    if (!(error == kDNSServiceErr_NoError))
     {
-        const BVServiceHostData hd = this->GetHostData();
-        std::cout << "Browsing for: ";
-        std::cout << hd.regtype << ".";
-        std::cout << hd.domain  << std::endl; // Do not pass the pointer to service
-        DNSServiceErrorType error = DNSServiceBrowse(&this->dnsRef,
-                                                    0,
-                                                    0,
-                                                    hd.regtype.c_str(),
-                                                    hd.domain.c_str(),
-                                                    C_ServiceBrowseReply,
-                                                    &this->GetLinkedList_p());
-        if (!(error == kDNSServiceErr_NoError))
-        {
-            this->SetStatus(BVStatus::BVSTATUS_NOK);
-            return;
-        }
-        this->SetIsBrowsingActive(true);
-    } else
-    {
-        std::cout << "Browsing active..." << std::endl;
+        this->SetStatus(BVStatus::BVSTATUS_FATAL_ERROR);
+        LogError("Discovery - couldn't initialize dnsRef by DNSServiceBrowse {}", error);
+        return;
     }
 }
 
-// TODO: StopBrowsing
-
-BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
+BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
 {
-    // DNSServiceProcessResult will block until there are no new services discovered.
-    // There's a problem with this.
-    // This will block indefinitely, and cannot go to a different state, when is blocking.
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    if (!this->GetIsBrowsingActive() || this->dnsRef == nullptr)
+    {
+        return BVStatus::BVSTATUS_OK;
+    }
     DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef); // blocks
     if (error != kDNSServiceErr_NoError) {
         std::cerr << "[ProcessDNSServiceBrowseResult] Encountered an error in DNSServiceBrowseResult: " << error << std::endl;
+        this->SetIsBrowsingActive(false);
         return BVStatus::BVSTATUS_NOK; // setup a flag maybe?
     }
-
-    // std::cout << "timer scheduled" << std::endl;
-
-    // TODO: How to stop this?
-
-
-    // TODO: Before pushing onto queue check somehow if the service at the given
-    //       servicename was already Registered!
-
-    // -- Put this into function (TODO: Remember that now we have a threadsafe queue - it could simplify this logic!) ---
-    // First: swap manual queue synchronization with threadsafeqeue
-    // Second: Try to get rid of queue synchronization/threadsafe queue here
-    // We have message passing now in tests, so just take the LinkedList that mDNS C API
-    // returns, and make this as std::list and send.
-    // App would just implement a callback that would copy the contents into their list
-
-    // std::unique_lock lk(this->GetDiscoveryQueueMutex());
-    // this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
-
-    // this->PushBrowsedServicesToQueue(); // critical section
-
-    // this->SetIsDiscoveryQueueReady(true);
-    // lk.unlock();
-    // this->GetDiscoveryQueueCV().notify_one();
-    // We could send a message to the thread now.
-    // Upon receiving the message, the application could consume the queue and update its data.
-
-    // Clear list after appending to queue.
+    BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+    SendMessage(BVMessage(
+                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
+                        std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
     LinkedList_str_ClearList(this->GetLinkedList_p());
-
-    // if active => maybe check the message queue
-    // this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
-    // Why are we waiting? just put another async task, it will block at DNSServiceProcessResult
-    // We honestly can get rid of the ASIO here.
-    // Although, it is very easily stopped, by stopping the ioContext.
-    // This could be a while (isBrowsingActive) ...
-    // this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
-    // {
-    //     this->ProcessDNSServiceBrowseResult();
-    // });
-
-    // -- Put this into function --
-
+    AwaitFD();
     return BVStatus::BVSTATUS_OK;
 }
 
-void BVDiscovery_Bonjour::Browse()
+// put on Worker thread
+void BVDiscovery_Bonjour::Browse(void)
 {
-    std::cout << "Scheduling the timer..." << std::endl;
-    this->CreateConnectionContext();
+    const int fd = DNSServiceRefSockFD(this->dnsRef);
+    if (fd < 0)
+    {
+        DNSServiceRefDeallocate(this->dnsRef);
+        this->dnsRef = nullptr;
+        LogError("Discovery: fd for daemon socket returned < 0.");
+        return;
+    }
 
-    std::cout << "timer scheduled" << std::endl;
-    // this->discoveryTimer.expires_after(std::chrono::seconds(DISCOVERY_TIMER_TRIGGER_S));
-    // this->discoveryTimer.async_wait([this](const boost::system::error_code& /*e*/)
-    // {
-    //     this->ProcessDNSServiceBrowseResult();
-    // });
+    boost::system::error_code ec;
+    browseFD.assign(fd, ec);
+    if (ec) 
+    {
+        DNSServiceRefDeallocate(this->dnsRef);
+        this->dnsRef = nullptr;
+        LogError("Discovery: couldn't assign the posix stream descriptor.");
+        return;
+    }
+    this->SetIsBrowsingActive(true);
+    AwaitFD(); // this puts work to ioContext
+    LogTrace("Discovery: Browsing active...");
+    this->ioContext.run();
+}
 
-    // this->ioContext.run();
-
-    // Define a timer (5s)
-    // Schedule this timer over and over while performing Discovery
-    // In the callback, pass ProcessDNSServiceBrowseResult
-    // it will call DNSServiceBrowse, and somehow write back
-    // the reply from the daemon - it will be a service name
-    // with a regtype and domain
-    // Do we really need a delay?
+void BVDiscovery_Bonjour::AwaitFD(void)
+{
+    if (!this->GetIsBrowsingActive() || this->dnsRef == nullptr)
+    {
+        return;
+    }
+    LogTrace("Discovery: Awaiting read readiness on the socket...");
+    this->browseFD.async_wait(boost::asio::posix::stream_descriptor::wait_read,
+                              [this](const boost::system::error_code& e)
+                              {
+                                if (e == boost::asio::error::operation_aborted)
+                                    return;
+                                if (e)
+                                {
+                                    SetIsBrowsingActive(false);
+                                    return;
+                                }
+                                this->ProcessDNSServiceBrowseResult();
+                              });
 }
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()

@@ -124,8 +124,10 @@ int main(int argc, char** argv)
     std::shared_ptr<const BVService_Bonjour> service_p =
         std::make_shared<const BVService_Bonjour>(service);
     BVDiscovery_Bonjour discovery{service.GetHostData(),
+                                  ioContext,
                                   std::make_shared<threadsafe_queue<BVMessage>>(),
                                   std::make_shared<threadsafe_queue<BVMessage>>()};
+    discovery.SetLogger(fileLogger);
 #endif
 #if __linux__
     auto data = service.TransferClient();
@@ -141,6 +143,7 @@ int main(int argc, char** argv)
     BVApp_ConsoleClient consoleClient{std::make_shared<threadsafe_queue<BVMessage>>(),
                                       std::make_shared<threadsafe_queue<BVMessage>>()};
     
+    consoleClient.SetLogger(fileLogger);
     std::thread td([&](){
         discovery();
     });
