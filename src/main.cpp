@@ -6,7 +6,14 @@
 #include <chrono>
 #include <queue>
 #include <memory>
+#include <filesystem>
 #include "BVDiscovery.hpp"
+#include "BVBroker.hpp"
+#include "BVMessage.hpp"
+#include "threadsafequeue.hpp"
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE // TODO: Set this up based on build variable
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
 #if __APPLE__
 #include "dns_sd.h"
 #include "BVService_Bonjour.hpp"
@@ -15,16 +22,10 @@
 #include "BVService_Avahi.hpp"
 #include "BVDiscovery_Avahi.hpp"
 #endif
-#include "BVApp_ConsoleClient_Bonjour.hpp"
+#include "BVApp_ConsoleClient.hpp"
 
-std::mutex discoveryQueueMutex;
-std::mutex messageQueueMutex;
-std::condition_variable discoveryQueueCV;
-bool isDiscoveryQueueReady = false;
 int main(int argc, char** argv)
 {
-    boost::asio::io_context ioContext;
-
 #if __APPLE__
     /* Put this in a test */
     uint32_t v;
@@ -78,11 +79,6 @@ int main(int argc, char** argv)
     }
     // From this point, the context pointers of both implementations are alive, and the services are discoverable
 
-    std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue_p =
-        std::make_shared<std::queue<BVServiceBrowseInstance>>();
-    // std::shared_ptr<std::queue<BVThrMessage>> messageQueue_p =
-        // std::make_shared<std::queue<BVThrMessage>>();
-
     // BVDiscovery_XXX class doesn't need a pointer to the service class.
     // It needs only:
     // hostname, domain, port and context pointer:
@@ -91,11 +87,45 @@ int main(int argc, char** argv)
     // Furthermore, Bonjour Discovery class is NOT utilizing any data that's specific to the BVService class,
     // because hostname, domain and type are known ahead of the creation of the object
 
+    boost::asio::io_context ioContext;
+    BVBroker broker{std::make_shared<threadsafe_queue<BVMessage>>()};
+
+    std::shared_ptr<spdlog::logger> fileLogger;
+    namespace fs = std::filesystem;
+    spdlog::set_level(spdlog::level::trace);
+    spdlog::set_pattern("[%H:%M:%S %z] [logger %n] [thread %t] %v");
+    try 
+    {
+        fs::path logDir = "logs";
+        fs::create_directories(logDir);
+
+        std::string fileName = "trace.log";
+
+        std::string loggerName = "trace_logger";
+        spdlog::drop(loggerName);
+
+        fs::path logPath = logDir / fileName;
+
+        fileLogger = spdlog::basic_logger_mt(
+            loggerName,
+            logPath.string(),
+            true);
+        fileLogger->set_level(spdlog::level::trace);
+        fileLogger->flush_on(spdlog::level::trace);
+        SPDLOG_LOGGER_TRACE(fileLogger, "Logger set up.");
+    }
+    catch (const spdlog::spdlog_ex &ex)
+    {
+        std::cout << "Log init failed: " << ex.what() << std::endl;
+        throw std::runtime_error("Cannot init logging handle...");
+    }
 #if __APPLE__
     // Create a discovery object, that periodically performs DNS-SD functionality.
     std::shared_ptr<const BVService_Bonjour> service_p =
         std::make_shared<const BVService_Bonjour>(service);
-    BVDiscovery_Bonjour discovery{service.GetHostData()};
+    BVDiscovery_Bonjour discovery{service.GetHostData(),
+                                  std::make_shared<threadsafe_queue<BVMessage>>(),
+                                  std::make_shared<threadsafe_queue<BVMessage>>()};
 #endif
 #if __linux__
     auto data = service.TransferClient();
@@ -108,7 +138,8 @@ int main(int argc, char** argv)
                                 service.GetHostData(),
                                 simple_poll_p}; // TODO: Pass messageQueue
 #endif
-    BVApp_ConsoleClient consoleClient{}; // TODO: Implement CLI
+    BVApp_ConsoleClient consoleClient{std::make_shared<threadsafe_queue<BVMessage>>(),
+                                      std::make_shared<threadsafe_queue<BVMessage>>()};
     
     std::thread td([&](){
         discovery();

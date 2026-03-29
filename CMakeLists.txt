@@ -15,13 +15,17 @@ find_package(Threads REQUIRED)
 find_package(wxWidgets REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+if(NOT TARGET spdlog)
+    find_package(spdlog REQUIRED)
+endif()
+
 add_subdirectory(tests)
 
 add_library(linked_list STATIC ${CMAKE_SOURCE_DIR}/src/linked_list.c ${CMAKE_SOURCE_DIR}/include/linked_list.h)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp
-						 ${CMAKE_SOURCE_DIR}/src/BVApp_ConsoleClient_Bonjour.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVApp_ConsoleClient.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVActor.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
 )
@@ -50,6 +54,10 @@ endif()
 # It's an okay solution for multiplatform development
 # Do not add or link these libraries when on UNIX
 
+target_compile_definitions(
+  LocalChat 
+  PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+
 if (APPLE)
 	add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.cpp)
 	add_library(BVDiscovery_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVDiscovery_Bonjour.cpp)
@@ -57,9 +65,11 @@ if (APPLE)
 	target_link_libraries(LocalChat BVService_Bonjour)
 	target_link_libraries(LocalChat BVDiscovery_Bonjour)
 	target_link_libraries(LocalChat bonjour_api)
+	
 endif()
 target_link_libraries(LocalChat linked_list)
 target_link_libraries(LocalChat wxWidgets::wxWidgets)
+target_link_libraries(LocalChat spdlog::spdlog)
 
 # We can compile different targets - only BVService_Bonjour, BVService (for BonVoyage main app and for LocalChat) or we can export these classes
 # onto a separate git repository. Then, we could use it as a submodule for LC and BV.

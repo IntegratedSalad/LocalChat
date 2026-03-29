@@ -253,7 +253,7 @@ MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,
                      std::bind(&MockApp::HandlePublishedServices, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
-                    std::bind(&MockApp::OnShutdown, this, std::placeholders::_1));
+                     std::bind(&MockApp::OnShutdown, this, std::placeholders::_1));
     // Maybe some messages that are announcements of failures?
 }
 

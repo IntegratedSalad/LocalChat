@@ -3,6 +3,8 @@
 #include <string>
 #include <boost/asio.hpp>
 #include "BVApp.hpp"
+#include "BVComponent.hpp"
+#include "BVLoggable.hpp"
 
 /*
     BVApp_ConsoleClient_Bonjour functions as a console application of LocalChat.
@@ -32,24 +34,23 @@ typedef enum class BVConsoleAction
     BVCONSOLEACTION_BLOCKHOST
 } BVConsoleAction;
 
-class BVApp_ConsoleClient : private BVApp
+class BVApp_ConsoleClient : public BVApp,
+                            public BVComponent,
+                            public BVLoggable
 {
 private:
     std::mutex stdoutMutex; // mutex for internal worker threads, in this case printing.
     std::thread stdinThread; // worker thread? I don't think this is needed
 
 public:
-    BVApp_ConsoleClient()
-    {
-        // this->Init();
-    }
+    BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                        std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
 
     void Run(void) override;
 
-    BVStatus HandlePublishedServices(std::unique_ptr<std::any> dp);
+    BVStatus HandlePublishedServices(std::unique_ptr<std::any> dp) override;
 
     BVStatus ParseAction(const std::string&);
-    BVStatus SendMessage(const std::string&);
     BVStatus ReadMessages(void);
     BVStatus PrintMessages(void);
     BVStatus PrintServices(void);
@@ -57,6 +58,12 @@ public:
 
     // void HandleServicesDiscoveredUpdateEvent(void) override;
     // void HandleUserKeyboardInput(void) override;
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
 
     // -------------------------------------------------------
 

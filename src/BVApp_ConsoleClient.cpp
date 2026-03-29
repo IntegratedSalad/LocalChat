@@ -1,20 +1,20 @@
-#include "BVApp_ConsoleClient_Bonjour.hpp"
+#include "BVApp_ConsoleClient.hpp"
+
+BVApp_ConsoleClient::BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+BVComponent(_outMbx, _inMbx)
+{
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,
+                     std::bind(&BVApp_ConsoleClient::HandlePublishedServices, this, std::placeholders::_1));
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
+}
 
 void BVApp_ConsoleClient::Run(void)
 {
-    // this->StartListenerThread();
-    // Wow! Always make sure that you're not calling functions that lock resources
-    // where they shouldn't be called
-    // this->PrintAll();
     while (this->GetIsRunning())
     {
         // print console
-
-        // Now -> if app wants tu utilize 'serviceV' it has to acquire a lock
-        // on condition that this->isDiscoveryQueueReady = false; meaning that the queue is empty,
-        // it's not being processed.
-        // It cannot read from this->isDiscoveryQueueReady without mutex!
-        // Or other mutex => because use here doesn't concern the queue, it concerns the vector.
     }
 }
 
@@ -23,7 +23,7 @@ void BVApp_ConsoleClient::Run(void)
 void BVApp_ConsoleClient::PrintAll(void)
 {
     for (int i = 0; i < 100; i++) {std::cout << std::endl;}
-    std::cout << "LocalChat console client v0.2.1.2a" << std::endl;
+    std::cout << "LocalChat console client v0.2.1.2.2a" << std::endl;
     std::cout << "(P)rint services" << std::endl;
     std::cout << "(S)witch to conversation" << std::endl;
     std::cout << "(E)xit" << std::endl;
@@ -58,22 +58,27 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
     return BVStatus::BVSTATUS_OK;
 }
 
+BVStatus BVApp_ConsoleClient::OnStart(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
 
-// void BVApp_ConsoleClient_Bonjour::HandleServicesDiscoveredUpdateEvent(void)
-// {
-//     this->PrintAll();
-// }
+BVStatus BVApp_ConsoleClient::OnResume(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
 
-// void BVApp_ConsoleClient_Bonjour::HandleUserKeyboardInput(void)
-// {
+BVStatus BVApp_ConsoleClient::OnShutdown(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
 
-// }
+BVStatus BVApp_ConsoleClient::OnRestart(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
 
-// BVStatus SendMessage(const asio::const_buffer);
-
-// BVStatus BVApp_ConsoleClient_Bonjour::ParseAction(const std::string&)
-// BVStatus BVApp_ConsoleClient_Bonjour::SendMessage(const std::string&);
-// BVStatus BVApp_ConsoleClient_Bonjour::ReadMessages(void);
-// BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void);
-// void BVApp_ConsoleClient_Bonjour::PrintScreen(void);
-// BVApp_ConsoleClient_Bonjour::~BVApp_ConsoleClient_Bonjour();
+BVStatus BVApp_ConsoleClient::OnPause(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}

@@ -78,7 +78,6 @@ class MockService : public BVService,
                     public BVLoggable
 {
 private:
-
 public:
     MockService(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                 std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :

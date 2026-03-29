@@ -1,6 +1,8 @@
 #pragma once
 #include "BV.hpp"
 #include "BVDiscovery.hpp"
+#include "BVComponent.hpp"
+#include "BVLoggable.hpp"
 #include "dns_sd.h"
 #include <mutex>
 #include <memory>
@@ -21,7 +23,9 @@
  * discarding those answers where the interface index is not set to
  * kDNSServiceInterfaceIndexLocalOnly.
 */
-class BVDiscovery_Bonjour : public BVDiscovery
+class BVDiscovery_Bonjour : public BVDiscovery,
+                            public BVComponent,
+                            public BVLoggable
 {
 private:
     // Is this really necessary to hold a shared pointer to service_p and not just a structure of needed params?
@@ -35,6 +39,14 @@ private:
     void Browse() override;
 
 public:
-    BVDiscovery_Bonjour(const BVServiceHostData _hostData);
+    BVDiscovery_Bonjour(const BVServiceHostData _hostData,
+                        std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                        std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
     ~BVDiscovery_Bonjour() override;
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
 };

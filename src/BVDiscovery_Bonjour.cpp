@@ -1,32 +1,60 @@
 #include "BVDiscovery_Bonjour.hpp"
 
-BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceHostData _hostData) :
-BVDiscovery(_hostData)
+BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceHostData _hostData,
+                                         std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+BVDiscovery(_hostData),
+BVComponent(_outMbx, _inMbx)
 {
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_START,
+                    std::bind(&BVDiscovery_Bonjour::OnStart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
+                     std::bind(&BVDiscovery_Bonjour::OnPause, this, std::placeholders::_1));
+    
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME, 
+                     std::bind(&BVDiscovery_Bonjour::OnResume, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&BVDiscovery_Bonjour::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN,
+                     std::bind(&BVDiscovery_Bonjour::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+                     std::bind(&BVDiscovery_Bonjour::OnRestart, this, std::placeholders::_1));
     this->dnsRef = nullptr;
+    Setup();
 }
 
 void BVDiscovery_Bonjour::Setup(void)
 {
-
+    
 }
 
-// void BVDiscovery_Bonjour::OnShutdown(void)
-// {
-
-// }
-
-// void BVDiscovery_Bonjour::OnStart(void)
-// {
-
-// }
-
-
-BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
+BVStatus BVDiscovery_Bonjour::OnStart(std::unique_ptr<std::any>)
 {
-    // When dnsRef is deallocated, browsing stops.
-    // TODO: Think of it maybe being deallocated in a separate method for control
-    DNSServiceRefDeallocate(this->dnsRef); 
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVDiscovery_Bonjour::OnPause(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVDiscovery_Bonjour::OnResume(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVDiscovery_Bonjour::OnRestart(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVDiscovery_Bonjour::OnShutdown(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
 }
 
 void BVDiscovery_Bonjour::CreateConnectionContext(void)
@@ -121,8 +149,6 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 
 void BVDiscovery_Bonjour::Browse()
 {
-
-
     std::cout << "Scheduling the timer..." << std::endl;
     this->CreateConnectionContext();
 
@@ -142,4 +168,11 @@ void BVDiscovery_Bonjour::Browse()
     // the reply from the daemon - it will be a service name
     // with a regtype and domain
     // Do we really need a delay?
+}
+
+BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
+{
+    // When dnsRef is deallocated, browsing stops.
+    // TODO: Think of it maybe being deallocated in a separate method for control
+    DNSServiceRefDeallocate(this->dnsRef); 
 }
