@@ -286,8 +286,7 @@ Build with maybe different logging levels.
 spdlog used to log.
 At debug build, log everything up to trace level.
 At release, only error and warning.
-TODO: Create interface from each component (and broker)
-can inherit, that allows for logging to the same file.
+BVLogger facilitates logging.
 
 ## Testing
 Functional tests.

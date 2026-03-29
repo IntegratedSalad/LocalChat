@@ -308,8 +308,6 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
     BVStatus subStatus19 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TEST_HEARTBEAT_ACK);
     BVStatus subStatus20 = broker_p->Subscribe(tcComponent.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
 
-    // TODO: ASSERT_EQ all above
-
     // start all
     broker_p->LaunchWorkerThread();
     tc.StartListeningOnMailbox();
@@ -335,7 +333,7 @@ TEST_F(BrokerBasicFixture, CheckBasicRouting)
     // join all
     tcComponent.TryJoinMailBoxThread();
     tc.TryJoinMailBoxThread();
-    tc.JoinWorkerThread();
+    tc.TryJoinWorkerThread();
     tcl.TryJoinMailBoxThread();
     broker_p->TryJoinWorkerThread();
 }

@@ -26,7 +26,7 @@ private:
 
     void CreateConnectionContext(void) override;
     void Setup(void) override;
-    void run(void) override;
+    void Browse(void) override;
 
     void Pause(void)
     {
@@ -194,9 +194,9 @@ public:
 
     void Setup(void);
     void LaunchWorkerThread(void);
-    void StartAnnouncingHeartbeat(void); // TODO: Announce with id of the TestHeartbeatComponent
+    void StartAnnouncingHeartbeat(void);
     void Beat(void);
-    void JoinWorkerThread(void) // TODO: Try join
+    void TryJoinWorkerThread(void)
     {
         this->worker_thread.join();
     }

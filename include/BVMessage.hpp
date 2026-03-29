@@ -2,10 +2,6 @@
 #include "BVEvent.hpp"
 #include <any>
 
-// template<typename T>
-
-// TODO: maybe typedef this std::shared_ptr<threadsafe_queue<BVMessage >>
-
 struct BVMessage
 {
     BVEventType event_t;

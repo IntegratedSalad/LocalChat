@@ -30,7 +30,7 @@ private:
 
     void CreateConnectionContext(void) override;
     void Setup(void) override;
-    void run() override;
+    void Browse() override;
 
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,

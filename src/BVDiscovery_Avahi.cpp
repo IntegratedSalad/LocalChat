@@ -90,7 +90,7 @@ void BVDiscovery_Avahi::CreateConnectionContext(void)
 
 // void DestroyConnectionContext
 
-void BVDiscovery_Avahi::run()
+void BVDiscovery_Avahi::Browse()
 {
     this->CreateConnectionContext();
     avahi_simple_poll_loop(this->simple_poll_p.get());

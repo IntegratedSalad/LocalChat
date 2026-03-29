@@ -22,7 +22,7 @@ private:
     virtual void CreateConnectionContext(void) = 0; // private member function which actually starts
     // void DestroyConnectionContext <- TODO:
     virtual void Setup(void) = 0;
-    virtual void run() = 0; // Browse? TODO: Maybe change
+    virtual void Browse() = 0;
 
     // TODO: From BVComponent, concrete implementation of BVDiscovery inherits Stop().
     // override this in implementations
@@ -100,13 +100,13 @@ public:
     // TODO: this is unnecessary
     void operator()(void)
     {
-        this->run();
+        this->Browse();
     }
 
     void LaunchWorkingThread(void)
     {
         this->worker_thread = std::thread([this] {
-            this->run();
+            this->Browse();
         });
     }
 

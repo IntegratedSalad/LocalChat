@@ -48,7 +48,7 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
                                                     hd.regtype.c_str(),
                                                     hd.domain.c_str(),
                                                     C_ServiceBrowseReply,
-                                                    &this->GetLinkedList_p()); // TODO: how to pass the address of a pointer?
+                                                    &this->GetLinkedList_p());
         if (!(error == kDNSServiceErr_NoError))
         {
             this->SetStatus(BVStatus::BVSTATUS_NOK);
@@ -119,7 +119,7 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
     return BVStatus::BVSTATUS_OK;
 }
 
-void BVDiscovery_Bonjour::run()
+void BVDiscovery_Bonjour::Browse()
 {
 
 

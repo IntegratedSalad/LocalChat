@@ -148,15 +148,13 @@ void MockDiscovery::RunNTimesWithKElements(const int n, const int k) // this is 
     }
 }
 
-// TODO: Get rid of it.
-// update component_test_Discovery_Basic
 void MockDiscovery::RunContinuously(void) // this is run in the main worker thread
 {
     this->SetIsBrowsingActive(true);
-    run();
+    Browse();
 }
 
-void MockDiscovery::run(void)
+void MockDiscovery::Browse(void)
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
 
@@ -171,7 +169,7 @@ void MockDiscovery::run(void)
         Pause();
 
         // wait 3 s - simulate waiting for daemon response
-        std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs)); // TODO: put this in a variable,
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
 
         std::string s("TESTSERVICE" + std::to_string(serviceNum));
         LinkedListElement_str* llen_p = LinkedListElement_str_Constructor((char*)s.c_str(), NULL);
@@ -191,8 +189,6 @@ void MockDiscovery::run(void)
         LinkedList_str_ClearList(this->GetLinkedList_p());
     }
 }
-
-// TODO: Add helper function to populate more fields, other than serviceName
 
 BVStatus MockDiscovery::OnStart(std::unique_ptr<std::any> dp) // test passing dp
 {
@@ -231,9 +227,6 @@ BVStatus MockDiscovery::OnResume(std::unique_ptr<std::any>)
 
 BVStatus MockDiscovery::OnShutdown(std::unique_ptr<std::any>)
 {
-    // TODO: Think through what the MockDiscovery implementation will be doing to mock DNS-SD functionality
-    // and write a queue push procedure
-
     // Remember that this is still mailbox thread if it is called from within mailbox thread!
     this->isConnectionContextAlive = false;
     this->SetIsBrowsingActive(false);

@@ -1,6 +1,6 @@
 #include "BVApp_ConsoleClient_Bonjour.hpp"
 
-void BVApp_ConsoleClient_Bonjour::Run(void)
+void BVApp_ConsoleClient::Run(void)
 {
     // this->StartListenerThread();
     // Wow! Always make sure that you're not calling functions that lock resources
@@ -20,7 +20,7 @@ void BVApp_ConsoleClient_Bonjour::Run(void)
 
 // I think that any event that needs to draw something
 // must redraw everything
-void BVApp_ConsoleClient_Bonjour::PrintAll(void)
+void BVApp_ConsoleClient::PrintAll(void)
 {
     for (int i = 0; i < 100; i++) {std::cout << std::endl;}
     std::cout << "LocalChat console client v0.2.1.2a" << std::endl;
@@ -34,7 +34,7 @@ void BVApp_ConsoleClient_Bonjour::PrintAll(void)
     std::cout << ">> " << std::endl;
 }
 
-BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void)
+BVStatus BVApp_ConsoleClient::PrintServices(void)
 {
     // TODO: Different implementation!
     // std::lock_guard vlk(this->serviceVectorMutex);
@@ -53,7 +53,7 @@ BVStatus BVApp_ConsoleClient_Bonjour::PrintServices(void)
     // return status;
 }
 
-BVStatus BVApp_ConsoleClient_Bonjour::HandlePublishedServices(std::unique_ptr<std::any> dp)
+BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> dp)
 {
     return BVStatus::BVSTATUS_OK;
 }

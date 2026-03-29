@@ -32,16 +32,14 @@ typedef enum class BVConsoleAction
     BVCONSOLEACTION_BLOCKHOST
 } BVConsoleAction;
 
-// TODO: This should be BVApp_ConsoleClient, as the client is not dependent on the
-// implementation
-class BVApp_ConsoleClient_Bonjour : private BVApp
+class BVApp_ConsoleClient : private BVApp
 {
 private:
     std::mutex stdoutMutex; // mutex for internal worker threads, in this case printing.
     std::thread stdinThread; // worker thread? I don't think this is needed
 
 public:
-    BVApp_ConsoleClient_Bonjour()
+    BVApp_ConsoleClient()
     {
         // this->Init();
     }
@@ -62,5 +60,5 @@ public:
 
     // -------------------------------------------------------
 
-    ~BVApp_ConsoleClient_Bonjour() {}
+    ~BVApp_ConsoleClient() {}
 };
