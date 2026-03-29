@@ -92,8 +92,6 @@ protected:
         //     this->discoveryQueueCV.notify_one(); // now Discovery component can enter critical section
         //     this->HandleServicesDiscoveredUpdateEvent();
 
-        //     // TODO: We have now an implementation of a thread safe queue.
-        //     // Maybe it can solve convoluted logic here?
         // }
     }
 

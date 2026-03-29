@@ -90,16 +90,17 @@ protected:
                                         .hostname = "mock",
                                         .regtype = "_localchathost._tcp"};
         
-        broker_p = std::make_unique<BVBroker>(std::make_shared<threadsafe_queue<BVMessage>>()); // TODO: pass logger here too
+        broker_p = std::make_unique<BVBroker>(std::make_shared<threadsafe_queue<BVMessage>>());
         discovery_mock_p = 
             std::make_unique<MockDiscovery>(hostDataMock,
                                             std::make_shared<threadsafe_queue<BVMessage>>(),
-                                            std::make_shared<threadsafe_queue<BVMessage>>()); // TODO: pass logger here too
+                                            std::make_shared<threadsafe_queue<BVMessage>>());
+        discovery_mock_p->SetLogger(fileLogger);
 
         app_mock_p = std::make_unique<MockApp>(std::make_shared<threadsafe_queue<BVMessage>>(),
                                                std::make_shared<threadsafe_queue<BVMessage>>(),
-                                               ioContext,
-                                               fileLogger);
+                                               ioContext);
+        app_mock_p->SetLogger(fileLogger);
     }
 
     void TearDown() override

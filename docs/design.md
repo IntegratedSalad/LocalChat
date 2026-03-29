@@ -319,7 +319,6 @@ text field, and other widgets.
    3. Notify user when someone is available to chat AND
    4. Output messages sent to user (callback upon receiving data on socket)
 
-(TODO: Should this application work in background?)
 How to ensure that an application works in the background?
 
 # Constants
@@ -351,3 +350,55 @@ boost::threadpool allows for the automatic thread management.
 ### Consumers
 ## Misc
 Instead of writing BV(...) use a namespace
+
+Registering a service:
+dns-sd -R <Name> <Type> <Domain> <Port> Optional<Text>
+Where:
+
+<Name>: Name string
+<Type>: E.g. _http._tcp
+		It is a SRV RR with format: _Service._Proto.Name
+		"_Service" part can be concatenation of name + host
+<Domain>: Should be local for our purposes
+<Port>:   Chosen port. (50001 for unused)
+
+a wiec przyklad:
+dns-sd -R bupsiobup _bupsiobuphost._tcp local 50001
+(musi to byc _localchathost._tcp jako type dla tej aplikacji)
+
+RR -> Resource Record
+SRV -> Service
+mDNS jest scisle uzywany po to, aby wziac nazwe hosta i otrzymac adres IP w malych sieciach (lokalnych). Poza tym, multicast odnosi sie do tego, ze wysylamy wiadomosc broadcast, ze dany host jest dostepny do komunikacji (poprzez LAN, czyli lokalnie). Jego domyslna funkcjonalnoscia NIE jest Service Discovery:
+"mDNS and LLMNR both do >name resolution<, but mDNS is also used for service discovery when paired with something called DNS-SD".
+Ale dns_sd.h zawiera funkcje DNSServiceResolve, ktory implementuje zasadnicza funkcjonalnosc mDNS - mamy jakis hostname i teraz chcemy IP. Tyle ze tu sie pojawia cos takiego jak txt record.
+Czym jest TXT record?
+Czym jest SRV record?:
+
+>>>"A client discovers the list of available instances for a given service type by querying the DNS PTR[18] record of that service type's name; the server returns zero or more names of the form <Service>.<Domain>, each corresponding to a SRV/TXT record pair."<<<
+"The SRV record resolves to the domain name providing the instance, while the TXT record can contain service-specific configuration parameters".
+
+Most important RFC Docs:
+6763 -> DNS Based Service Discovery
+6762 -> mDNS
+2782 -> A DNS RR for specifying the location of services
+6763, section 11 -> Discovery of Browsing and Registration Domains (Domain Enumeration)
+
+avahi:
+How to resolve:
+host name: service name + .local (domain)
+example:
+avahi-resolve-host-name bupsiobup.local
+
+How to set up an example:
+
+on macOS:
+dns-sd -R <Name> <Type> <Domain> <Port>, where type should be _tcp, domain "local"
+check: dns-sd -B _[<Servicename>]._tcp local -> we should see service type at instance (host) name.
+on Ubuntu:
+avahi-resolve-host-name [<HostName>].local -> we should see IP of the host that enables this service
+avahi-publish-service <name> <type> <port> -> registers a service
+avahi-browse _[<Servicename>]._tcp -> shows every hostname with that service >type< (not name)
+on macOS after publishing service:
+dns-sd -L [ServiceName] _localchathost local -> gives instance name (host) and port
+Now we have host name that publishes a service that we just looked up, now we can resolve:
+dns-sd -G v4 [hostname].local -> yields local address of the hostname

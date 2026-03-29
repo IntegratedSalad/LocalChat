@@ -251,13 +251,11 @@ BVStatus MockDiscovery::OnRestart(std::unique_ptr<std::any>)
 
 MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
-        boost::asio::io_context& _ioContext,
-        std::shared_ptr<spdlog::logger> _fileLogger) :
+        boost::asio::io_context& _ioContext) :
     BVComponent(_outMbx, _inMbx),
     ioContext(_ioContext),
     announceTimer(_ioContext),
-    pauseDiscoveryTimer(_ioContext),
-    fileLogger(_fileLogger)
+    pauseDiscoveryTimer(_ioContext)
 {
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,
                      std::bind(&MockApp::HandlePublishedServices, this, std::placeholders::_1));
@@ -311,8 +309,7 @@ BVStatus MockApp::HandlePublishedServices(std::unique_ptr<std::any> dp)
     // Mock client will periodically read it, but real user in the product implementation
     // will try to read it and they might do it when this is updated here
 
-    SPDLOG_LOGGER_TRACE(this->fileLogger, "App calls HandlePublishedServices.");
-    fileLogger->flush();
+    LogTrace("App calls HandlePublishedServices.");
     std::lock_guard<std::mutex> l(this->serviceVectorMutex);
     for (auto& lElem : newServicesList)
     {
@@ -363,8 +360,7 @@ void MockApp::TaskAnnounce(void)
     for (auto& lElem : this->serviceV)
     {
         logTrace = "App announces " + lElem.serviceName;
-        SPDLOG_LOGGER_TRACE(this->fileLogger, logTrace);
-        fileLogger->flush();
+        LogTrace(logTrace.c_str());
     }
 }
 
@@ -379,8 +375,7 @@ void MockApp::TaskStartDiscovery(void)
 // Pause - join worker thread for a moment
 void MockApp::TaskPauseDiscovery(void)
 {
-    SPDLOG_LOGGER_TRACE(this->fileLogger, "App pauses discovery.");
-    fileLogger->flush();
+    LogTrace("App pauses discovery.");
     SendMessage(BVMessage(
                 BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, nullptr));
 }
@@ -388,26 +383,21 @@ void MockApp::TaskPauseDiscovery(void)
 // Resume - spawn worker thread
 void MockApp::TaskResumeDiscovery(void)
 {
-    SPDLOG_LOGGER_TRACE(this->fileLogger, "App resumes discovery.");
-    fileLogger->flush();
+    LogTrace("App resumes discovery.");
     SendMessage(BVMessage(
                 BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME, nullptr));
 }
 
 void MockApp::TaskQuit(void)
 {
-    // TODO: Maybe provide an interface for logging, so that
-    // each component can print traces?
-    SPDLOG_LOGGER_TRACE(this->fileLogger, "App quits.");
-    fileLogger->flush();
+    LogTrace("App quits.");
     SendMessage(BVMessage(
                 BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr));
 }
 
 void MockApp::TaskSleep(void)
 {
-    SPDLOG_LOGGER_TRACE(this->fileLogger, "App sleeps...");
-    fileLogger->flush();
+    LogTrace("App sleeps...");
     std::this_thread::sleep_for(std::chrono::milliseconds(this->taskSleepMs));
 }
 

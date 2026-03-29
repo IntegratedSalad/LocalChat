@@ -8,11 +8,13 @@
 #include "linked_list.h"
 #include "stdio.h"
 #include "spdlog/spdlog.h"
+#include "BVLoggable.hpp"
 #include <boost/asio.hpp>
 #include <condition_variable>
 
 class MockDiscovery : public BVDiscovery, 
-                      public BVComponent
+                      public BVComponent,
+                      public BVLoggable
 {
 private:
     bool isConnectionContextAlive;
@@ -72,7 +74,8 @@ public:
 };
 
 class MockService : public BVService,
-                    public BVComponent
+                    public BVComponent,
+                    public BVLoggable
 {
 private:
 
@@ -94,7 +97,8 @@ public:
 };
 
 class MockApp : public BVApp,
-                public BVComponent
+                public BVComponent,
+                public BVLoggable
 {
 private:
     using TaskFunction = std::function<void(void)>;
@@ -107,15 +111,13 @@ private:
     // task queue - what will App do while running
     // (simulate user behavior)
     std::queue<TaskFunction> tasks_q;
-    std::shared_ptr<spdlog::logger> fileLogger;
 
     int taskSleepMs = 1000;
 
 public:
     MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
             std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
-            boost::asio::io_context& _ioContext,
-            std::shared_ptr<spdlog::logger> _fileLogger);
+            boost::asio::io_context& _ioContext);
 
     ~MockApp() override
     {}
