@@ -271,27 +271,39 @@ TEST_F(CommunicationFixture, CheckAppPausingDiscoveryAndResumingLater)
        1. Task Sleep
        2. Task Sleep
        3. Task Sleep
-       3. Task Announce
        4. Task Pause Discovery
-       5. Task Sleep
-       5. Task Sleep
+       5. Task Announce
        6. Task Sleep
-       7. Task Announce
-       8. Task Resume Discovery
+       7. Task Sleep
+       8. Task Sleep
        9. Task Sleep
-       10. Task Sleep
-       9. Task Sleep
-       9. Task Sleep
-       11. Task Announce
-       12. Task Quit
+       10. Task Announce
+       11. Task Sleep
+       12. Task Sleep
+       13. Task Sleep
+       14. Task Sleep
+       15. Task Announce
+       16. Task Resume Discovery
+       17. Task Sleep
+       18. Task Sleep
+       19. Task Sleep
+       20. Task Sleep
+       21. Task Announce
+       22. Task Quit
     */
-    discovery_mock_p->SetSleepMs(3000);
-    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    discovery_mock_p->SetSleepMs(1300);
+    app_mock_p->SetTaskSleepMs(500);
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskPauseDiscovery, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
@@ -336,7 +348,7 @@ TEST_F(CommunicationFixture, CheckAppPausingDiscoveryAndResumingLater)
     app_mock_p->LaunchWorkerThread();
 
     // sleep until app_mock queue is non empty! (or just wait for now...)
-    std::this_thread::sleep_for(std::chrono::milliseconds(25000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(23000));
 
     // Join all
     discovery_mock_p->TryJoinMailBoxThread();
@@ -346,6 +358,9 @@ TEST_F(CommunicationFixture, CheckAppPausingDiscoveryAndResumingLater)
     broker_p->TryJoinWorkerThread();
 
     // Verify logs? They perhaps have to be verified manually
+    // It probably will show another services, when timings are off
+    // (app does not pause discovery before it publishing)
+    // because PauseDiscovery comes after/while discovery is sleeping.
 
     // Verify queue not empty
     ASSERT_NE(app_mock_p->GetServiceVectorCopy().size(), 0);

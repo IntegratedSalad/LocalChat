@@ -109,7 +109,7 @@ private:
     std::queue<TaskFunction> tasks_q;
     std::shared_ptr<spdlog::logger> fileLogger;
 
-    const int taskSleepMs = 1000;
+    int taskSleepMs = 1000;
 
 public:
     MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
@@ -142,6 +142,15 @@ public:
     {
         this->tasks_q.push(f);
     }
+
+    int GetTaskSleepMs(void)
+    {
+        return this->taskSleepMs;
+    }
+    void SetTaskSleepMs(const int _ms)
+    {
+        this->taskSleepMs = _ms;
+    }    
     
     BVStatus HandlePublishedServices(std::unique_ptr<std::any>) override;
     // void HandleServicesDiscoveredUpdateEvent(void) override;
