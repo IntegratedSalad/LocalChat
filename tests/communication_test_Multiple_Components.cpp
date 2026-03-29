@@ -20,7 +20,7 @@
  * the worker thread is blocked when there are no new services discovered
  * via browsing. This might be implemented later in another test.
  * This might not be that important, as the test might not reflect
- * challenges working with the concrete implementation.
+ * challenges to face while working with the concrete implementation.
  * TODO: Documentaiton
  * @test CheckInit
  * @brief ...
@@ -65,16 +65,19 @@ protected:
             std::string fileName = 
                 std::string(test_info->test_suite_name()) + "_" + test_info->name() + ".log";
 
+            std::string loggerName =
+                std::string(test_info->test_suite_name()) + "_" + test_info->name() + "_logger";
+            spdlog::drop(loggerName);
+
             fs::path logPath = logDir / fileName;
 
             fileLogger = spdlog::basic_logger_mt(
-                "communication_test_Multiple_Components_Logger",
+                loggerName,
                 logPath.string(),
                 true);
             fileLogger->set_level(spdlog::level::trace);
             fileLogger->flush_on(spdlog::level::trace);
             SPDLOG_LOGGER_TRACE(this->fileLogger, "Logger set up.");
-
         }
         catch (const spdlog::spdlog_ex &ex)
         {
