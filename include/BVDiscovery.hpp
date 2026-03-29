@@ -4,6 +4,7 @@
 #include <queue>
 #include <list>
 #include <boost/asio.hpp>
+#include <condition_variable>
 #include "linked_list.h"
 #include "const.h"
 #include "BVService.hpp"
@@ -21,7 +22,7 @@ private:
     virtual void CreateConnectionContext(void) = 0; // private member function which actually starts
     // void DestroyConnectionContext <- TODO:
     virtual void Setup(void) = 0;
-    virtual void run() = 0;
+    virtual void run() = 0; // Browse? TODO: Maybe change
 
     // TODO: From BVComponent, concrete implementation of BVDiscovery inherits Stop().
     // override this in implementations

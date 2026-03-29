@@ -29,9 +29,10 @@ private:
 
     // Callbacks?
     virtual BVStatus OnStart(std::unique_ptr<std::any>) = 0;
+    virtual BVStatus OnPause(std::unique_ptr<std::any>) = 0;
+    virtual BVStatus OnResume(std::unique_ptr<std::any>) = 0;
     virtual BVStatus OnShutdown(std::unique_ptr<std::any>) = 0;
     virtual BVStatus OnRestart(std::unique_ptr<std::any>) = 0;
-    virtual BVStatus OnPause(std::unique_ptr<std::any>) = 0;
 
     // BVStatus React(void); // Check State and react
 

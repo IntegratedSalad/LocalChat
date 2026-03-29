@@ -7,7 +7,7 @@ typedef enum class BVEventType
     BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE,
     BVEVENTTYPE_DISCOVERY_REQUEST_RESUME,
     BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN, // terminate all; usually BVEVENTTYPE_TERMINATE_ALL
-    BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+    BVEVENTTYPE_DISCOVERY_REQUEST_RESTART, // this shouldn't mean doing anything to the thread
 
     BVEVENTTYPE_APP_PUBLISHED_SERVICE, // published service list or pushed on queue
 

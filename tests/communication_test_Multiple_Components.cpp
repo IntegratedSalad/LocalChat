@@ -8,6 +8,27 @@
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
+/*
+ * @name communication_test_Multiple_Components
+ * @brief Testcases for testing interaction
+ * of Discovery and App components as their Mocks
+ * with the Broker instantiated and routing messages between them
+ * This test treats Discovery as a general abstraction
+ * which periodically posts some test services.
+ * It does not simulate a very important detail - 
+ * whenever we wait for the daemon response in Discovery implementation
+ * the worker thread is blocked when there are no new services discovered
+ * via browsing. This might be implemented later in another test.
+ * This might not be that important, as the test might not reflect
+ * challenges working with the concrete implementation.
+ * TODO: Documentaiton
+ * @test CheckInit
+ * @brief ...
+ * 
+ * @test CheckInitAndDeInitSequences
+ * @brief ...
+*/
+
 class CommunicationFixture : public ::testing::Test
 {
 protected:
@@ -66,18 +87,16 @@ protected:
                                         .hostname = "mock",
                                         .regtype = "_localchathost._tcp"};
         
-        broker_p = std::make_unique<BVBroker>(std::make_shared<threadsafe_queue<BVMessage>>());
+        broker_p = std::make_unique<BVBroker>(std::make_shared<threadsafe_queue<BVMessage>>()); // TODO: pass logger here too
         discovery_mock_p = 
             std::make_unique<MockDiscovery>(hostDataMock,
                                             std::make_shared<threadsafe_queue<BVMessage>>(),
-                                            std::make_shared<threadsafe_queue<BVMessage>>());
+                                            std::make_shared<threadsafe_queue<BVMessage>>()); // TODO: pass logger here too
 
         app_mock_p = std::make_unique<MockApp>(std::make_shared<threadsafe_queue<BVMessage>>(),
                                                std::make_shared<threadsafe_queue<BVMessage>>(),
                                                ioContext,
                                                fileLogger);
-
-
     }
 
     void TearDown() override
@@ -177,8 +196,9 @@ TEST_F(CommunicationFixture, CheckBasicContinuousCommunicationAndDeInit)
        2. Task Announce
        3. Task Sleep
        4. Task Sleep
-       5. Task Announce
-       6. Task Quit - this should send termination message!
+       5. Task Sleep
+       6. Task Announce
+       7. Task Quit - this should send termination message!
     */
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
     app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));
@@ -227,33 +247,123 @@ TEST_F(CommunicationFixture, CheckBasicContinuousCommunicationAndDeInit)
     app_mock_p->TryJoinWorkerThread();
     broker_p->TryJoinWorkerThread();
 
+    // Verify logs? They perhaps have to be verified manually
+
+    // Verify queue not empty
     ASSERT_NE(app_mock_p->GetServiceVectorCopy().size(), 0);
 
-    // Verify logs?
-    // Verify queue empty
-    // Verify is browsing active
-    // Verify each component is not listening to mail anymore!
-    // Verify app serviceV?
-}
+    // Verify flags
+    ASSERT_FALSE(discovery_mock_p->GetIsListeningToMail());
+    ASSERT_FALSE(discovery_mock_p->GetIsBrowsingActive());
+    ASSERT_FALSE(app_mock_p->GetIsListeningToMail());
 
+    // Verify app serviceV? What do we expect to be in serviceV?
+
+    // For now, this suffices
+}
 
 TEST_F(CommunicationFixture, CheckAppPausingDiscoveryAndResumingLater)
 {
-    // This cancels being able to be discovered.
+    // This cancels being able to discover.
+    // The announce result before pause and after pause and a little bit of waiting
+    // should be the same, because discovery had not been active.
+    /* Tasks:
+       1. Task Sleep
+       2. Task Sleep
+       3. Task Sleep
+       3. Task Announce
+       4. Task Pause Discovery
+       5. Task Sleep
+       5. Task Sleep
+       6. Task Sleep
+       7. Task Announce
+       8. Task Resume Discovery
+       9. Task Sleep
+       10. Task Sleep
+       9. Task Sleep
+       9. Task Sleep
+       11. Task Announce
+       12. Task Quit
+    */
+    discovery_mock_p->SetSleepMs(3000);
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskPauseDiscovery, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskResumeDiscovery, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskSleep, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskAnnounce, app_mock_p.get()));
+    app_mock_p->SubmitTask(std::bind(&MockApp::TaskQuit, app_mock_p.get()));
+
+    BVStatus attachStatusDiscovery = broker_p->Attach(*discovery_mock_p);
+    BVStatus attachStatusApp = broker_p->Attach(*app_mock_p);
+
+    ASSERT_EQ(attachStatusDiscovery, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(attachStatusApp, BVStatus::BVSTATUS_OK);
+
+    BVStatus subStatus1 = broker_p->Subscribe(discovery_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_START);
+    BVStatus subStatus2 = broker_p->Subscribe(discovery_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE);
+    BVStatus subStatus3 = broker_p->Subscribe(discovery_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME);
+    BVStatus subStatus4 = broker_p->Subscribe(discovery_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    BVStatus subStatus5 = broker_p->Subscribe(discovery_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN);
+    BVStatus subStatus6 = broker_p->Subscribe(discovery_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART);
+    BVStatus subStatus7 = broker_p->Subscribe(app_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE);
+    BVStatus subStatus8 = broker_p->Subscribe(app_mock_p->GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+
+    ASSERT_EQ(subStatus1, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus2, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus3, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus4, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus5, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus6, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus7, BVStatus::BVSTATUS_OK);
+    ASSERT_EQ(subStatus8, BVStatus::BVSTATUS_OK);
+
+    // Launch
+    broker_p->LaunchWorkerThread();
+    discovery_mock_p->StartListeningOnMailbox();
+    discovery_mock_p->LaunchWorkingThread();
+    app_mock_p->StartListeningOnMailbox();
+    app_mock_p->LaunchWorkerThread();
+
+    // sleep until app_mock queue is non empty! (or just wait for now...)
+    std::this_thread::sleep_for(std::chrono::milliseconds(25000));
+
+    // Join all
+    discovery_mock_p->TryJoinMailBoxThread();
+    discovery_mock_p->TryJoinWorkerThread();
+    app_mock_p->TryJoinMailBoxThread();
+    app_mock_p->TryJoinWorkerThread();
+    broker_p->TryJoinWorkerThread();
+
+    // Verify logs? They perhaps have to be verified manually
+
+    // Verify queue not empty
+    ASSERT_NE(app_mock_p->GetServiceVectorCopy().size(), 0);
+
+    // Verify flags
+    ASSERT_FALSE(discovery_mock_p->GetIsListeningToMail());
+    ASSERT_FALSE(discovery_mock_p->GetIsBrowsingActive());
+    ASSERT_FALSE(app_mock_p->GetIsListeningToMail());
 }
 
+// TEST_F(CommunicationFixture, CheckAppShuttingDownDiscovery)
+// {
+//     // This should never happen, as this means that Discovery will no longer
+//     // be able to listen to messages.
+//     // Hard reset later implemented maybe?
+// }
 
-TEST_F(CommunicationFixture, CheckAppShuttingDownDiscovery)
-{
-    // This should never happen, as this means that Discovery will no longer
-    // be able to listen to messages.
-    // Hard reset later implemented maybe?
-}
-
-TEST_F(CommunicationFixture, CheckAppRestartingDiscovery)
-{
-
-}
+// Maybe test doing tasks without delay?
 
 // These will have to be tested later
 // TEST_F(CommunicationFixture, CheckAppShuttingDownService)

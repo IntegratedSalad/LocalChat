@@ -66,6 +66,8 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
 BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 {
     // DNSServiceProcessResult will block until there are no new services discovered.
+    // There's a problem with this.
+    // This will block indefinitely, and cannot go to a different state, when is blocking.
     DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef); // blocks
     if (error != kDNSServiceErr_NoError) {
         std::cerr << "[ProcessDNSServiceBrowseResult] Encountered an error in DNSServiceBrowseResult: " << error << std::endl;
@@ -119,6 +121,8 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult()
 
 void BVDiscovery_Bonjour::run()
 {
+
+
     std::cout << "Scheduling the timer..." << std::endl;
     this->CreateConnectionContext();
 

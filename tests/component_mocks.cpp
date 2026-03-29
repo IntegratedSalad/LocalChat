@@ -19,6 +19,9 @@ MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
 
     RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
                      std::bind(&MockDiscovery::OnPause, this, std::placeholders::_1));
+    
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME, 
+                     std::bind(&MockDiscovery::OnResume, this, std::placeholders::_1));
 
     RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
                      std::bind(&MockDiscovery::OnShutdown, this, std::placeholders::_1));
@@ -160,13 +163,16 @@ void MockDiscovery::run(void)
     this->SetIsBrowsingActive(true);
     int serviceNum = 0;
 
-    while (this->GetIsBrowsingActive())
+    // this literally might be infinite loop, because GetIsBrowsedActive will not be changed
+    // (it would mean joining worker thread)
+    while (this->GetIsBrowsingActive()) 
     {
-        // wait 3 s - simulate waiting for daemon response
-        // TODO: maybe random interval 1-5s?
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        // If paused - wait
+        Pause();
 
-        // replace with std::to_string
+        // wait 3 s - simulate waiting for daemon response
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs)); // TODO: put this in a variable,
+
         std::string s("TESTSERVICE" + std::to_string(serviceNum));
         LinkedListElement_str* llen_p = LinkedListElement_str_Constructor((char*)s.c_str(), NULL);
         LinkedList_str_AddElement(this->GetLinkedList_p(), llen_p);
@@ -178,7 +184,6 @@ void MockDiscovery::run(void)
             LinkedList_str_AddElement(this->GetLinkedList_p(), llen_p);
             serviceNum++;
         }
-        // PushBrowsedServicesToQueue(); // deprecated!
         BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
         SendMessage(BVMessage(
                         BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
@@ -204,9 +209,23 @@ BVStatus MockDiscovery::OnStart(std::unique_ptr<std::any> dp) // test passing dp
 BVStatus MockDiscovery::OnPause(std::unique_ptr<std::any> dp)
 {
     this->isConnectionContextAlive = false;
-    this->SetIsBrowsingActive(false);
+    if (this->isPaused)
+    {
+        return BVStatus::BVSTATUS_NOK;
+    }
+    this->isPaused = true;
+    return BVStatus::BVSTATUS_OK;
+}
 
-    // TODO: if this is mailbox thread, should we join worker thread here?
+BVStatus MockDiscovery::OnResume(std::unique_ptr<std::any>)
+{
+    this->isConnectionContextAlive = true;
+    if (!this->isPaused)
+    {
+        return BVStatus::BVSTATUS_NOK;
+    }
+    this->isPaused = false;
+    pausedCv.notify_all();
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -292,6 +311,8 @@ BVStatus MockApp::HandlePublishedServices(std::unique_ptr<std::any> dp)
     // Mock client will periodically read it, but real user in the product implementation
     // will try to read it and they might do it when this is updated here
 
+    SPDLOG_LOGGER_TRACE(this->fileLogger, "App calls HandlePublishedServices.");
+    fileLogger->flush();
     std::lock_guard<std::mutex> l(this->serviceVectorMutex);
     for (auto& lElem : newServicesList)
     {
@@ -322,6 +343,14 @@ BVStatus MockApp::OnRestart(std::unique_ptr<std::any> dp)
 
 BVStatus MockApp::OnPause(std::unique_ptr<std::any> dp)
 {
+
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus MockApp::OnResume(std::unique_ptr<std::any> dp)
+{
+
+
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -339,13 +368,36 @@ void MockApp::TaskAnnounce(void)
     }
 }
 
+
+// Start - spawn worker AND mailbox thread
+void MockApp::TaskStartDiscovery(void)
+{
+    // I think that the App should have a handle to threads.
+    // As it is put on the main thread, and can manage other.
+}
+
+// Pause - join worker thread for a moment
 void MockApp::TaskPauseDiscovery(void)
 {
-    // TODO: send message
+    SPDLOG_LOGGER_TRACE(this->fileLogger, "App pauses discovery.");
+    fileLogger->flush();
+    SendMessage(BVMessage(
+                BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, nullptr));
+}
+
+// Resume - spawn worker thread
+void MockApp::TaskResumeDiscovery(void)
+{
+    SPDLOG_LOGGER_TRACE(this->fileLogger, "App resumes discovery.");
+    fileLogger->flush();
+    SendMessage(BVMessage(
+                BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME, nullptr));
 }
 
 void MockApp::TaskQuit(void)
 {
+    // TODO: Maybe provide an interface for logging, so that
+    // each component can print traces?
     SPDLOG_LOGGER_TRACE(this->fileLogger, "App quits.");
     fileLogger->flush();
     SendMessage(BVMessage(
@@ -443,11 +495,17 @@ BVStatus TestHeartbeatComponent::OnShutdown(std::unique_ptr<std::any>)
 
 BVStatus TestHeartbeatComponent::OnRestart(std::unique_ptr<std::any>)
 {
-
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus TestHeartbeatComponent::OnPause(std::unique_ptr<std::any>)
 {
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus TestHeartbeatComponent::OnResume(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
 }
 
 TestHeartbeatListenerComponent::TestHeartbeatListenerComponent(
@@ -503,7 +561,7 @@ void TestHeartbeatListenerComponent::Setup(void)
 
 BVStatus TestHeartbeatListenerComponent::OnStart(std::unique_ptr<std::any>)
 {
-
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus TestHeartbeatListenerComponent::OnShutdown(std::unique_ptr<std::any>)
@@ -513,12 +571,17 @@ BVStatus TestHeartbeatListenerComponent::OnShutdown(std::unique_ptr<std::any>)
 
 BVStatus TestHeartbeatListenerComponent::OnRestart(std::unique_ptr<std::any>)
 {
+    return BVStatus::BVSTATUS_OK;
+}
 
+BVStatus TestHeartbeatListenerComponent::OnResume(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus TestHeartbeatListenerComponent::OnPause(std::unique_ptr<std::any>)
 {
-
+    return BVStatus::BVSTATUS_OK;
 }
 
 TCComponent::TCComponent(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
@@ -549,6 +612,7 @@ BVComponent(_outMbx, _inMbx)
 
 BVStatus TCComponent::OnStart(std::unique_ptr<std::any>)
 {
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus TCComponent::OnShutdown(std::unique_ptr<std::any>)
@@ -558,8 +622,15 @@ BVStatus TCComponent::OnShutdown(std::unique_ptr<std::any>)
 
 BVStatus TCComponent::OnRestart(std::unique_ptr<std::any>)
 {
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus TCComponent::OnPause(std::unique_ptr<std::any>)
 {
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus TCComponent::OnResume(std::unique_ptr<std::any>)
+{
+    return BVStatus::BVSTATUS_OK;
 }

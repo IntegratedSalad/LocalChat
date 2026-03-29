@@ -7,8 +7,9 @@
 #include "const.h"
 #include "linked_list.h"
 #include "stdio.h"
-#include <boost/asio.hpp>
 #include "spdlog/spdlog.h"
+#include <boost/asio.hpp>
+#include <condition_variable>
 
 class MockDiscovery : public BVDiscovery, 
                       public BVComponent
@@ -16,9 +17,25 @@ class MockDiscovery : public BVDiscovery,
 private:
     bool isConnectionContextAlive;
 
+    std::atomic<bool> isPaused = false;
+    std::condition_variable pausedCv;
+    std::mutex pauseMutex;
+    int sleepMs = 1000;
+
     void CreateConnectionContext(void) override;
     void Setup(void) override;
     void run(void) override;
+
+    void Pause(void)
+    {
+        std::unique_lock<std::mutex> lk(pauseMutex);
+        pausedCv.wait(lk, [this]{return isPaused==false;});       
+    }
+
+    // maybe iocontext for simulating Bonjour?
+    // OR just create another subclass!
+    // TODO: iocontext in MockDiscoveryBonjour
+    // IF NEEDED
 
 public:
     MockDiscovery(const BVServiceHostData _hostData,
@@ -37,10 +54,19 @@ public:
     void RunNTimes(const int n);
     void RunNTimesWithKElements(const int n, const int k);
 
-    // Define callbacks for other events
+    int GetSleepMs(void)
+    {
+        return this->sleepMs;
+    }
+    void SetSleepMs(const int _ms)
+    {
+        this->sleepMs = _ms;
+    }
 
+    // Define callbacks for other events
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
 };
@@ -61,7 +87,7 @@ public:
     {}
 
     BVStatus Register(void) override;
-
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
@@ -101,11 +127,13 @@ public:
        Tasks are simulations of user input.
     */  
 
-    // Announce registered services
-    // TODO: Think of utilizing a logging library spdlog
-    //       to verify announced 
+    // Announce (log) registered services in serviceV
     void TaskAnnounce(void);
     void TaskPauseDiscovery(void);
+    // Starting means starting the worker AND mailbox thread.
+    void TaskStartDiscovery(void);
+    // Resuming means ...
+    void TaskResumeDiscovery(void);
     void TaskQuit(void);
     void TaskSleep(void);
     // void 
@@ -120,6 +148,7 @@ public:
     // void HandleUserKeyboardInput(void) override;
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
@@ -168,6 +197,7 @@ public:
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
 };
@@ -193,6 +223,7 @@ public:
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
 };
@@ -220,6 +251,7 @@ public:
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
 };
