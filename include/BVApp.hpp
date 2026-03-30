@@ -3,7 +3,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
-#include <condition_variable>
+#include <list>
 #include <queue>
 #include <algorithm>
 #include <thread>
@@ -33,6 +33,8 @@ private:
     std::atomic<bool> isRunning = true;
     // BVActor actor; // ?
     std::thread worker_thread;
+
+    // TODO: Managing BVService can be done from main UI thread (APP).
 
     // checking the serviceQueue
     // This can be implemented separately from any other

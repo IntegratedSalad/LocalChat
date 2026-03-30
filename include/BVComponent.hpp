@@ -50,7 +50,7 @@ private:
             {
                 callback_m.at(msg->event_t);
             }
-            catch(const std::out_of_range& ex)
+            catch(const std::out_of_range& ex) // TODO: Maybe log this too...
             {
                 std::cerr << "[BVComponent]::ListenToMail, mailbox_thread for " 
                             << "out_of_range::what(): " << ex.what() << std::endl;

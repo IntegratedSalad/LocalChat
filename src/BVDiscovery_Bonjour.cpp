@@ -120,6 +120,7 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
         LogError("Discovery - couldn't initialize dnsRef by DNSServiceBrowse {}", error);
         return;
     }
+    LogTrace("Discovery: Connection context created.");
 }
 
 BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
@@ -129,7 +130,8 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
     {
         return BVStatus::BVSTATUS_OK;
     }
-    DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef); // blocks
+    // Now, this shouldn't block, as this handler is only caled when the socked is ready to read.
+    DNSServiceErrorType error = DNSServiceProcessResult(this->dnsRef);
     if (error != kDNSServiceErr_NoError) {
         std::cerr << "[ProcessDNSServiceBrowseResult] Encountered an error in DNSServiceBrowseResult: " << error << std::endl;
         this->SetIsBrowsingActive(false);
@@ -144,7 +146,9 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
     return BVStatus::BVSTATUS_OK;
 }
 
-// put on Worker thread
+// Put on Worker thread
+// This starts AwaitingFD, which triggers a handler whenever the socket is marked
+// as ready to read from.
 void BVDiscovery_Bonjour::Browse(void)
 {
     const int fd = DNSServiceRefSockFD(this->dnsRef);

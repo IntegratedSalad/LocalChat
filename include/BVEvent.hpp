@@ -10,6 +10,8 @@ typedef enum class BVEventType
     BVEVENTTYPE_DISCOVERY_REQUEST_RESTART, // this shouldn't mean doing anything to the thread
 
     BVEVENTTYPE_APP_PUBLISHED_SERVICE, // published service list or pushed on queue
+    BVEVENTTYPE_APP_DISCOVERY_RESUMED,
+    BVEVENTTYPE_APP_DISCOVERY_PAUSED,
 
     BVEVENTTYPE_SERVICE_REQUEST_START,
     BVEVENTTYPE_SERVICE_REQUEST_SHUTDOWN,
