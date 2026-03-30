@@ -169,10 +169,10 @@ public:
 
         char c = '\0';
         const ssize_t n = ::read(STDIN_FILENO, &c, 1);
-        if (n < 0)
-        {
-            throw std::runtime_error("BVTerminal: read failed");
-        }
+        // if (n < 0)
+        // {
+        //     throw std::runtime_error("BVTerminal: read failed");
+        // }
         if (n == 0)
         {
             throw std::runtime_error("BVTerminal: EOF on stdin");

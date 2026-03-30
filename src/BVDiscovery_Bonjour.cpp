@@ -50,6 +50,7 @@ BVStatus BVDiscovery_Bonjour::OnPause(std::unique_ptr<std::any>)
         return BVStatus::BVSTATUS_OK; // this shouldn't happen, but don't do anything.
     }
     this->SetIsBrowsingActive(false);
+    LogTrace("Discovery: Pausing...");
 
     boost::system::error_code ec;
     browseFD.cancel(ec);
@@ -76,6 +77,7 @@ BVStatus BVDiscovery_Bonjour::OnResume(std::unique_ptr<std::any>)
         LogTrace("Discovery: pauseTimer has timed out.");
     } 
     this->SetIsBrowsingActive(true);
+    LogTrace("Discovery: Resuming...");
     AwaitFD();
     return BVStatus::BVSTATUS_OK;
 }

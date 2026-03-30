@@ -62,3 +62,10 @@ bin/
 # Misc
 .DS_Store
 *.cmake
+
+# Logs
+*.log
+
+# Tests
+test/
+tests/

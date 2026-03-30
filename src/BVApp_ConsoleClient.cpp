@@ -12,6 +12,7 @@ BVComponent(_outMbx, _inMbx)
 
 void BVApp_ConsoleClient::Run(void)
 {
+    std::cerr << "stdin isatty = " << ::isatty(STDIN_FILENO) << '\n';
     this->terminal.SetNonCanonicalMode();
     PrintAll();
     while (this->GetIsRunning())
@@ -37,7 +38,7 @@ void BVApp_ConsoleClient::Run(void)
                     BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, nullptr));
                 break;
             case BVConsoleActionType::BVCONSOLEACTION_RESUME_DISCOVERY:
-                LogTrace("App: Pause discovery message sent.");
+                LogTrace("App: Resume discovery message sent.");
                 SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME, nullptr));
                 break;
@@ -71,7 +72,6 @@ void BVApp_ConsoleClient::Run(void)
 // must redraw everything
 void BVApp_ConsoleClient::PrintAll(void)
 {
-    std::lock_guard stdoutlk{this->stdoutMutex};
     for (int i = 0; i < 200; i++) {std::cout << std::endl;}
     std::cout << "LocalChat console client v0.2.1.2.2a" << std::endl;
     std::cout << "Re(D)raw" << std::endl;
@@ -89,7 +89,7 @@ void BVApp_ConsoleClient::PrintAll(void)
 
 BVStatus BVApp_ConsoleClient::PrintServices(void)
 {
-    std::lock_guard<std::mutex> l(this->serviceVectorMutex);
+    // std::lock_guard<std::mutex> l(this->serviceVectorMutex);
     BVStatus status = BVStatus::BVSTATUS_OK;
     if (this->serviceV.size() == 0)
     {
@@ -139,7 +139,6 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
     }
     // this is called from different thread
     PrintAll();
-    PrintNewServicesNotification();
     return BVStatus::BVSTATUS_OK;
 }
 
