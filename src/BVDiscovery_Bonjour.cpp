@@ -56,8 +56,13 @@ BVStatus BVDiscovery_Bonjour::OnPause(std::unique_ptr<std::any>)
     browseFD.cancel(ec);
 
     this->pauseTimer.expires_after(std::chrono::seconds(this->pauseTimerDelayS));
-    this->pauseTimer.async_wait([this](const boost::system::error_code& /*e*/)
+    this->pauseTimer.async_wait([this](const boost::system::error_code& ec)
     {
+        if (ec == boost::asio::error::operation_aborted)
+        {
+            LogTrace("Pause timer cancelled.");
+            return;
+        }
         this->OnResume(nullptr);
     });
 
@@ -68,14 +73,7 @@ BVStatus BVDiscovery_Bonjour::OnResume(std::unique_ptr<std::any>)
 {
     // Cancel timer
     const std::size_t opCancelledNum = this->pauseTimer.cancel();
-    if (opCancelledNum > 0)
-    {
-        LogTrace("Discovery: cancelled a pauseTimer.");
-    } 
-    else
-    {
-        LogTrace("Discovery: pauseTimer has timed out.");
-    } 
+    LogTrace("Discovery: pauseTimer has timed out.");
     this->SetIsBrowsingActive(true);
     LogTrace("Discovery: Resuming...");
     AwaitFD();
