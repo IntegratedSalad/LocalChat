@@ -142,14 +142,70 @@ int main(int argc, char** argv)
 #endif
     BVApp_ConsoleClient consoleClient{std::make_shared<threadsafe_queue<BVMessage>>(),
                                       std::make_shared<threadsafe_queue<BVMessage>>()};
-    
     consoleClient.SetLogger(fileLogger);
-    std::thread td([&](){
-        discovery();
-    });
 
-    consoleClient.Run();
-    td.join();
+    // Broker setup
+    BVStatus attachStatusDiscovery = broker.Attach(discovery);
+    BVStatus attachStatusApp = broker.Attach(consoleClient);
+    if (attachStatusDiscovery != BVStatus::BVSTATUS_OK ||
+        attachStatusApp       != BVStatus::BVSTATUS_OK)
+    {
+        std::cerr << "Fatal error: Broker couldn't attach all components..." << std::endl;
+        exit(-1);
+    }
+
+    BVStatus subStatusDiscoveryRequestStart = 
+        broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_START);
+    BVStatus subStatusDiscoveryRequestPause = 
+        broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE);
+    BVStatus subStatusDiscoveryRequestResume = 
+        broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME);
+    BVStatus subStatusDiscoveryTerminateAll = 
+        broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    BVStatus subStatusDiscoveryRequestShutdown = 
+        broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN);
+    BVStatus subStatusDiscoveryRequestRestart = 
+        broker.Subscribe(discovery.GetSubscriberId(),  BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART);
+    BVStatus subStatusAppRequestRestart = 
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE);
+    // this is needed to exit listening on mailbox!
+    BVStatus subStatusAppRequestTerminate = 
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    if (subStatusDiscoveryRequestStart    != BVStatus::BVSTATUS_OK ||
+        subStatusDiscoveryRequestPause    != BVStatus::BVSTATUS_OK ||
+        subStatusDiscoveryRequestResume   != BVStatus::BVSTATUS_OK ||
+        subStatusDiscoveryTerminateAll    != BVStatus::BVSTATUS_OK ||
+        subStatusDiscoveryRequestShutdown != BVStatus::BVSTATUS_OK ||
+        subStatusDiscoveryRequestRestart  != BVStatus::BVSTATUS_OK ||
+        subStatusAppRequestRestart        != BVStatus::BVSTATUS_OK ||
+        subStatusAppRequestTerminate      != BVStatus::BVSTATUS_OK)
+    {
+        std::cerr << "Fatal error: Broker couldn't subscribe to a crucial event" << std::endl;
+        exit(-1);
+    }
+
+    broker.LaunchWorkerThread();
+    discovery.StartListeningOnMailbox();
+    discovery.LaunchWorkingThread();
+    consoleClient.StartListeningOnMailbox();
+
+    consoleClient.Run(); // this is our app worker thread (main thread)
+
+    // Join all
+    discovery.TryJoinMailBoxThread();
+    discovery.TryJoinWorkerThread();
+    consoleClient.TryJoinMailBoxThread();
+    broker.TryJoinWorkerThread();
+
+    // Detach
+    BVStatus dDiscoveryStatus = broker.Detach(discovery.GetSubscriberId());
+    BVStatus dAppStatus = broker.Detach(consoleClient.GetSubscriberId());
+    if (dDiscoveryStatus != BVStatus::BVSTATUS_OK || dAppStatus != BVStatus::BVSTATUS_OK)
+    {
+        std::cerr << "Fatal error: Broker couldn't detach all components..." << std::endl;
+        exit(-1);
+    }
+
 
     return 0;
 }
