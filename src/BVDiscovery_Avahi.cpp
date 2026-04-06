@@ -12,21 +12,33 @@
 // } BrowseData;
 
 BVDiscovery_Avahi::BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
-                  std::mutex& _discoveryQueueMutex,
-                  boost::asio::io_context& _ioContext, // needed?
-                  std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                  std::condition_variable& _discoveryQueueCV,
-                  bool& _isDiscoveryQueueReady,
-                  const BVServiceHostData _hostData,
-                  std::shared_ptr<AvahiSimplePoll> _simple_poll_p):
+                                     boost::asio::io_context& _ioContext, // probably not needed
+                                     const BVServiceHostData _hostData,
+                                     std::shared_ptr<AvahiSimplePoll> _simple_poll_p,
+                                     std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                                     std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx):
     client_p(std::move(_client_p)),
     simple_poll_p(_simple_poll_p),
-    BVDiscovery(_hostData, 
-                _discoveryQueueMutex,
-                _discoveryQueue,
-                _discoveryQueueCV,
-                _isDiscoveryQueueReady)
+    BVDiscovery(_hostData),
+    BVComponent(_outMbx, _inMbx)
 {
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_START,
+                     std::bind(&BVDiscovery_Avahi::OnStart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE, 
+                     std::bind(&BVDiscovery_Avahi::OnPause, this, std::placeholders::_1));
+    
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME, 
+                     std::bind(&BVDiscovery_Avahi::OnResume, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
+                     std::bind(&BVDiscovery_Avahi::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN,
+                     std::bind(&BVDiscovery_Avahi::OnShutdown, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
+                     std::bind(&BVDiscovery_Avahi::OnRestart, this, std::placeholders::_1));
     this->Setup();
 }
 
@@ -39,30 +51,41 @@ void BVDiscovery_Avahi::Setup(void)
         << std::endl;
         throw std::bad_alloc();
     }
-    // any setup required...
-}
-
-void BVDiscovery_Avahi::Shutdown(void)
-{
-
+    this->CreateConnectionContext();
 }
 
 
-void BVDiscovery_Avahi::OnShutdown(void)
+BVStatus BVDiscovery_Avahi::OnStart(std::unique_ptr<std::any> dp)
 {
-
+    return BVStatus::BVSTATUS_OK;
 }
 
-
-void BVDiscovery_Avahi::Start(void)
+BVStatus BVDiscovery_Avahi::OnPause(std::unique_ptr<std::any> dp)
 {
-
+    this->SetIsPaused(true);
+    LogTrace("Discovery: Pausing...");
+    avahi_simple_poll_wakeup(this->GetSimplePoll());
+    return BVStatus::BVSTATUS_OK;
 }
 
-
-void BVDiscovery_Avahi::OnStart(void)
+BVStatus BVDiscovery_Avahi::OnResume(std::unique_ptr<std::any> dp)
 {
+    this->SetIsPaused(false);
+    LogTrace("Discovery: Resuming...");
+    this->pauseCV.notify_all();
+    return BVStatus::BVSTATUS_OK;
+}
 
+BVStatus BVDiscovery_Avahi::OnRestart(std::unique_ptr<std::any> dp)
+{
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVDiscovery_Avahi::OnShutdown(std::unique_ptr<std::any> dp)
+{
+    this->SetIsBrowsingActive(false);
+    LogTrace("Discovery: Shutting down...");
+    return BVStatus::BVSTATUS_OK;
 }
 
 
@@ -90,8 +113,24 @@ void BVDiscovery_Avahi::CreateConnectionContext(void)
 
 // void DestroyConnectionContext
 
+// This is put on a separate thread
 void BVDiscovery_Avahi::Browse()
 {
-    this->CreateConnectionContext();
-    avahi_simple_poll_loop(this->simple_poll_p.get());
+    this->SetIsBrowsingActive(true);
+    while (this->GetIsBrowsingActive())
+    {
+        if (!this->GetIsPaused())
+        {
+            int status = avahi_simple_poll_iterate(this->GetSimplePoll(),
+                                                   AVAHI_POLL_ITERATE_TIMEOUT_MS);
+            if (status == -1)
+            {
+                const std::string err_s("avahi_simple_poll_iterate returned -1");
+                throw std::runtime_error(err_s);
+            }
+        } else
+        {
+            Pause();
+        }
+    }
 }

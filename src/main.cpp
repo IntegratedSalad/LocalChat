@@ -132,13 +132,11 @@ int main(int argc, char** argv)
 #if __linux__
     auto data = service.TransferClient();
     BVDiscovery_Avahi discovery{std::move(data),
-                                discoveryQueueMutex,
                                 ioContext,
-                                discoveryQueue_p,
-                                discoveryQueueCV,
-                                isDiscoveryQueueReady,
                                 service.GetHostData(),
-                                simple_poll_p}; // TODO: Pass messageQueue
+                                simple_poll_p,
+                                std::make_shared<threadsafe_queue<BVMessage>>(),
+                                std::make_shared<threadsafe_queue<BVMessage>>()};
 #endif
     BVApp_ConsoleClient consoleClient{std::make_shared<threadsafe_queue<BVMessage>>(),
                                       std::make_shared<threadsafe_queue<BVMessage>>()};

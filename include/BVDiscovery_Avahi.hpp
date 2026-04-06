@@ -2,6 +2,8 @@
 #include "BV.hpp"
 #include "BVDiscovery.hpp"
 #include "BVAvahi_Common.hpp"
+#include "BVComponent.hpp"
+#include "BVLoggable.hpp"
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -21,36 +23,37 @@ struct AvahiServiceBrowserDeleter
     }
 };
 
-class BVDiscovery_Avahi : public BVDiscovery
+class BVDiscovery_Avahi : public BVDiscovery,
+                          public BVComponent,
+                          public BVLoggable
 {
 private:
     std::unique_ptr<AvahiClient, AvahiClientDeleter> client_p = nullptr;
     std::unique_ptr<AvahiServiceBrowser, AvahiServiceBrowserDeleter> serviceBrowser_p = nullptr;
     std::shared_ptr<AvahiSimplePoll> simple_poll_p;
+    std::atomic<bool> isPaused = false;
+    std::condition_variable pauseCV;
+    std::mutex pauseMutex;
 
     void CreateConnectionContext(void) override;
     void Setup(void) override;
-    void Browse() override;
+    void Browse(void) override;
 
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
-                      std::mutex& _discoveryQueueMutex,
-                      boost::asio::io_context& _ioContext, // needed?
-                      std::shared_ptr<std::queue<BVServiceBrowseInstance>> _discoveryQueue,
-                      std::condition_variable& _discoveryQueueCV,
-                      bool& _isDiscoveryQueueReady,
+                      boost::asio::io_context& _ioContext, // probably not needed
                       const BVServiceHostData _hostData,
-                      std::shared_ptr<AvahiSimplePoll> _simple_poll_p);
-    ~BVDiscovery_Avahi();
+                      std::shared_ptr<AvahiSimplePoll> _simple_poll_p,
+                      std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                      std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
 
     void OnServiceFound(void)
     {
-        std::unique_lock lk(this->GetDiscoveryQueueMutex());
-        this->GetDiscoveryQueueCV().wait(lk, [this]{return !this->GetIsDiscoveryQueueReady();});
-        this->PushBrowsedServicesToQueue();
-        this->SetIsDiscoveryQueueReady(true);
-        lk.unlock();
-        this->GetDiscoveryQueueCV().notify_one();
+        using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+        BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+        SendMessage(BVMessage(
+                        BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
+                            std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
         LinkedList_str_ClearList(this->GetLinkedList_p());
     }
 
@@ -58,4 +61,28 @@ public:
     {
         return this->simple_poll_p.get();
     }
+
+    bool GetIsPaused(void)
+    {
+        return this->isPaused;
+    }
+
+    void SetIsPaused(const bool _isPaused)
+    {
+        this->isPaused = _isPaused;
+    }
+
+    void Pause(void)
+    {
+        std::unique_lock<std::mutex> lk(pauseMutex);
+        pauseCV.wait(lk, [this]{return !this->isPaused;});
+    }
+
+    BVStatus OnStart(std::unique_ptr<std::any>) override;
+    BVStatus OnPause(std::unique_ptr<std::any>) override;
+    BVStatus OnResume(std::unique_ptr<std::any>) override;
+    BVStatus OnRestart(std::unique_ptr<std::any>) override;
+    BVStatus OnShutdown(std::unique_ptr<std::any>) override;
+
+    ~BVDiscovery_Avahi();
 };

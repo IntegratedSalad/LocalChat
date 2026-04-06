@@ -1,6 +1,7 @@
 #pragma once
 #include "BVEvent.hpp"
 #include <any>
+#include <memory>
 
 struct BVMessage
 {

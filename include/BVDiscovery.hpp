@@ -5,6 +5,7 @@
 #include <list>
 #include <boost/asio.hpp>
 #include <condition_variable>
+#include <mutex>
 #include "linked_list.h"
 #include "const.h"
 #include "BVService.hpp"

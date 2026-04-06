@@ -33,6 +33,8 @@ void browse_callback(
         }
         case AVAHI_BROWSER_NEW:
         {
+            // If not paused: add.
+
             // Add discovered services to the linked list
             setbuf(stdout, NULL);
             printf("Found %s.%s in %s!\n", name, type, domain);

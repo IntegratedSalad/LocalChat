@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <algorithm>
 
 // typedef uint8_t SubscriberID;
 

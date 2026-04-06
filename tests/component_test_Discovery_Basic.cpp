@@ -20,8 +20,8 @@ protected:
         outMailBox_p = std::make_shared<threadsafe_queue<BVMessage>>();
 
         BVServiceHostData hostDataMock{.port = PORT,
-                                        .domain = ".local",
                                         .hostname = "mock",
+                                        .domain = ".local",
                                         .regtype = "_localchathost._tcp"};
         discovery_mock_p = 
             std::make_unique<MockDiscovery>(hostDataMock,

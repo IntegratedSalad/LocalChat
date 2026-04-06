@@ -86,8 +86,8 @@ protected:
         }
 
         BVServiceHostData hostDataMock{.port = PORT,
-                                        .domain = ".local",
                                         .hostname = "mock",
+                                        .domain = ".local",
                                         .regtype = "_localchathost._tcp"};
         
         broker_p = std::make_unique<BVBroker>(std::make_shared<threadsafe_queue<BVMessage>>());

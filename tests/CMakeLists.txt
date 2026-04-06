@@ -67,6 +67,7 @@ target_link_libraries(
   GTest::gtest_main
   linked_list
 	${Boost_LIBRARIES}
+  spdlog::spdlog
 )
 
 add_executable(
@@ -80,6 +81,7 @@ target_link_libraries(
   GTest::gtest_main
   linked_list
 	${Boost_LIBRARIES}
+  spdlog::spdlog
 )
 
 add_executable(
