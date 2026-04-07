@@ -2,9 +2,6 @@
 #include <string>
 #include <iostream>
 
-// BVActorMessage?
-// messages sent between actors - someone disconnected, someone sent a message
-
 typedef enum class BVStatus
 {
     // General flags

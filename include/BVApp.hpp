@@ -9,7 +9,6 @@
 #include <thread>
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
-#include "BVActor.hpp"
 
 enum class BVAppEvent_e
 {
@@ -31,7 +30,6 @@ class BVApp
 {
 private:
     std::atomic<bool> isRunning = true;
-    // BVActor actor; // ?
     std::thread worker_thread;
 
     // TODO: Managing BVService can be done from main UI thread (APP).

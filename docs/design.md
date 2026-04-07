@@ -112,11 +112,6 @@ At shutdown, the worker thread is joined.
 How many bytes were transmitted?
 How much hosts were discovered etc.
 
-## Component 'BVActor'
-Description:
-An actor, an instance that acts like a user would.
-Actor will be sending messages, keeping message history etc.
-
 ## Component 'BVApp' (A manager class)
 BVApp is a class with virtual methods that helps define a GUI framework
 while providing basic functionality for managing sub-components.
