@@ -8,13 +8,14 @@ participant App                       as App
 loop not isPaused
     DiscoveryWT -> DiscoveryWT : Check isPaused
 
-?-> DiscoveryWT: Poll FD
-activate DiscoveryWT
-    DiscoveryWT -> DiscoveryWT  : Service found
-    DiscoveryWT -> Broker       : //BVEVENTTYPE_APP_PUBLISHED_SERVICE//
-deactivate DiscoveryWT
-Broker -> App                   : //BVEVENTTYPE_APP_PUBLISHED_SERVICE//
-App -> App                      : Update state
+    ?-> DiscoveryWT: Poll FD
+    activate DiscoveryWT
+        DiscoveryWT -> DiscoveryWT  : Service found
+        DiscoveryWT -> Broker       : //BVEVENTTYPE_APP_PUBLISHED_SERVICE//
+
+    deactivate DiscoveryWT
+    Broker -> App                   : //BVEVENTTYPE_APP_PUBLISHED_SERVICE//
+    App -> App                      : Update state
     App -> Broker               : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
     Broker -> DiscoveryMbx      : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
     DiscoveryMbx -> DiscoveryWT : Pause browsing
@@ -34,9 +35,9 @@ end
 
 App -> Broker                : //BVEVENTTYPE_TERMINATE_ALL//
 Broker -> DiscoveryMbx       : //BVEVENTTYPE_TERMINATE_ALL//
-Broker -> Broker             : Return  
+App -> App                   : Return
+Broker -> Broker             : Return
 DiscoveryMbx -> DiscoveryWT  : Call //::OnShutdown()// 
 DiscoveryMbx -> DiscoveryMbx : Return
 DiscoveryWT -> DiscoveryWT   : Return
-App -> App                   : Return
 @enduml

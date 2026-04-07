@@ -4,6 +4,8 @@ It uses **mDNS / DNS-SD** for service discovery, allowing machines on the same L
 
 ![screenshot](screenshot.png)
 
+This is my engineering thesis.
+
 ## Dependencies
 ### All
 - **CMake**
@@ -16,12 +18,14 @@ It uses **mDNS / DNS-SD** for service discovery, allowing machines on the same L
 - **Avahi** (daemon installed system-wide, need to install avahi-devel to compile)
 ### macOS
 - **Bonjour/mDNSResponder** (installed system-wide)
+
 # Setup and installation
 ## macOS
 ### Bonjour
 Bonjour framework, mDNSResponder and mDNSResponderHelper are installed system-wide by default on macOS.
 mDNSResponder and mNDSResponderHelper daemons are run at boot.
 LocalChat is tested and run on macOS Monterey 12.3.1 and macOS Sequoia.
+
 ## Linux
 ### Avahi
 Tested on Fedora Linux Workstation 43
