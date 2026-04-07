@@ -30,27 +30,6 @@ private:
     std::thread worker_thread; // TODO: provide way to launching this thread
 
 protected:
-    // [[deprecated]] void PushBrowsedServicesToQueue(void)
-    // {
-    //     for (const LinkedListElement_str* lle_p = this->c_ll_p->head_p;
-    //         lle_p != NULL;)
-    //     {
-    //         BVServiceBrowseInstance bI; // put on heap? No, STL containers have elements allocated on heap.
-    //         std::string regType(lle_p->data + N_BYTES_SERVNAME_MAX, N_BYTES_REGTYPE_MAX);
-    //         std::string replyDomain(lle_p->data + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, N_BYTES_REPLDOMN_MAX);
-    //         std::string serviceName(lle_p->data, N_BYTES_SERVNAME_MAX);
-
-    //         regType.erase(std::remove(regType.begin(), regType.end(), ' '), regType.end());
-    //         replyDomain.erase(std::remove(replyDomain.begin(), replyDomain.end(), ' '), replyDomain.end());
-    //         serviceName.erase(std::remove(serviceName.begin(), serviceName.end(), ' '), serviceName.end());
-
-    //         bI.regType = regType;
-    //         bI.replyDomain = replyDomain;
-    //         bI.serviceName = serviceName;
-    //         lle_p = lle_p->next_p;
-    //     }
-    // }
-
     std::list<BVServiceBrowseInstance> ReturnListFromBrowseResults(void)
     {
         std::list<BVServiceBrowseInstance> l;
@@ -78,6 +57,9 @@ protected:
         return l;
     }
 
+    // BVDiscovery is also responsible for providing resolving functionality.
+    // virtual BVStatus ResolveService(const BVServiceBrowseInstance& bI) = 0; TODO after cleanup
+
 public:
     BVDiscovery(const BVServiceHostData _hostData) :
     hostData(_hostData)
@@ -95,14 +77,6 @@ public:
     {
         LinkedList_str_Destructor(&this->GetLinkedList_p());
     };
-
-    // Function that is called upon running the discovery functionality when being passed
-    // as callable to a thread
-    // TODO: this is unnecessary
-    void operator()(void)
-    {
-        this->Browse();
-    }
 
     void LaunchWorkingThread(void)
     {

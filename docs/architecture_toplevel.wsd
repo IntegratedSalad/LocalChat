@@ -4,30 +4,24 @@ left to right direction
 
 ' Components
 component "Broker" as Broker
-component "Service" as Service
 component "Discovery" as Discovery
 component "App" as App
+component "Service" as Service
 
 ' Message Topics (Interfaces)
-interface "ServiceEvents" as ServiceEvents
 interface "DiscoveryEvents" as DiscoveryEvents
 interface "AppEvents" as AppEvents
 
 ' Broker provides all topics
-Broker -- ServiceEvents
 Broker -- DiscoveryEvents
 Broker -- AppEvents
 
 ' Publishers
-Service ..> ServiceEvents : publish
 Discovery ..> DiscoveryEvents : publish
 App ..> AppEvents : publish
 
 ' Subscribers
-App ..> ServiceEvents : subscribe
 App ..> DiscoveryEvents : subscribe
-
-Service ..> AppEvents : subscribe
 Discovery ..> AppEvents : subscribe
 
 ' Notes
@@ -38,9 +32,16 @@ Each subscription means receiving certain
 event types.
 end note
 
-note bottom of ServiceEvents
+note bottom of AppEvents
 Each event comes as a message
 containing event type and data.
+end note
+
+note right of Service
+Service is not a component, however 
+it is used to register the service
+and get Service data:
+hostname, regtype, domain and port
 end note
 
 @enduml

@@ -1,15 +1,27 @@
 # LocalChat
-Chat application that allows hosts in the same network to communicate (send text messages).
-It uses ?FLTK? to provide GUI for the user, and mDNSResponder as mDNS zero-conf implementation,
-and Boost' ASIO library for asynchronous I/O operations.
+LocalChat is a cross-platform application written in C++17 that allows hosts in the same network to communicate.
+It uses **mDNS / DNS-SD** for service discovery, allowing machines on the same LAN to find each other automatically.
 
+![screenshot](screenshot.png)
+
+## Dependencies
+### All
+- **CMake**
+- **Threads / concurrency primitives from the C++ standard library**
+- **Boost ASIO**
+- **wxWidgets**
+- **spdlog**
+- **Google Test**
+### Linux
+- **Avahi** (daemon installed system-wide, need to install avahi-devel to compile)
+### macOS
+- **Bonjour/mDNSResponder** (installed system-wide)
 # Setup and installation
 ## macOS
 ### Bonjour
 Bonjour framework, mDNSResponder and mDNSResponderHelper are installed system-wide by default on macOS.
 mDNSResponder and mNDSResponderHelper daemons are run at boot.
 LocalChat is tested and run on macOS Monterey 12.3.1 and macOS Sequoia.
-
 ## Linux
 ### Avahi
 Tested on Fedora Linux Workstation 43
@@ -23,4 +35,4 @@ make -jX, where X is the number of threads.
 ./LocalChat
 
 ## Windows
-### Bonjour
+**Windows is currently not supported.**

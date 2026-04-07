@@ -15,7 +15,7 @@ Maybe it is put on the same thread as Discovery.
 ## Key rules
 Each piece of mutable state, so a component and its data, has exactly one owning thread.
 
-**TODO:** : No longer a queue, update this
+### Note: this is now 
 ### Discovery queue handling
 **What Discovery does (who produces the items to be put on queue)**
 Discovery polls the DNS-SD results and appends it to a queue.
@@ -32,7 +32,6 @@ of deallocating the dnsRef
 How the components simultaneously wait on queue and do things?
 
 **I think it can be solved with two threads per each Component.**
-
 *We do not want to create two threads per component, because we will need to synchronize*
 *them with each other.*
 *We have to somehow make use of ASIO framework, to manage async tasks that Discovery is making.*
@@ -110,7 +109,6 @@ bool (atomic?) to see if we're processing the queue (and stop it).
 4. Send(Message) = concrete, public => Send Message through mailbox to Broker
 6. DeAttach(Broker)
 
-???
 1. RequestStart    -> concrete, virtual
 2. RequestShutdown -> concrete, virtual
 3. RequestRestart  -> concrete, virtual

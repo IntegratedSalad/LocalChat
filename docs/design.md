@@ -31,8 +31,6 @@ There should be also a CLI tool offering the same functionality.
 But maybe just focus on the GUI application.
 First step is to allow sharing messages. ?And maybe encryption of these messages?
 
-
-
 MAKE A CLEAR DISTINCTION BETWEEN DNS-SD AND MDNS!
 Make sure that we are using hostname to IP resolution WITH mDNS, not any local DNS server.
 
@@ -81,36 +79,23 @@ Description:
 This class embeds the DNS-SD Service Discovery functionality:
     1. Discovery of instances (hosts) of localchathost service.
       a. Starting a discovery
-      b. Stopping the discovery
-      c. Putting the results onto a Queue
-    ? 2. Resolving a host name of a service (to IPv4).?
+      b. Pausing the discovery
+      c. Sending the results to App
+    2. Resolving a host name of a service (to IPv4).
 
 ### Data exchange
-How will discovery results from BVDiscovery be used?
-Should they be stored in queue for consumption?
-Who will consume them?
+Data exchange is done via message passing. See architecture.md.
 
-**TODO: Update this**
-### Discovery Queue
-BVDiscovery main goal is to populate a discoveryQueue
-(non-priority queue, with thread-safe operations)
-with structures that contain information about services discovered via
-dns-sd functionality over multicast.
-Discovery component (class) should provide the functions for
-starting/stopping the component functionality being executed.
-This is done by making sure that the connection context of a particular implementation
-is allocated and alive for the duration of discovery functionality.
-It would be probably better that discovery queue
-is not managed *per se* by Discovery component, but it can 'query' a thread-safe queue object that would put the new discovery object on the queue on discovery object' behalf.
-
-Now - if Discovery thread and main thread should not share any data (discovery queue cannot be just passed to two objects), what should consume the queue and in what matter?
+### Discovery
+Discovery is a way to perform DNS Service Browsing - find services and inform App (the consumer)
+about the results.
 
 ### Discovery Thread
 Called internally a *worker thread*.
-Discovery object ?should? run in a separate thread as it will need to block waiting for the response from the daemon about a new service being discovered.
-Worker thread does not join unless Discovery executes OnShutdown procedure.
+Discovery object should run in a separate thread as it will need to block waiting for the response from the daemon about a new service being discovered.
 
 ### Start procedure
+Thread started
 
 ### Pause procedure
 At pause, the worker thread is joined.
@@ -142,12 +127,6 @@ Managing subcomponents:
 It manages these components by sending messages to them via a shared queue.
 These objects have defined states, as to behave in a defined manner.
 
-!Wydaje mi sie, ze nalezy zrobic pewna abstrakcje. dns_sd.h definiuje pare operacji, po ktorych nalezy czekac na odpowiedz od daemona.
-Czy nie da sie zrobic jakiegos systemu ktory by byl abstrakcją tego? Czy to jest potrzebne?
-Poniewaz teraz BVActor musi wyszukac, czy istnieje juz nazwa hosta o podanym serwisie. Jezeli istnieje, to nie rejestruj jeszcze raz.
-W zasadzie taka abstrakcja wymagana bylaby, w momencie gdybym chcial rozszerzyc funkcjonalnosc mDNSResponder albo funkcji, ktore
-wymagaja kontaktu z demonem byloby bardzo duzo.
-
 ## Component BVApp_ConsoleClient
 BVApp_ConsoleClient implements BVApp.
 It is a CLI application that is meant to be a preview and/or playground environment
@@ -164,7 +143,7 @@ Execution loop:
 1. User executes the application.
 2. Main screen is printed. It has list of connected (registered) services.
    Next to the service, there's a string: '(X) messages unread' if the host sent the user a message.
-3. User is idle. The discovery queue has been updated.
+3. User is idle. The discovery has found new services
    1. The app is notified about the event
    2. Screen is refreshed with the new positions.
 4. User chooses (S)witch to the host.
@@ -179,43 +158,6 @@ Execution loop:
       1. Information is printed that user closed the app.
       2. (M)essaging does nothing
 5. User (E)xits.
-
-discoveryQueue:
-Queue is updated (items are pushed into this queue) by BVDiscovery component.
-Items are consumed by BVApp_ConsoleClient.
-Another thread that waits and prints the updated services?
-
-/ discoveryQueueMutex is locked by discovery component
-=> services are put to discoveryQueue
-/ discoveryQueueMutex is unlocked by discovery component
-/ discoveryQueueMutex is locked by app
-/ vectorMutex is locked by thread handling discoveryQueue
-=> vector is updated
-/ discoveryQueueMutex is unlocked by app
-/ vectorMutex is unlocked by thread handling discoveryQueue
-=> app event 'updated vector' is sent
- => ?services? ?app event handler? thread executes function responsible for handling this -> printing (performing std I/O op.)
- => function is called ->
-  / vectorMutex doesn't have to be locked here? What if the vector will be updated again? Maybe lock it.
-  => vector is printed
-  / vectorMutex is unlocked
-What if the user writes to stdout and the function that is a handler of 'updated vector' is called
-at the same time? what happens with the stdout?
-If the user is typing something and then the screen gets redrawn by the handler, what happens?
-Maybe these operations are directly executed upon receiving a message.
-So -> (P)rint sends message, handler sends a message (to update the screen)
-So these are put on the queue and executed sequentially and there's only one class managing the I/O queue,
-that performs printing to the screen.
-It listens for messages and it only performs I/O.
-So - any action in APP component involving discoveryQueue,vector and I/O is a request in form of a message to the queue.
-There's a class that handles discoveryQueue and I/O - discoveryQueue has items - there's a message sent.
-Update vector - message.
-User wants to print something - message.
-There has to be an update on screen - message.
-User chooses some host (accesses vector) - message.
-App has exclusive access to the I/O
-
-Maybe for now, let's just see which problems we are facing.
 
 ## Component 'BVTCPConnection'
 Establishes a TCP connection between two hosts.
@@ -248,7 +190,7 @@ It seems that we already have the information needed and we do not need to resol
 And next: why is there
 gethostbyname
 function mentioned?
-Okay - Resolution doesn't mean resolve the hostname to IP address. It means:
+Okay - Resolution doesn't only mean resolve the hostname to IP address. It can mean:
 Resolve a service name to target host name, port number and txt record
 DNS-SD part is doing it's thing. It is not strictly mDNS functionality, but
 mDNS and DNS-SD are paired to provide this functionality of connecting hosts.
@@ -260,6 +202,8 @@ DNS-SD resolves a service name onto target host name port number and txt record.
 This target host name on the .local domain can be resolved by mDNS onto an IP address.
 Wikipedia:
 "By default, mDNS exclusively resolves hostnames ending with the .local top-level domain"
+
+We can perform DNSServiceResolution in BVDiscovery
 
 # Connection Type
 P2P? There isn't really any server to be expected. Maybe when it comes to
@@ -322,7 +266,7 @@ How to ensure that an application works in the background?
 
 # Constants
 How many hosts can one user discover max?
-128?
+256.
 
 # Threading
 ## Best practices [^2]
