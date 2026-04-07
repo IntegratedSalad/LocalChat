@@ -73,7 +73,7 @@ void BVApp_ConsoleClient::Run(void)
 void BVApp_ConsoleClient::PrintAll(void)
 {
     for (int i = 0; i < 200; i++) {std::cout << std::endl;}
-    std::cout << "LocalChat console client v0.2.1.2.2a" << std::endl;
+    std::cout << "LocalChat console client v0.2.2" << std::endl;
     std::cout << "Re(D)raw" << std::endl;
     std::cout << "Send (M)essage" << std::endl;
     std::cout << "(P)ause discovery" << std::endl;

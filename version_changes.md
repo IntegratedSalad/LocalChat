@@ -5,19 +5,19 @@
    1.1a -> Write Discovery with Avahi regardless of the architecture [V]
    1.2a -> Test if it works on mac and linux [V]
    1.3a -> Write Discovery interface, an abstraction that provides functionality
-           for writing to a queue regardless of implementation []
-   1.4a -> Test if it works on mac and linux []
+           regardless of implementation [V]
+   1.4a -> Test if it works on mac and linux [V]
    1.4b -> If possible and quick - write quick tests that would test:
            A. Registration - mocking the response from the daemon (somehow)
-           B. Discovery - mocking the response from the daemon
-   1. Stopping and restarting the Registration functionality []
-      2.2 Needs an architectural rewrite. []
-   2. Stopping and restarting the discovery functionality []
+           B. Discovery - mocking the response from the daemon [V]
+   1. Stopping and restarting the Registration functionality [V]
+      2.2 Needs an architectural rewrite. [V]
+   2. Stopping and restarting the discovery functionality [V]
 3. Choosing one service and sending it a string of bytes. []
    1. Resolving the host with DNSServiceResolve []
 4. Multiple sessions opened []
 5. Sending files []
 
-1. 
+6. 
 Release:
 1. Console Chat application that handles multiple sessions and allows for file exchange []
