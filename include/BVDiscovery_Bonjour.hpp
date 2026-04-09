@@ -50,6 +50,9 @@ private:
     void Setup(void) override;
     void Browse() override;
 
+protected:
+    BVStatus ResolveService(const BVServiceBrowseInstance& bI) override; 
+
 public:
     BVDiscovery_Bonjour(const BVServiceHostData _hostData,
                         boost::asio::io_context& _ioContext,

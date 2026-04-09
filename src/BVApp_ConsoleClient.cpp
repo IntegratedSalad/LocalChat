@@ -1,7 +1,9 @@
 #include "BVApp_ConsoleClient.hpp"
 
 BVApp_ConsoleClient::BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
-                                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
+                                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+                                         boost::asio::io_context& _ioContext) :
+BVApp(_ioContext),
 BVComponent(_outMbx, _inMbx)
 {
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,

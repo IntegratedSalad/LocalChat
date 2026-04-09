@@ -139,7 +139,8 @@ int main(int argc, char** argv)
                                 std::make_shared<threadsafe_queue<BVMessage>>()};
 #endif
     BVApp_ConsoleClient consoleClient{std::make_shared<threadsafe_queue<BVMessage>>(),
-                                      std::make_shared<threadsafe_queue<BVMessage>>()};
+                                      std::make_shared<threadsafe_queue<BVMessage>>(),
+                                      ioContext};
     consoleClient.SetLogger(fileLogger);
 
     // Broker setup

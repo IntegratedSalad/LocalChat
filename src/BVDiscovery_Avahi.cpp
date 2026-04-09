@@ -88,10 +88,11 @@ BVStatus BVDiscovery_Avahi::OnShutdown(std::unique_ptr<std::any> dp)
     return BVStatus::BVSTATUS_OK;
 }
 
-
-BVDiscovery_Avahi::~BVDiscovery_Avahi()
-{   
+BVStatus BVDiscovery_Avahi::::ResolveService(const BVServiceBrowseInstance& bI)
+{
+    return BVStatus::BVSTATUS_OK;
 }
+
 
 // This essentially creates a connection context
 // and sets up the callback
@@ -133,4 +134,8 @@ void BVDiscovery_Avahi::Browse()
             Pause();
         }
     }
+}
+
+BVDiscovery_Avahi::~BVDiscovery_Avahi()
+{   
 }

@@ -39,6 +39,9 @@ private:
     // TODO: iocontext in MockDiscoveryBonjour
     // IF NEEDED
 
+protected:
+    BVStatus ResolveService(const BVServiceBrowseInstance& bI) override;
+
 public:
     MockDiscovery(const BVServiceHostData _hostData,
                   std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
@@ -105,8 +108,6 @@ private:
     boost::asio::steady_timer announceTimer;
     boost::asio::steady_timer pauseDiscoveryTimer;
     // ...
-    boost::asio::io_context& ioContext;
-
     // task queue - what will App do while running
     // (simulate user behavior)
     std::queue<TaskFunction> tasks_q;

@@ -242,11 +242,16 @@ BVStatus MockDiscovery::OnRestart(std::unique_ptr<std::any>)
     // clear everything and start
 }
 
+BVStatus MockDiscovery::ResolveService(const BVServiceBrowseInstance& bI)
+{
+    return BVStatus::BVSTATUS_OK;
+}
+
 MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
         boost::asio::io_context& _ioContext) :
     BVComponent(_outMbx, _inMbx),
-    ioContext(_ioContext),
+    BVApp(_ioContext),
     announceTimer(_ioContext),
     pauseDiscoveryTimer(_ioContext)
 {

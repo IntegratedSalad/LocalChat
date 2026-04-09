@@ -57,8 +57,8 @@ protected:
         return l;
     }
 
-    // BVDiscovery is also responsible for providing resolving functionality.
-    // virtual BVStatus ResolveService(const BVServiceBrowseInstance& bI) = 0; TODO after cleanup
+    // Resolve a service name discovered to a target host name, port number, and txt record.
+    virtual BVStatus ResolveService(const BVServiceBrowseInstance& bI) = 0;
 
 public:
     BVDiscovery(const BVServiceHostData _hostData) :

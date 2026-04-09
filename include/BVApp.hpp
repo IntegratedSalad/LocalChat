@@ -7,6 +7,7 @@
 #include <queue>
 #include <algorithm>
 #include <thread>
+#include <boost/asio.hpp>
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
 
@@ -22,8 +23,7 @@ enum class BVAppEvent_e
  * an application that user interacts with.
  * Behavior is simply a reaction to an event.
  * What event does a user do, that is abstract of a particular GUI lib.
- * This is put on the main thread. So anything that happens on the main thread,
- * happens 
+ * This is put on the main thread.
  *
 */
 class BVApp
@@ -31,72 +31,26 @@ class BVApp
 private:
     std::atomic<bool> isRunning = true;
     std::thread worker_thread;
-
-    // TODO: Managing BVService can be done from main UI thread (APP).
-
-    // checking the serviceQueue
-    // This can be implemented separately from any other
-    // BVApp implementation - however it can be still overriden.
-    // Stoppable? Probably will be, when isRunning = false
-    // If we want to pause this and then resume we need a state machine.
-    // For now - listening is until the app quits.
-    // This is supposed to run on a separate worker thread
-    // created by BVApp.
+    std::thread io_thread; // ? Maybe on this thread we run the ioContext loop.
+    // Should BVApp be an owner of a ioContext? and BVDiscovery just an entity that posts jobs to it?
+    // If yes, then there should be maybe another thread onto which we put ioContext.run().
+    // And we join it with app (still a main thread, but not in main.cpp but at the end of Run()).
+    boost::asio::io_context& ioContext;
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
     std::mutex serviceVectorMutex;
-    // // event queue?
 
-    // std::shared_ptr<std::queue<BVServiceBrowseInstance>> discoveryQueue;
-    // std::mutex& discoveryQueueMutex;
-    // std::condition_variable& discoveryQueueCV;
-    // bool& isDiscoveryQueueReady;
-
-    // std::queue<BVAppEvent_e> eventQueue;
-    // std::mutex eventQueueMutex;
-    // std::condition_variable eventQueueCV;
-
-    // I think this is not needed.
-    // Upon receiving message, the service vector will be updated
-    // Either there will be a new service, or someone will close the application, so
-    virtual void ListenForUpcomingServices(void)
+    BVStatus ResolveService(const BVServiceBrowseInstance& bI)
     {
-        // while (this->isRunning)
-        // {
-        //     std::unique_lock lk(this->discoveryQueueMutex);
-        //     discoveryQueueCV.wait(lk, [this]{return this->isDiscoveryQueueReady;}); // maybe only check on event from discovery component?
+        // can I .run() the shared ioContext here?
 
-        //     // question is... will the Discovery_Bonjour component modify isDiscoveryQueueReady boolean?
-
-        //     // funny thing -> we are now blocking the discovery component by app.
-        //     // if app decides to block the serviceVectorMutex and doesn't release quickly, now discoveryQueueMutex is locked too.
-        //     // if discovery component tries to update queue now, it cannot.
-        //     // Also - when shutting down we have to make sure that neither of the threads
-        //     // lock for eternity.
-        //     // Instead of locking next time we can notify some different queue (send a message)
-        //     std::unique_lock vlk(this->serviceVectorMutex);
-        //     while (!discoveryQueue->empty())
-        //     {
-        //         BVServiceBrowseInstance bI = discoveryQueue->front();
-        //         if (std::find(this->serviceV.begin(), this->serviceV.end(), bI) == serviceV.end())
-        //         {
-        //             this->serviceV.push_back(bI);
-        //         }
-        //         discoveryQueue->pop(); // consume everything
-        //     }
-
-        //     vlk.unlock(); // main thread can now utilize vector
-        //     this->isDiscoveryQueueReady = false; // meaning - it's not ready, nothing should be in there, queue empty
-        //     lk.unlock();
-        //     this->discoveryQueueCV.notify_one(); // now Discovery component can enter critical section
-        //     this->HandleServicesDiscoveredUpdateEvent();
-
-        // }
+        return BVStatus::BVSTATUS_OK;
     }
 
 public:
-    BVApp()
+    BVApp(boost::asio::io_context& _ioContext) :
+    ioContext(_ioContext)
     {};
 
     virtual ~BVApp()

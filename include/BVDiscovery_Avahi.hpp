@@ -39,6 +39,9 @@ private:
     void Setup(void) override;
     void Browse(void) override;
 
+protected:
+    BVStatus ResolveService(const BVServiceBrowseInstance& bI) override;
+
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
                       boost::asio::io_context& _ioContext, // probably not needed

@@ -196,6 +196,11 @@ void BVDiscovery_Bonjour::AwaitFD(void)
                               });
 }
 
+BVStatus BVDiscovery_Bonjour::ResolveService(const BVServiceBrowseInstance& bI)
+{
+    BVStatus::BVSTATUS_OK;
+}
+
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
     // When dnsRef is deallocated, browsing stops.

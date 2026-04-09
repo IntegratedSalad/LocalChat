@@ -204,7 +204,8 @@ private:
 
 public:
     BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
-                        std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
+                        std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+                        boost::asio::io_context& _ioContext);
 
     void Run(void) override;
 
