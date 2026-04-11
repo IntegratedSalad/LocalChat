@@ -247,13 +247,23 @@ BVStatus MockDiscovery::ResolveService(const BVServiceBrowseInstance& bI)
     return BVStatus::BVSTATUS_OK;
 }
 
+std::unique_ptr<std::any> MockDiscovery::CreateResolveContext(const BVServiceBrowseInstance& bI)
+{
+
+}
+
+void MockDiscovery::DestroyResolveContext(std::unique_ptr<std::any> rcp)
+{
+
+}
+
 MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
         boost::asio::io_context& _ioContext) :
-    BVComponent(_outMbx, _inMbx),
-    BVApp(_ioContext),
-    announceTimer(_ioContext),
-    pauseDiscoveryTimer(_ioContext)
+BVComponent(_outMbx, _inMbx),
+BVApp(_ioContext),
+announceTimer(_ioContext),
+pauseDiscoveryTimer(_ioContext)
 {
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,
                      std::bind(&MockApp::HandlePublishedServices, this, std::placeholders::_1));
@@ -316,6 +326,11 @@ BVStatus MockApp::HandlePublishedServices(std::unique_ptr<std::any> dp)
             this->serviceV.push_back(lElem);
         }
     }
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus MockApp::HandleResolvedServices(std::unique_ptr<std::any> dp)
+{
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -397,6 +412,11 @@ void MockApp::TaskSleep(void)
 {
     LogTrace("App sleeps...");
     std::this_thread::sleep_for(std::chrono::milliseconds(this->taskSleepMs));
+}
+
+BVStatus MockApp::ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI)
+{
+    return BVStatus::BVSTATUS_OK;
 }
 
 TestHeartbeatComponent::TestHeartbeatComponent(std::vector<BVEventType> _eventTypesOfInterest,

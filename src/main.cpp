@@ -165,8 +165,12 @@ int main(int argc, char** argv)
         broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_SHUTDOWN);
     BVStatus subStatusDiscoveryRequestRestart = 
         broker.Subscribe(discovery.GetSubscriberId(),  BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART);
+    BVStatus subStatusDiscoveryRequestResolve = 
+        broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE);
     BVStatus subStatusAppRequestRestart = 
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE);
+    BVStatus subStatusAppServiceResolved = 
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED);
     // this is needed to exit listening on mailbox!
     BVStatus subStatusAppRequestTerminate = 
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
@@ -176,7 +180,9 @@ int main(int argc, char** argv)
         subStatusDiscoveryTerminateAll    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestShutdown != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestRestart  != BVStatus::BVSTATUS_OK ||
+        subStatusDiscoveryRequestResolve  != BVStatus::BVSTATUS_OK ||
         subStatusAppRequestRestart        != BVStatus::BVSTATUS_OK ||
+        subStatusAppServiceResolved       != BVStatus::BVSTATUS_OK ||
         subStatusAppRequestTerminate      != BVStatus::BVSTATUS_OK)
     {
         std::cerr << "Fatal error: Broker couldn't subscribe to a crucial event" << std::endl;
@@ -187,13 +193,14 @@ int main(int argc, char** argv)
     discovery.StartListeningOnMailbox();
     discovery.LaunchWorkingThread();
     consoleClient.StartListeningOnMailbox();
-
+    consoleClient.LaunchIOThread();
     consoleClient.Run(); // this is our app worker thread (main thread)
 
     // Join all
     discovery.TryJoinMailBoxThread();
     discovery.TryJoinWorkerThread();
     consoleClient.TryJoinMailBoxThread();
+    consoleClient.TryJoinIOThread();
     broker.TryJoinWorkerThread();
 
     // Detach

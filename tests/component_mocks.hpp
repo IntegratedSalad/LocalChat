@@ -25,6 +25,8 @@ private:
     int sleepMs = 1000;
 
     void CreateConnectionContext(void) override;
+    std::unique_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI) override;
+    void DestroyResolveContext(std::unique_ptr<std::any> rcp) override;
     void Setup(void) override;
     void Browse(void) override;
 
@@ -114,6 +116,9 @@ private:
 
     int taskSleepMs = 1000;
 
+protected:
+    BVStatus ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI);
+
 public:
     MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
             std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
@@ -155,6 +160,7 @@ public:
     }    
     
     BVStatus HandlePublishedServices(std::unique_ptr<std::any>) override;
+    BVStatus HandleResolvedServices(std::unique_ptr<std::any> dp) override;
     // void HandleServicesDiscoveredUpdateEvent(void) override;
     // void HandleUserKeyboardInput(void) override;
 

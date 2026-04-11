@@ -8,6 +8,7 @@
 #include "BVApp.hpp"
 #include "BVComponent.hpp"
 #include "BVLoggable.hpp"
+#include "api_common.h"
 
 /*
     BVApp_ConsoleClient_Bonjour functions as a console application of LocalChat.
@@ -202,6 +203,9 @@ private:
     std::thread stdinThread; // worker thread? I don't think this is needed
     BVTerminal terminal{};
 
+protected:
+    BVStatus ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI) override;
+
 public:
     BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
@@ -210,6 +214,7 @@ public:
     void Run(void) override;
 
     BVStatus HandlePublishedServices(std::unique_ptr<std::any> dp) override;
+    BVStatus HandleResolvedServices(std::unique_ptr<std::any> dp) override;
 
     BVStatus ReadMessages(void);
     BVStatus PrintMessages(void);

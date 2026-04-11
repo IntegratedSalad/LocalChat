@@ -10,6 +10,8 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::HandlePublishedServices, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_TERMINATE_ALL,
                      std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
+                     std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
 }
 
 void BVApp_ConsoleClient::Run(void)
@@ -137,10 +139,51 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
         if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
         {
             this->serviceV.push_back(lElem);
+            // Send request to resolve
+            // Should we exchange messages here or just resolve 
+            // in Discovery after browsing there?
+            // And report once we have everything (browsing + resolved hostname)
+            // First - let's try exchanging messages.
+            // Also - if we do Resolution straight in the BVDiscovery,
+            // we might do repeat it for the same service.
+            // Maybe also take note in BVDiscovery
+            SendMessage(BVMessage(
+                            BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE,
+                                std::make_unique<std::any>(std::make_any<BVServiceBrowseInstance>(lElem))));
+            LogTrace("App: Sending request to Discovery to resolve {}", lElem.serviceName);
         }
     }
     // this is called from different thread
     PrintAll();
+
+    // Should we resolve here? Maybe just send a request to Discovery to resolve
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> dp)
+{
+    if (dp == nullptr)
+    {
+        LogError("App: Error - HandleResolvedServices, data pointer is null!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    DNSResolutionResult* res;
+    try
+    {
+        res = std::any_cast<DNSResolutionResult*>(*dp);
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED callback. " 
+                    << e.what() << std::endl;
+        LogError("App: Bad cast in HandleResolvedServices! Error details: {}", e.what());
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+
+    BVServiceBrowseInstance* bI{static_cast<BVServiceBrowseInstance*>(res->browseInstance)};
+    std::string hosttarget = res->hosttarget;
+
+    LogTrace("App: Resolved {} to hosttarget: {}", bI->serviceName, hosttarget);
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -162,6 +205,7 @@ BVStatus BVApp_ConsoleClient::OnResume(std::unique_ptr<std::any>)
 
 BVStatus BVApp_ConsoleClient::OnShutdown(std::unique_ptr<std::any>)
 {
+    StopIOContext();
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -195,4 +239,9 @@ std::optional<BVConsoleActionType> BVApp_ConsoleClient::ParseConsoleActionFromKe
         default:
             return std::nullopt;
     }
+}
+
+BVStatus BVApp_ConsoleClient::ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI)
+{
+    return BVStatus::BVSTATUS_OK;
 }

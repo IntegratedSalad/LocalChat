@@ -11,6 +11,12 @@
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
 
+struct BVUser
+{
+    std::string name;
+    BVHost serviceResolvedData;
+};
+
 enum class BVAppEvent_e
 {
     BVAPPEVENT_NEW_SERVICES
@@ -39,14 +45,16 @@ private:
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
+    std::vector<BVHost> hostsV; // after resolving
     std::mutex serviceVectorMutex;
+    // Maybe connection manager which gets a reference to io_context?
+    // He will be making connections to users.
+    // What is a connection?
+    // Can the host that wants to communicate just open a socket themselves?
+    // Or the endpoints need to be opened after browsing and resolution to hostname then IP?
 
-    BVStatus ResolveService(const BVServiceBrowseInstance& bI)
-    {
-        // can I .run() the shared ioContext here?
-
-        return BVStatus::BVSTATUS_OK;
-    }
+    // Find IP
+    virtual BVStatus ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI) = 0;
 
 public:
     BVApp(boost::asio::io_context& _ioContext) :
@@ -55,6 +63,25 @@ public:
 
     virtual ~BVApp()
     {}
+
+    // App is the owner and manager of the ioContext loop.
+    void LaunchIOThread(void)
+    {
+        this->io_thread = std::thread([this](){this->ioContext.run();});
+    }
+
+    void StopIOContext(void)
+    {
+        this->ioContext.stop();
+    }
+
+    void TryJoinIOThread(void)
+    {
+        if (this->io_thread.joinable())
+        {
+            io_thread.join();
+        }
+    }
 
     void LaunchWorkerThread(void)
     {
@@ -74,6 +101,11 @@ public:
         return this->worker_thread;
     }
 
+    std::thread& GetIOThread(void)
+    {
+        return this->io_thread;
+    }
+
     std::vector<BVServiceBrowseInstance> GetServiceVectorCopy(void)
     {
         return this->serviceV;
@@ -85,6 +117,7 @@ public:
     // virtual void HandleUserKeyboardInput(void) = 0;
     // Probably has to be guarded with a mutex!
     virtual BVStatus HandlePublishedServices(std::unique_ptr<std::any>) = 0;
+    virtual BVStatus HandleResolvedServices(std::unique_ptr<std::any>) = 0;
 
     const std::atomic<bool>& GetIsRunning(void)
     {

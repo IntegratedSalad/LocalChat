@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include <boost/asio/ip/tcp.hpp>
 
 typedef enum class BVStatus
 {
@@ -13,11 +14,26 @@ typedef enum class BVStatus
     BVSTATUS_MAX_COMPONENTS
 } BVStatus;
 
+struct BVHost
+{
+    std::string serviceDomainName;
+    std::string hostname;
+    boost::asio::ip::address address;
+};
+
 struct BVServiceBrowseInstance
 {
     std::string serviceName;
     std::string regType;
     std::string replyDomain;
+
+    BVServiceBrowseInstance(const BVServiceBrowseInstance& other) :
+    serviceName(other.serviceName),
+    regType(other.regType),
+    replyDomain(other.replyDomain)
+    {}
+
+    BVServiceBrowseInstance() = default;
 
     bool operator==(const BVServiceBrowseInstance& otherBI)
     {

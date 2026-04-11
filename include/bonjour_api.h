@@ -10,8 +10,15 @@ extern "C" {
 #include "dns_sd.h"
 #include "linked_list.h" 
 #include "const.h"
+#include "api_common.h"
 
 extern bool replyError;
+
+typedef struct ResolveCallbackContext
+{
+    void* discovery_p; // for accessing functions in callback - must point to BVDiscovery_Bonjour
+    void* browseInstance_p;
+} ResolveCallbackContext;
 
 // * Service Discovery callbacks * //
 
@@ -48,6 +55,26 @@ void C_RegisterReply(
     const char *name,
     const char *regtype,
     const char *domain,
+    void *context);
+
+// * Service Resolution callbacks * //
+/* 
+ *
+ *
+ * 
+ * 
+ * 
+*/
+void C_ResolveReply(
+    DNSServiceRef sdRef,
+    DNSServiceFlags flags,
+    uint32_t interfaceIndex,
+    DNSServiceErrorType errorCode,
+    const char *fullname,
+    const char *hosttarget,
+    uint16_t port,
+    uint16_t txtLen,
+    const unsigned char *txtRecord,
     void *context);
 
 #ifdef __cplusplus

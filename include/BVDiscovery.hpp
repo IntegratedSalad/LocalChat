@@ -20,8 +20,9 @@ private:
 
     const BVServiceHostData hostData; // for service data
 
-    virtual void CreateConnectionContext(void) = 0; // private member function which actually starts
-    // void DestroyConnectionContext <- TODO:
+    virtual void CreateConnectionContext(void) = 0; // private member function which actually starts Discovery
+    virtual std::unique_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI) = 0; // create resolver
+    virtual void DestroyResolveContext(std::unique_ptr<std::any> rcp) = 0;
     virtual void Setup(void) = 0;
     virtual void Browse() = 0;
 
@@ -58,7 +59,32 @@ protected:
     }
 
     // Resolve a service name discovered to a target host name, port number, and txt record.
+    /*  
+     * Please note, that resolve context and resolve operation is PER service to be resolved!
+     * This means that it is a dynamic entity and must be freed after resolution is complete.
+    */
     virtual BVStatus ResolveService(const BVServiceBrowseInstance& bI) = 0;
+    BVStatus OnResolveRequest(std::unique_ptr<std::any> dp)
+    {
+        if (dp == nullptr)
+        {
+            std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE callback. " <<
+                            "No data has been passed into the callback!" << std::endl;
+            return BVStatus::BVSTATUS_FATAL_ERROR;
+        }
+        BVServiceBrowseInstance bI;
+        try
+        {
+            bI = std::any_cast<BVServiceBrowseInstance>(*dp);
+        }
+        catch(const std::bad_any_cast& e)
+        {
+            std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE callback. " 
+                        << e.what() << std::endl;
+            return BVStatus::BVSTATUS_FATAL_ERROR;
+        }
+        return ResolveService(bI);
+    }
 
 public:
     BVDiscovery(const BVServiceHostData _hostData) :
@@ -125,5 +151,10 @@ public:
     void SetStatus(const BVStatus& s)
     {
         this->status = s;
+    }
+
+    BVStatus& GetStatus(void)
+    {
+        return this->status;
     }
 };

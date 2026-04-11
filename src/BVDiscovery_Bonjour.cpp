@@ -27,6 +27,9 @@ BVComponent(_outMbx, _inMbx)
 
     RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
                      std::bind(&BVDiscovery_Bonjour::OnRestart, this, std::placeholders::_1));
+
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE,
+                     std::bind(&BVDiscovery_Bonjour::OnResolveRequest, this, std::placeholders::_1));
     this->dnsRef = nullptr;
     Setup();
 }
@@ -34,6 +37,7 @@ BVComponent(_outMbx, _inMbx)
 void BVDiscovery_Bonjour::Setup(void)
 {
     this->CreateConnectionContext();
+    SetStatus(BVStatus::BVSTATUS_OK);
 }
 
 BVStatus BVDiscovery_Bonjour::OnStart(std::unique_ptr<std::any>)
@@ -76,7 +80,7 @@ BVStatus BVDiscovery_Bonjour::OnResume(std::unique_ptr<std::any>)
     LogTrace("Discovery: pauseTimer has timed out.");
     this->SetIsBrowsingActive(true);
     LogTrace("Discovery: Resuming...");
-    AwaitFD();
+    AwaitFDForProcessingBrowseResult();
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -123,6 +127,34 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
     LogTrace("Discovery: Connection context created.");
 }
 
+std::unique_ptr<std::any> BVDiscovery_Bonjour::CreateResolveContext(const BVServiceBrowseInstance& bI)
+{
+    LogTrace("Discovery: Resolve request received.");
+    auto payload = std::make_unique<ResolveCallbackContext>();
+    payload->discovery_p = this;
+    BVServiceBrowseInstance this_bI = bI;
+    payload->browseInstance_p = &this_bI;
+    DNSServiceRef resolveDnsRef = nullptr;
+    DNSServiceErrorType error = DNSServiceResolve(&resolveDnsRef,
+                                                  0,
+                                                  0,
+                                                  bI.serviceName.c_str(),
+                                                  bI.regType.c_str(),
+                                                  bI.replyDomain.c_str(),
+                                                  C_ResolveReply,
+                                                  &payload);
+    if (!(error == kDNSServiceErr_NoError))
+    {
+        this->SetStatus(BVStatus::BVSTATUS_FATAL_ERROR);
+        LogError("Discovery - couldn't initialize resolveDnsRef by DNSServiceResolve {}", error);
+        return nullptr;        
+    }
+    LogTrace("Discovery: Resolve context created.");
+
+    return std::make_unique<std::any>(
+            std::make_any<DNSServiceRef>(resolveDnsRef));
+}
+
 BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
 {
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
@@ -142,7 +174,7 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
                     BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
                         std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
     LinkedList_str_ClearList(this->GetLinkedList_p());
-    AwaitFD();
+    AwaitFDForProcessingBrowseResult();
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -170,12 +202,11 @@ void BVDiscovery_Bonjour::Browse(void)
         return;
     }
     this->SetIsBrowsingActive(true);
-    AwaitFD(); // this puts work to ioContext
+    AwaitFDForProcessingBrowseResult(); // this puts work to ioContext
     LogTrace("Discovery: Browsing active...");
-    this->ioContext.run();
 }
 
-void BVDiscovery_Bonjour::AwaitFD(void)
+void BVDiscovery_Bonjour::AwaitFDForProcessingBrowseResult(void)
 {
     if (!this->GetIsBrowsingActive() || this->dnsRef == nullptr)
     {
@@ -198,7 +229,60 @@ void BVDiscovery_Bonjour::AwaitFD(void)
 
 BVStatus BVDiscovery_Bonjour::ResolveService(const BVServiceBrowseInstance& bI)
 {
-    BVStatus::BVSTATUS_OK;
+    auto rcp = CreateResolveContext(bI);
+    if (rcp == nullptr)
+    {
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    DNSServiceRef ref;
+    try
+    {
+        ref = std::any_cast<DNSServiceRef>(*rcp);
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        LogError("Bad cast in BVDiscovery_Bonjour::ResolveService!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    const int fd = DNSServiceRefSockFD(ref);
+    if (fd < 0)
+    {
+        DNSServiceRefDeallocate(ref);
+        ref = nullptr;
+        LogError("Discovery: fd for resolve daemon socket returned < 0.");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+
+    boost::system::error_code ec;
+    boost::asio::posix::stream_descriptor resolveFD{ioContext};
+    resolveFD.assign(fd, ec);
+    if (ec) 
+    {
+        DNSServiceRefDeallocate(this->dnsRef);
+        this->dnsRef = nullptr;
+        LogError("Discovery: couldn't assign the posix stream descriptor.");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+
+    resolveFD.async_wait(boost::asio::posix::stream_descriptor::wait_read,
+                         [this, &ref](const boost::system::error_code& e){
+                          if (e == boost::asio::error::operation_aborted)
+                            return;
+                          DNSServiceErrorType error = DNSServiceProcessResult(ref);
+                          if (error != kDNSServiceErr_NoError)
+                          {
+                            SetIsBrowsingActive(false);
+                            this->LogError("Error in completion handler of resolveFD!");
+                            this->LogError("Error in DNSServiceProcessResult! {}", error);
+                            return;
+                          }
+                          LogTrace("Discovery: Resolve result has been processed.");
+                          DNSServiceRefDeallocate(ref);
+                          LogTrace("Discovery: Resolve ref has been deallocated.");
+                        });
+
+    LogTrace("Discovery: Resolve job scheduled...");
+    return BVStatus::BVSTATUS_OK;
 }
 
 BVDiscovery_Bonjour::~BVDiscovery_Bonjour()

@@ -39,6 +39,10 @@ BVDiscovery_Avahi::BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDel
 
     RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART,
                      std::bind(&BVDiscovery_Avahi::OnRestart, this, std::placeholders::_1));
+    
+    RegisterCallback(BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE,
+                     std::bind(&BVDiscovery_Avahi::OnResolveRequest, this, std::placeholders::_1));
+
     this->Setup();
 }
 

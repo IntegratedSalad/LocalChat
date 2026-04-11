@@ -13,6 +13,7 @@
 #include "BVLoggable.hpp"
 #include "linked_list.h"
 #include "bonjour_api.h"
+#include "api_common.h"
 
 /*
  *   This class is a Bonjour implementation of BV Discovery Component.
@@ -44,9 +45,12 @@ private:
     const int16_t pauseTimerDelayS = 3600;
 
     BVStatus ProcessDNSServiceBrowseResult(void);
-    void AwaitFD(void);
+    void AwaitFDForProcessingBrowseResult(void);
 
     void CreateConnectionContext(void) override; // private member function which actually starts the Discovery service
+    std::unique_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI) override; // this is PER SERVICE to be resolved!
+    void DestroyResolveContext(std::unique_ptr<std::any> rcp) override {/*unimplemented*/};
+
     void Setup(void) override;
     void Browse() override;
 
@@ -59,6 +63,14 @@ public:
                         std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
     ~BVDiscovery_Bonjour() override;
+
+    void SendMessage_API_INTERFACE(const BVEventType& et, std::any a_type)
+    {
+        this->SendMessage(BVMessage(
+            et,
+            std::make_unique<std::any>(a_type))
+        );
+    }
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
