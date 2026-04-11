@@ -117,7 +117,7 @@ private:
     int taskSleepMs = 1000;
 
 protected:
-    BVStatus ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI);
+    BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
 
 public:
     MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,

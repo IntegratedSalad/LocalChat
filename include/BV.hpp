@@ -16,7 +16,7 @@ typedef enum class BVStatus
 
 struct BVHost
 {
-    std::string serviceDomainName;
+    std::string serviceName;
     std::string hostname;
     boost::asio::ip::address address;
 };

@@ -54,7 +54,7 @@ protected:
     // Or the endpoints need to be opened after browsing and resolution to hostname then IP?
 
     // Find IP
-    virtual BVStatus ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI) = 0;
+    virtual BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) = 0;
 
 public:
     BVApp(boost::asio::io_context& _ioContext) :
@@ -104,6 +104,11 @@ public:
     std::thread& GetIOThread(void)
     {
         return this->io_thread;
+    }
+
+    boost::asio::io_context& GetIoContext(void)
+    {
+        return this->ioContext;
     }
 
     std::vector<BVServiceBrowseInstance> GetServiceVectorCopy(void)

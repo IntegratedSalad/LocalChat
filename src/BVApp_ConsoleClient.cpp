@@ -171,6 +171,7 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
 
 BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> dp)
 {
+    LogTrace("App: HandleResolvedServices ENTER");
     if (dp == nullptr)
     {
         LogError("App: Error - HandleResolvedServices, data pointer is null!");
@@ -191,9 +192,13 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
 
     // BVServiceBrowseInstance* bI{static_cast<BVServiceBrowseInstance*>(res->browseInstance_p)};
     std::string hosttarget = res->hosttarget;
+    std::string serviceName = res->serviceName;
+    int         port        = res->port;
 
-    LogTrace("App: Resolved {} to hosttarget: {}", res->serviceName, hosttarget);
+    LogTrace("App: Resolved {} to hosttarget: {}", serviceName, hosttarget);
     LogTrace("App: on port {}", res->port);
+
+    BVHost host = ResolveServiceToEndpoint(hosttarget, serviceName, port);
 
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
@@ -255,7 +260,27 @@ std::optional<BVConsoleActionType> BVApp_ConsoleClient::ParseConsoleActionFromKe
     }
 }
 
-BVStatus BVApp_ConsoleClient::ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI)
+BVHost BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port)
 {
-    return BVStatus::BVSTATUS_OK;
+    BVHost host{};
+    boost::system::error_code ec;
+    boost::asio::ip::tcp::resolver resolver{GetIoContext()};
+    auto results = resolver.resolve(boost::asio::ip::tcp::v4(), hosttarget, std::to_string(port), ec);
+
+    if (ec)
+    {
+        LogError("App: Error while resolving to IPv4... {}", ec.to_string());
+        return host;
+    }
+    if (results.empty())
+    {
+        LogError("App: Endpoints empty...");
+        return host;
+    }
+    boost::asio::ip::tcp::endpoint endpoint = results.begin()->endpoint();
+    LogTrace("Successfuly resolved {} to {}", serviceName, endpoint.address().to_string());
+    host.address = endpoint.address();
+    host.hostname = hosttarget;
+    host.serviceName = serviceName; 
+    return host;
 }

@@ -204,7 +204,7 @@ private:
     BVTerminal terminal{};
 
 protected:
-    BVStatus ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI) override;
+    BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
 
 public:
     BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,

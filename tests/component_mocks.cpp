@@ -414,9 +414,9 @@ void MockApp::TaskSleep(void)
     std::this_thread::sleep_for(std::chrono::milliseconds(this->taskSleepMs));
 }
 
-BVStatus MockApp::ResolveServiceToEndpoint(const BVServiceBrowseInstance& bI)
+BVHost MockApp::ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port)
 {
-    return BVStatus::BVSTATUS_OK;
+    return BVHost{};
 }
 
 TestHeartbeatComponent::TestHeartbeatComponent(std::vector<BVEventType> _eventTypesOfInterest,
