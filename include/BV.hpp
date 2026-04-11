@@ -10,7 +10,7 @@ typedef enum class BVStatus
     BVSTATUS_NOK,
     BVSTATUS_IN_PROGRESS,
     BVSTATUS_FATAL_ERROR,
-
+    BVSTATUS_DEAD,
     BVSTATUS_MAX_COMPONENTS
 } BVStatus;
 

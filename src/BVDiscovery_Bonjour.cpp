@@ -285,5 +285,6 @@ BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
     // When dnsRef is deallocated, browsing stops.
     // TODO: Think of it maybe being deallocated in a separate method for control
     LogTrace("Discovery dies.");
+    SetStatus(BVStatus::BVSTATUS_DEAD);
     DNSServiceRefDeallocate(this->dnsRef); 
 }

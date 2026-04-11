@@ -21,6 +21,7 @@ void BVApp_ConsoleClient::Run(void)
     PrintAll();
     while (this->GetIsRunning())
     {
+        continue;
         const char key = this->terminal.ReadChar();
         auto action = ParseConsoleActionFromKey(key);
         if (!action.has_value())
@@ -140,6 +141,7 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
         {
             if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
             {
+                // TODO: If serviceName of this machine, skip
                 this->serviceV.push_back(lElem);
                 toResolve.push_back(lElem);
                 // Send request to resolve
@@ -190,7 +192,6 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    // BVServiceBrowseInstance* bI{static_cast<BVServiceBrowseInstance*>(res->browseInstance_p)};
     std::string hosttarget = res->hosttarget;
     std::string serviceName = res->serviceName;
     int         port        = res->port;
@@ -199,6 +200,10 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     LogTrace("App: on port {}", res->port);
 
     BVHost host = ResolveServiceToEndpoint(hosttarget, serviceName, port);
+    if (host.serviceName == "ERROR")
+    {
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
 
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
@@ -265,16 +270,18 @@ BVHost BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     BVHost host{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
-    auto results = resolver.resolve(boost::asio::ip::tcp::v4(), hosttarget, std::to_string(port), ec);
+    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4(), */hosttarget, std::to_string(port), ec);
 
     if (ec)
     {
         LogError("App: Error while resolving to IPv4... {}", ec.to_string());
+        host.serviceName = "ERROR";
         return host;
     }
     if (results.empty())
     {
         LogError("App: Endpoints empty...");
+        host.serviceName = "ERROR";
         return host;
     }
     boost::asio::ip::tcp::endpoint endpoint = results.begin()->endpoint();

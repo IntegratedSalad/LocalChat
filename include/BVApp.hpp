@@ -42,6 +42,7 @@ private:
     // If yes, then there should be maybe another thread onto which we put ioContext.run().
     // And we join it with app (still a main thread, but not in main.cpp but at the end of Run()).
     boost::asio::io_context& ioContext;
+    BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
@@ -67,7 +68,10 @@ public:
     // App is the owner and manager of the ioContext loop.
     void LaunchIOThread(void)
     {
-        this->io_thread = std::thread([this](){this->ioContext.run();});
+        this->io_thread = std::thread([this](){
+            this->ioContext.run();
+            status = BVStatus::BVSTATUS_DEAD;
+        });
     }
 
     void StopIOContext(void)
