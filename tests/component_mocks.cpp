@@ -247,7 +247,7 @@ BVStatus MockDiscovery::ResolveService(const BVServiceBrowseInstance& bI)
     return BVStatus::BVSTATUS_OK;
 }
 
-std::unique_ptr<std::any> MockDiscovery::CreateResolveContext(const BVServiceBrowseInstance& bI)
+std::shared_ptr<std::any> MockDiscovery::CreateResolveContext(const BVServiceBrowseInstance& bI)
 {
 
 }

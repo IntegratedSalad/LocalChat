@@ -132,24 +132,33 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
     // Mock client will periodically read it, but real user in the product implementation
     // will try to read it and they might do it when this is updated here
 
+    std::vector<BVServiceBrowseInstance> toResolve;
     LogTrace("App: HandlePublishedServices is called.");
-    std::lock_guard<std::mutex> l(this->serviceVectorMutex);
-    for (auto& lElem : newServicesList)
     {
-        if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
+        std::lock_guard<std::mutex> l(this->serviceVectorMutex);
+        for (auto& lElem : newServicesList)
         {
-            this->serviceV.push_back(lElem);
-            // Send request to resolve
-            // Should we exchange messages here or just resolve 
-            // in Discovery after browsing there?
-            // And report once we have everything (browsing + resolved hostname)
-            // First - let's try exchanging messages.
-            // Also - if we do Resolution straight in the BVDiscovery,
-            // we might do repeat it for the same service.
-            // Maybe also take note in BVDiscovery
+            if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
+            {
+                this->serviceV.push_back(lElem);
+                toResolve.push_back(lElem);
+                // Send request to resolve
+                // Should we exchange messages here or just resolve 
+                // in Discovery after browsing there?
+                // And report once we have everything (browsing + resolved hostname)
+                // First - let's try exchanging messages.
+                // Also - if we do Resolution straight in the BVDiscovery,
+                // we might do repeat it for the same service.
+                // Maybe also take note in BVDiscovery
+            }
+        }
+    }
+    {
+        for (auto& lElem : toResolve)
+        {
             SendMessage(BVMessage(
-                            BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE,
-                                std::make_unique<std::any>(std::make_any<BVServiceBrowseInstance>(lElem))));
+                    BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE,
+                        std::make_unique<std::any>(std::make_any<BVServiceBrowseInstance>(lElem))));
             LogTrace("App: Sending request to Discovery to resolve {}", lElem.serviceName);
         }
     }
@@ -180,10 +189,14 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    BVServiceBrowseInstance* bI{static_cast<BVServiceBrowseInstance*>(res->browseInstance)};
+    // BVServiceBrowseInstance* bI{static_cast<BVServiceBrowseInstance*>(res->browseInstance_p)};
     std::string hosttarget = res->hosttarget;
 
-    LogTrace("App: Resolved {} to hosttarget: {}", bI->serviceName, hosttarget);
+    LogTrace("App: Resolved {} to hosttarget: {}", res->serviceName, hosttarget);
+    LogTrace("App: on port {}", res->port);
+
+    // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
+    ::free(res);
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -206,6 +219,7 @@ BVStatus BVApp_ConsoleClient::OnResume(std::unique_ptr<std::any>)
 BVStatus BVApp_ConsoleClient::OnShutdown(std::unique_ptr<std::any>)
 {
     StopIOContext();
+    LogTrace("App: Shutting down...");
     return BVStatus::BVSTATUS_OK;
 }
 

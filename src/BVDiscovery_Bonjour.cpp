@@ -127,22 +127,29 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
     LogTrace("Discovery: Connection context created.");
 }
 
-std::unique_ptr<std::any> BVDiscovery_Bonjour::CreateResolveContext(const BVServiceBrowseInstance& bI)
+// Resolve context is a more complex type than simple DNSServiceRef.
+// The posix_descriptor has to outlive the ResolveService too
+std::shared_ptr<Bonjour_ResolveContext> BVDiscovery_Bonjour::CreateResolveContext(const BVServiceBrowseInstance& bI)
 {
-    LogTrace("Discovery: Resolve request received.");
-    auto payload = std::make_unique<ResolveCallbackContext>();
-    payload->discovery_p = this;
-    BVServiceBrowseInstance this_bI = bI;
-    payload->browseInstance_p = &this_bI;
+    auto ctx = std::make_shared<Bonjour_ResolveContext>(ioContext);
+    ctx->callback_ctx.discovery_p = this; 
+    // this has to outlive this function, so we have to put
+    // ResolveCallbackContext into Bonjour_ResolveContext.
+    // ctx has to be a shared pointer
+    ::memcpy(ctx->callback_ctx.serviceName, bI.serviceName.c_str(), N_BYTES_SERVNAME_MAX);
+    ::memcpy(ctx->callback_ctx.regType, bI.regType.c_str(), N_BYTES_REGTYPE_MAX);
+    ::memcpy(ctx->callback_ctx.replyDomain, bI.replyDomain.c_str(), N_BYTES_REPLDOMN_MAX);
     DNSServiceRef resolveDnsRef = nullptr;
     DNSServiceErrorType error = DNSServiceResolve(&resolveDnsRef,
                                                   0,
                                                   0,
-                                                  bI.serviceName.c_str(),
+                                                  bI.serviceName.c_str(), 
                                                   bI.regType.c_str(),
                                                   bI.replyDomain.c_str(),
                                                   C_ResolveReply,
-                                                  &payload);
+                                                  &ctx->callback_ctx);
+    ctx->sdRef = resolveDnsRef;
+
     if (!(error == kDNSServiceErr_NoError))
     {
         this->SetStatus(BVStatus::BVSTATUS_FATAL_ERROR);
@@ -150,9 +157,7 @@ std::unique_ptr<std::any> BVDiscovery_Bonjour::CreateResolveContext(const BVServ
         return nullptr;        
     }
     LogTrace("Discovery: Resolve context created.");
-
-    return std::make_unique<std::any>(
-            std::make_any<DNSServiceRef>(resolveDnsRef));
+    return ctx;
 }
 
 BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
@@ -229,33 +234,23 @@ void BVDiscovery_Bonjour::AwaitFDForProcessingBrowseResult(void)
 
 BVStatus BVDiscovery_Bonjour::ResolveService(const BVServiceBrowseInstance& bI)
 {
-    auto rcp = CreateResolveContext(bI);
-    if (rcp == nullptr)
+    LogTrace("Discovery: Received request to resolve a service...");
+    std::shared_ptr<Bonjour_ResolveContext> ctx_p = CreateResolveContext(bI);
+    if (ctx_p == nullptr)
     {
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
-    DNSServiceRef ref;
-    try
-    {
-        ref = std::any_cast<DNSServiceRef>(*rcp);
-    }
-    catch(const std::bad_any_cast& e)
-    {
-        LogError("Bad cast in BVDiscovery_Bonjour::ResolveService!");
-        return BVStatus::BVSTATUS_FATAL_ERROR;
-    }
-    const int fd = DNSServiceRefSockFD(ref);
+    const int fd = DNSServiceRefSockFD(ctx_p->sdRef);
     if (fd < 0)
     {
-        DNSServiceRefDeallocate(ref);
-        ref = nullptr;
+        DNSServiceRefDeallocate(ctx_p->sdRef);
+        ctx_p->sdRef = nullptr;
         LogError("Discovery: fd for resolve daemon socket returned < 0.");
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
     boost::system::error_code ec;
-    boost::asio::posix::stream_descriptor resolveFD{ioContext};
-    resolveFD.assign(fd, ec);
+    ctx_p->resolveFD.assign(fd, ec);
     if (ec) 
     {
         DNSServiceRefDeallocate(this->dnsRef);
@@ -264,11 +259,11 @@ BVStatus BVDiscovery_Bonjour::ResolveService(const BVServiceBrowseInstance& bI)
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    resolveFD.async_wait(boost::asio::posix::stream_descriptor::wait_read,
-                         [this, &ref](const boost::system::error_code& e){
+    ctx_p->resolveFD.async_wait(boost::asio::posix::stream_descriptor::wait_read,
+                         [this, ctx_p](const boost::system::error_code& e){
                           if (e == boost::asio::error::operation_aborted)
                             return;
-                          DNSServiceErrorType error = DNSServiceProcessResult(ref);
+                          DNSServiceErrorType error = DNSServiceProcessResult(ctx_p->sdRef);
                           if (error != kDNSServiceErr_NoError)
                           {
                             SetIsBrowsingActive(false);
@@ -277,7 +272,7 @@ BVStatus BVDiscovery_Bonjour::ResolveService(const BVServiceBrowseInstance& bI)
                             return;
                           }
                           LogTrace("Discovery: Resolve result has been processed.");
-                          DNSServiceRefDeallocate(ref);
+                          DNSServiceRefDeallocate(ctx_p->sdRef);
                           LogTrace("Discovery: Resolve ref has been deallocated.");
                         });
 
@@ -289,5 +284,6 @@ BVDiscovery_Bonjour::~BVDiscovery_Bonjour()
 {
     // When dnsRef is deallocated, browsing stops.
     // TODO: Think of it maybe being deallocated in a separate method for control
+    LogTrace("Discovery dies.");
     DNSServiceRefDeallocate(this->dnsRef); 
 }

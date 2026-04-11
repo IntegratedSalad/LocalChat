@@ -25,7 +25,7 @@ private:
     int sleepMs = 1000;
 
     void CreateConnectionContext(void) override;
-    std::unique_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI) override;
+    std::shared_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI);
     void DestroyResolveContext(std::unique_ptr<std::any> rcp) override;
     void Setup(void) override;
     void Browse(void) override;

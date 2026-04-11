@@ -21,7 +21,9 @@ private:
     const BVServiceHostData hostData; // for service data
 
     virtual void CreateConnectionContext(void) = 0; // private member function which actually starts Discovery
-    virtual std::unique_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI) = 0; // create resolver
+    // This shouldn't be virtual, as there are problems to cast from unique/shared ptr pting to std::any
+    // To the desired implementation-oriented type.
+    // virtual std::shared_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI) = 0; // create resolver
     virtual void DestroyResolveContext(std::unique_ptr<std::any> rcp) = 0;
     virtual void Setup(void) = 0;
     virtual void Browse() = 0;

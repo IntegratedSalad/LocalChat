@@ -20,6 +20,18 @@
  *   It utilizes a LL of records that is copied to the shared queue.
  */
 
+// This is different from ResolveCallbackContext - this is used in BVDiscovery_Bonjour!
+struct Bonjour_ResolveContext
+{
+    ResolveCallbackContext callback_ctx{};
+    DNSServiceRef sdRef = nullptr;
+    boost::asio::posix::stream_descriptor resolveFD;
+
+    Bonjour_ResolveContext(boost::asio::io_context& ioContext) :
+    resolveFD(ioContext)
+    {}
+};
+
 /* Excerpt from dns_sd.h
  * Clients explicitly wishing to discover *only* LocalOnly services during a
  * browse may do this, without flags, by inspecting the interfaceIndex of each
@@ -48,7 +60,7 @@ private:
     void AwaitFDForProcessingBrowseResult(void);
 
     void CreateConnectionContext(void) override; // private member function which actually starts the Discovery service
-    std::unique_ptr<std::any> CreateResolveContext(const BVServiceBrowseInstance& bI) override; // this is PER SERVICE to be resolved!
+    std::shared_ptr<Bonjour_ResolveContext> CreateResolveContext(const BVServiceBrowseInstance& bI); // this is PER SERVICE to be resolved!
     void DestroyResolveContext(std::unique_ptr<std::any> rcp) override {/*unimplemented*/};
 
     void Setup(void) override;
