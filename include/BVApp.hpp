@@ -37,11 +37,12 @@ class BVApp
 private:
     std::atomic<bool> isRunning = true;
     std::thread worker_thread;
-    std::thread io_thread; // ? Maybe on this thread we run the ioContext loop.
-    // Should BVApp be an owner of a ioContext? and BVDiscovery just an entity that posts jobs to it?
-    // If yes, then there should be maybe another thread onto which we put ioContext.run().
-    // And we join it with app (still a main thread, but not in main.cpp but at the end of Run()).
-    boost::asio::io_context& ioContext;
+    std::thread io_thread;
+
+    boost::asio::io_context& ioContext; // App owns ioContext
+    // workGuard is needed so we don't stop ioContext when no job has been scheduled early enough.
+    boost::asio::executor_work_guard<boost::asio::io_context::executor_type> workGuard;
+
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
 
 protected:
@@ -59,7 +60,8 @@ protected:
 
 public:
     BVApp(boost::asio::io_context& _ioContext) :
-    ioContext(_ioContext)
+    ioContext(_ioContext),
+    workGuard(boost::asio::make_work_guard(_ioContext))
     {};
 
     virtual ~BVApp()
@@ -76,6 +78,7 @@ public:
 
     void StopIOContext(void)
     {
+        workGuard.reset();
         this->ioContext.stop();
     }
 

@@ -21,7 +21,7 @@ void BVApp_ConsoleClient::Run(void)
     PrintAll();
     while (this->GetIsRunning())
     {
-        continue;
+        // continue;
         const char key = this->terminal.ReadChar();
         auto action = ParseConsoleActionFromKey(key);
         if (!action.has_value())
