@@ -11,18 +11,6 @@
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
 
-struct BVUser
-{
-    std::string name;
-    BVHost serviceResolvedData;
-};
-
-enum class BVAppEvent_e
-{
-    BVAPPEVENT_NEW_SERVICES
-};
-//?
-
 /*
  * class BVApp
  * BVApp defines behavior and manages data related to

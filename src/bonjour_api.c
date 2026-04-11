@@ -82,7 +82,6 @@ void C_ResolveReply(
         if (context != NULL)
         {
             ResolveCallbackContext* resolve_callback_context_p = GetResolveCallbackContext(context);
-            // should we malloc this resolution result? yes, we have to copy the 
             DNSResolutionResult* resolution_result_p = (DNSResolutionResult*)malloc(sizeof(DNSResolutionResult));
             const size_t fullname_len = strlen(fullname);
             const size_t hosttarget_len = strlen(hosttarget);
@@ -92,12 +91,9 @@ void C_ResolveReply(
             memcpy(resolution_result_p->txtRecord, txtRecord, txtRecord_len);
             resolution_result_p->port = ntohs(port);
             resolution_result_p->txtLen = txtLen;
-
-            // Write a bridge function that will take browseInstance fields and convert it to C-like strings
             memcpy(resolution_result_p->serviceName, resolve_callback_context_p->serviceName, N_BYTES_SERVNAME_MAX);
             memcpy(resolution_result_p->regType, resolve_callback_context_p->regType, N_BYTES_REGTYPE_MAX);
             memcpy(resolution_result_p->replyDomain, resolve_callback_context_p->replyDomain, N_BYTES_REPLDOMN_MAX);
-
             SendServiceResolvedMessageToApp(resolution_result_p, resolve_callback_context_p->discovery_p);
         } else
         {

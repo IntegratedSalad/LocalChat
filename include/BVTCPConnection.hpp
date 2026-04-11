@@ -5,6 +5,13 @@
 #include "BV.hpp"
 #include "BVLoggable.hpp"
 
+struct BVUser
+{
+    std::string name;
+    BVHost hostData;
+};
+
+
 struct BVTCPConnection
 {
     BVHost host;

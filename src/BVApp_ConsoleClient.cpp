@@ -21,7 +21,7 @@ void BVApp_ConsoleClient::Run(void)
     PrintAll();
     while (this->GetIsRunning())
     {
-        // continue;
+        // continue; // uncomment when debugging - this hangs the main thread.
         const char key = this->terminal.ReadChar();
         auto action = ParseConsoleActionFromKey(key);
         if (!action.has_value())
@@ -204,6 +204,7 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     {
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
+    hostsV.push_back(host);
 
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
@@ -275,7 +276,6 @@ BVHost BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     if (ec)
     {
         LogError("App: Error while resolving to IPv4... {}", ec.to_string());
-        host.serviceName = "ERROR";
         return host;
     }
     if (results.empty())

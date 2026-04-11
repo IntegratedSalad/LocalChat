@@ -108,9 +108,6 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
     */
     const BVServiceHostData hd = this->GetHostData();
     LogTrace("Discovery: Browsing for {}.{}", hd.regtype, hd.domain);
-    // std::cout << "Browsing for: ";
-    // std::cout << hd.regtype << ".";
-    // std::cout << hd.domain  << std::endl; // Do not pass the pointer to service
     DNSServiceErrorType error = DNSServiceBrowse(&this->dnsRef,
                                                 0,
                                                 0,
