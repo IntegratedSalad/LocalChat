@@ -6,6 +6,10 @@ It uses **mDNS / DNS-SD** for service discovery, allowing machines on the same L
 
 This is my engineering thesis.
 
+For now, service browsing and service resolution in a controlled, asynchronous manner has been implemented:
+![screenshot2](docs/crossplatform_resolution2.png)
+Screenshot shows resolved fedora service running on virtual machine and macOS service running locally on the same machine. 
+
 ## Dependencies
 ### All
 - **CMake**
