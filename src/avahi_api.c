@@ -25,26 +25,26 @@ void resolve_callback(
             break;
         case AVAHI_RESOLVER_FOUND: {
             char a[AVAHI_ADDRESS_STR_MAX], *t;
-            fprintf(stderr, "Service '%s' of type '%s' in domain '%s':\n", name, type, domain);
+            // fprintf(stderr, "Service '%s' of type '%s' in domain '%s':\n", name, type, domain);
             avahi_address_snprint(a, sizeof(a), address);
             t = avahi_string_list_to_string(txt);
-            fprintf(stderr,
-                    "\t%s:%u (%s)\n"
-                    "\tTXT=%s\n"
-                    "\tcookie is %u\n"
-                    "\tis_local: %i\n"
-                    "\tour_own: %i\n"
-                    "\twide_area: %i\n"
-                    "\tmulticast: %i\n"
-                    "\tcached: %i\n",
-                    host_name, port, a,
-                    t,
-                    avahi_string_list_get_service_cookie(txt),
-                    !!(flags & AVAHI_LOOKUP_RESULT_LOCAL),
-                    !!(flags & AVAHI_LOOKUP_RESULT_OUR_OWN),
-                    !!(flags & AVAHI_LOOKUP_RESULT_WIDE_AREA),
-                    !!(flags & AVAHI_LOOKUP_RESULT_MULTICAST),
-                    !!(flags & AVAHI_LOOKUP_RESULT_CACHED));
+            // fprintf(stderr,
+            //         "\t%s:%u (%s)\n"
+            //         "\tTXT=%s\n"
+            //         "\tcookie is %u\n"
+            //         "\tis_local: %i\n"
+            //         "\tour_own: %i\n"
+            //         "\twide_area: %i\n"
+            //         "\tmulticast: %i\n"
+            //         "\tcached: %i\n",
+            //         host_name, port, a,
+            //         t,
+            //         avahi_string_list_get_service_cookie(txt),
+            //         !!(flags & AVAHI_LOOKUP_RESULT_LOCAL),
+            //         !!(flags & AVAHI_LOOKUP_RESULT_OUR_OWN),
+            //         !!(flags & AVAHI_LOOKUP_RESULT_WIDE_AREA),
+            //         !!(flags & AVAHI_LOOKUP_RESULT_MULTICAST),
+            //         !!(flags & AVAHI_LOOKUP_RESULT_CACHED));
 
             /* Prepare data */
             DNSResolutionResult* resolution_result_p = (DNSResolutionResult*)malloc(sizeof(DNSResolutionResult));
