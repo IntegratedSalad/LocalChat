@@ -92,11 +92,16 @@ BVStatus BVDiscovery_Avahi::OnShutdown(std::unique_ptr<std::any> dp)
     return BVStatus::BVSTATUS_OK;
 }
 
-BVStatus BVDiscovery_Avahi::::ResolveService(const BVServiceBrowseInstance& bI)
+BVStatus BVDiscovery_Avahi::ResolveService(const BVServiceBrowseInstance& bI)
 {
+    /*
+     * Avahi seems to be different in how to handle resolution.
+     * App does not need to ask Discovery - instead, resolver
+     * is created in the browse callback.
+     *
+    */
     return BVStatus::BVSTATUS_OK;
 }
-
 
 // This essentially creates a connection context
 // and sets up the callback
@@ -108,8 +113,8 @@ void BVDiscovery_Avahi::CreateConnectionContext(void)
         avahi_service_browser_new(client_p.get(), 
                                   AVAHI_IF_UNSPEC, 
                                   AVAHI_PROTO_UNSPEC, 
-                                  regtype.c_str(), 
-                                  domain.c_str(), 
+                                  regtype.c_str(),
+                                  domain.c_str(),
                                   (AvahiLookupFlags)0,
                                   browse_callback,
                                   this)
@@ -139,6 +144,7 @@ void BVDiscovery_Avahi::Browse()
         }
     }
 }
+
 
 BVDiscovery_Avahi::~BVDiscovery_Avahi()
 {   

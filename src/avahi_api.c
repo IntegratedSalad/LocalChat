@@ -1,5 +1,66 @@
 #include "avahi_api.h"
 
+void resolve_callback(
+    AvahiServiceResolver *r,
+    AVAHI_GCC_UNUSED AvahiIfIndex interface,
+    AVAHI_GCC_UNUSED AvahiProtocol protocol,
+    AvahiResolverEvent event,
+    const char *name,
+    const char *type,
+    const char *domain,
+    const char *host_name,
+    const AvahiAddress *address,
+    uint16_t port,
+    AvahiStringList *txt,
+    AvahiLookupResultFlags flags,
+    void* userdata) 
+{
+    assert(r);
+    assert(userdata);
+
+    switch (event) 
+    {
+        case AVAHI_RESOLVER_FAILURE:
+            fprintf(stderr, "(Resolver) Failed to resolve service '%s' of type '%s' in domain '%s': %s\n", name, type, domain, avahi_strerror(avahi_client_errno(avahi_service_resolver_get_client(r))));
+            break;
+        case AVAHI_RESOLVER_FOUND: {
+            char a[AVAHI_ADDRESS_STR_MAX], *t;
+            fprintf(stderr, "Service '%s' of type '%s' in domain '%s':\n", name, type, domain);
+            avahi_address_snprint(a, sizeof(a), address);
+            t = avahi_string_list_to_string(txt);
+            fprintf(stderr,
+                    "\t%s:%u (%s)\n"
+                    "\tTXT=%s\n"
+                    "\tcookie is %u\n"
+                    "\tis_local: %i\n"
+                    "\tour_own: %i\n"
+                    "\twide_area: %i\n"
+                    "\tmulticast: %i\n"
+                    "\tcached: %i\n",
+                    host_name, port, a,
+                    t,
+                    avahi_string_list_get_service_cookie(txt),
+                    !!(flags & AVAHI_LOOKUP_RESULT_LOCAL),
+                    !!(flags & AVAHI_LOOKUP_RESULT_OUR_OWN),
+                    !!(flags & AVAHI_LOOKUP_RESULT_WIDE_AREA),
+                    !!(flags & AVAHI_LOOKUP_RESULT_MULTICAST),
+                    !!(flags & AVAHI_LOOKUP_RESULT_CACHED));
+
+            /* Prepare data */
+            DNSResolutionResult* resolution_result_p = (DNSResolutionResult*)malloc(sizeof(DNSResolutionResult));
+            memcpy(resolution_result_p->serviceName, name, N_BYTES_SERVNAME_MAX);
+            memcpy(resolution_result_p->regType, type, N_BYTES_REGTYPE_MAX);
+            memcpy(resolution_result_p->replyDomain, domain, N_BYTES_REPLDOMN_MAX);
+            memcpy(resolution_result_p->hosttarget, host_name, strlen(host_name));
+            memcpy(resolution_result_p->fullname, a, strlen(a));
+            memcpy(resolution_result_p->txtRecord, t, strlen(t));
+            resolution_result_p->port = ntohs(port);
+            resolution_result_p->txtLen = strlen(t);
+            on_service_resolved(userdata, resolution_result_p); // Sends Message
+        }
+    }
+}
+
 /*
  * Browse callback
  * void* userdata should contain a pointer to the discovery implementation
@@ -64,11 +125,26 @@ void browse_callback(
             LinkedListElement_str* lle_p = LinkedListElement_str_Constructor(buff, NULL);
             LinkedList_str_AddElement((LinkedList_str*)on_service_add(userdata), lle_p);
 
-            on_service_found(userdata); // calls PushBrowsedServicesToQueue
+            on_service_found(userdata); // calls ReturnListFromBrowseResults
 
-            // We must call the member function that is responsible for enqueing the results
-            // discovery_p->OnServiceFound(); // calls PushBrowsedServicesToQueue
-            // or notify
+            // Service Resolution
+            /*
+             * In case of Avahi, resolution is done immediately after service was found
+             *
+            */
+            if (!(avahi_service_resolver_new(avahi_service_browser_get_client(sb), 
+                                             interface, 
+                                             protocol, 
+                                             name, 
+                                             type, 
+                                             domain, 
+                                             AVAHI_PROTO_UNSPEC, 
+                                             0, 
+                                             resolve_callback, 
+                                             userdata)))
+            {
+                fprintf(stderr, "Failed to resolve service '%s': %s\n", name, avahi_strerror(avahi_client_errno(avahi_service_browser_get_client(sb))));
+            }
             break;
         }
         case AVAHI_BROWSER_REMOVE:

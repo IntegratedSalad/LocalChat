@@ -10,10 +10,16 @@
 #include <condition_variable>
 #include "linked_list.h"
 #include "avahi_api.h"
+#include "api_common.h"
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
 #include <avahi-common/error.h>
 #include <avahi-common/simple-watch.h>
+
+struct Avahi_ResolveContext
+{
+    ResolveCallbackContext callback_ctx{};
+};
 
 struct AvahiServiceBrowserDeleter
 {
@@ -38,6 +44,9 @@ private:
     void CreateConnectionContext(void) override;
     void Setup(void) override;
     void Browse(void) override;
+
+    void DestroyResolveContext(std::unique_ptr<std::any> rcp) override
+    {}
 
 protected:
     BVStatus ResolveService(const BVServiceBrowseInstance& bI) override;
@@ -79,6 +88,14 @@ public:
     {
         std::unique_lock<std::mutex> lk(pauseMutex);
         pauseCV.wait(lk, [this]{return !this->isPaused;});
+    }
+
+    void SendMessage_API_INTERFACE(const BVEventType& et, std::any a_type)
+    {
+        this->SendMessage(BVMessage(
+            et,
+            std::make_unique<std::any>(a_type))
+        );
     }
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;

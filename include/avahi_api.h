@@ -9,6 +9,8 @@ extern "C" {
 #include <string.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
 #include <avahi-client/client.h>
 #include <avahi-client/lookup.h>
 #include <avahi-common/error.h>

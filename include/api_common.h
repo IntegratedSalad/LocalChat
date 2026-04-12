@@ -9,6 +9,14 @@ extern "C" {
 #include <const.h>
 #define MAX_DNS_RESOLUTION_FIELD_SIZE 256
 
+typedef struct ResolveCallbackContext
+{
+    void* discovery_p; // for accessing functions in callback - must point to BVDiscovery_XXX
+    char serviceName[N_BYTES_SERVNAME_MAX];
+    char regType[N_BYTES_REGTYPE_MAX];
+    char replyDomain[N_BYTES_REPLDOMN_MAX];
+} ResolveCallbackContext;
+
 typedef struct DNSResolutionResult
 {
     char fullname[MAX_DNS_RESOLUTION_FIELD_SIZE];

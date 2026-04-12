@@ -2,6 +2,7 @@
 #define __AVAHI_BRIDGE_API
 
 #include <avahi-common/simple-watch.h>
+#include "api_common.h"
 #include "linked_list.h"
 
 #ifdef __cplusplus
@@ -10,6 +11,7 @@ extern "C" {
 void on_service_found(void* obj);
 AvahiSimplePoll* on_browser_failure(void* obj);
 LinkedList_str* on_service_add(void* obj);
+void on_service_resolved(void* obj, DNSResolutionResult* res_p);
 #ifdef __cplusplus
 }
 #endif

@@ -14,15 +14,6 @@ extern "C" {
 
 extern bool replyError;
 
-typedef struct ResolveCallbackContext
-{
-    void* discovery_p; // for accessing functions in callback - must point to BVDiscovery_Bonjour
-    // void* browseInstance_p;
-    char serviceName[N_BYTES_SERVNAME_MAX];
-    char regType[N_BYTES_REGTYPE_MAX];
-    char replyDomain[N_BYTES_REPLDOMN_MAX];
-} ResolveCallbackContext;
-
 // * Service Discovery callbacks * //
 
 /* 
