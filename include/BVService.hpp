@@ -5,7 +5,9 @@
 #include "const.h"
 
 // This represents a host service that was just registered
-struct BVServiceHostData
+// This is very similar to BVServiceBrowseInstance...
+// This struct is used only as data of as service hosted on THIS machine
+struct BVServiceData
 {
     int port;
     std::string hostname;
@@ -70,9 +72,9 @@ public:
         this->isRegistered = _isRegistered;
     }
 
-    BVServiceHostData GetHostData(void) const
+    BVServiceData GetHostData(void) const
     {
-        BVServiceHostData hData = {
+        BVServiceData hData = {
                                    .port = this->port,
                                    .hostname = this->hostname,
                                    .domain = this->domain,

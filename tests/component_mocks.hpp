@@ -45,7 +45,7 @@ protected:
     BVStatus ResolveService(const BVServiceBrowseInstance& bI) override;
 
 public:
-    MockDiscovery(const BVServiceHostData _hostData,
+    MockDiscovery(const BVServiceData _hostData,
                   std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                   std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
 
@@ -120,7 +120,8 @@ protected:
     BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
 
 public:
-    MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+    MockApp(const BVServiceData _thisMachineServiceData,
+            std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
             std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
             boost::asio::io_context& _ioContext);
 

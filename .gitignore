@@ -65,6 +65,7 @@ bin/
 
 # Logs
 *.log
+logs/
 
 # Tests
 test/

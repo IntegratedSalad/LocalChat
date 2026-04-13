@@ -1,6 +1,6 @@
 #include "BVDiscovery_Bonjour.hpp"
 
-BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceHostData _hostData,
+BVDiscovery_Bonjour::BVDiscovery_Bonjour(const BVServiceData _hostData,
                                          boost::asio::io_context& _ioContext,
                                          std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                                          std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
@@ -106,7 +106,7 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
         Browsing goes indefinitely, until the DNSServiceRef is passed to
         DNSServiceRefDeallocate.
     */
-    const BVServiceHostData hd = this->GetHostData();
+    const BVServiceData hd = this->GetHostData();
     LogTrace("Discovery: Browsing for {}.{}", hd.regtype, hd.domain);
     DNSServiceErrorType error = DNSServiceBrowse(&this->dnsRef,
                                                 0,

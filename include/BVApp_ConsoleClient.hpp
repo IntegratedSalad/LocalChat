@@ -207,7 +207,8 @@ protected:
     BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
 
 public:
-    BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+    BVApp_ConsoleClient(const BVServiceData _thisMachineServiceData,
+                        std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
                         boost::asio::io_context& _ioContext);
 

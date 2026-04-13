@@ -18,6 +18,7 @@ struct BVHost
 {
     std::string serviceName;
     std::string hostname;
+    int port;
     boost::asio::ip::address address;
 };
 

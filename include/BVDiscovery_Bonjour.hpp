@@ -70,7 +70,7 @@ protected:
     BVStatus ResolveService(const BVServiceBrowseInstance& bI) override; 
 
 public:
-    BVDiscovery_Bonjour(const BVServiceHostData _hostData,
+    BVDiscovery_Bonjour(const BVServiceData _hostData,
                         boost::asio::io_context& _ioContext,
                         std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                         std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);

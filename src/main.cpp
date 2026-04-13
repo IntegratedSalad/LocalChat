@@ -27,7 +27,6 @@
 int main(int argc, char** argv)
 {
 #if __APPLE__
-    /* Put this in a test */
     uint32_t v;
     uint32_t size = sizeof(v);
     DNSServiceErrorType err = DNSServiceGetProperty(kDNSServiceProperty_DaemonVersion, &v, &size);
@@ -42,9 +41,8 @@ int main(int argc, char** argv)
     }
     /* */
 #endif
-// for linux maybe write a simple function that communicates with the avahi-daemon?
     std::string hostname = boost::asio::ip::host_name();  // Use an appropriate host name or retrieve it
-    std::string domain = "local";
+    std::string domain = "local.";
 
     /*
         Let's keep registration procedure synchronous, at least for now.
@@ -93,7 +91,7 @@ int main(int argc, char** argv)
     std::shared_ptr<spdlog::logger> fileLogger;
     namespace fs = std::filesystem;
     spdlog::set_level(spdlog::level::trace);
-    spdlog::set_pattern("[%H:%M:%S %z] [logger %n] [thread %t] %v");
+    spdlog::set_pattern("[%H:%M:%S %z] [logger %n] [%l] [thread %t] %v");
     try 
     {
         fs::path logDir = "logs";
@@ -101,7 +99,7 @@ int main(int argc, char** argv)
 
         std::string fileName = "trace.log";
 
-        std::string loggerName = "trace_logger";
+        std::string loggerName = "main_logger";
         spdlog::drop(loggerName);
 
         fs::path logPath = logDir / fileName;
@@ -119,11 +117,12 @@ int main(int argc, char** argv)
         std::cout << "Log init failed: " << ex.what() << std::endl;
         throw std::runtime_error("Cannot init logging handle...");
     }
+    const BVServiceData thisMachineServiceData = service.GetHostData();
 #if __APPLE__
     // Create a discovery object, that periodically performs DNS-SD functionality.
-    std::shared_ptr<const BVService_Bonjour> service_p =
+    std::shared_ptr<const BVService_Bonjour> service_p = // TODO: Redundant, remove!
         std::make_shared<const BVService_Bonjour>(service);
-    BVDiscovery_Bonjour discovery{service.GetHostData(),
+    BVDiscovery_Bonjour discovery{thisMachineServiceData,
                                   ioContext,
                                   std::make_shared<threadsafe_queue<BVMessage>>(),
                                   std::make_shared<threadsafe_queue<BVMessage>>()};
@@ -138,7 +137,8 @@ int main(int argc, char** argv)
                                 std::make_shared<threadsafe_queue<BVMessage>>(),
                                 std::make_shared<threadsafe_queue<BVMessage>>()};
 #endif
-    BVApp_ConsoleClient consoleClient{std::make_shared<threadsafe_queue<BVMessage>>(),
+    BVApp_ConsoleClient consoleClient{thisMachineServiceData,
+                                      std::make_shared<threadsafe_queue<BVMessage>>(),
                                       std::make_shared<threadsafe_queue<BVMessage>>(),
                                       ioContext};
     consoleClient.SetLogger(fileLogger);

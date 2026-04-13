@@ -33,7 +33,7 @@ LocalChat is tested and run on macOS Monterey 12.3.1 and macOS Sequoia.
 ## Linux
 ### Avahi
 Tested on Fedora Linux Workstation 43
-Install avahi-devel, cmake, boost, gcc, g++, wxGTK-devel
+Install avahi-devel, cmake, boost, gcc, g++, wxGTK-devel, spdlog
 avahi-daemon runs on boot, however avahi-devel is needed to compile the source.
 For development see docs/linux_notes.md
 

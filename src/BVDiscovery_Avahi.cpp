@@ -13,7 +13,7 @@
 
 BVDiscovery_Avahi::BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
                                      boost::asio::io_context& _ioContext, // probably not needed
-                                     const BVServiceHostData _hostData,
+                                     const BVServiceData _hostData,
                                      std::shared_ptr<AvahiSimplePoll> _simple_poll_p,
                                      std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                                      std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx):

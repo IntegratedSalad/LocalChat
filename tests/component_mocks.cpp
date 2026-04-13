@@ -1,10 +1,10 @@
 #include "component_mocks.hpp"
 #include <any>
 
-MockDiscovery::MockDiscovery(const BVServiceHostData _hostData,
+MockDiscovery::MockDiscovery(const BVServiceData _serviceData,
                              std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                              std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx) :
-    BVDiscovery(_hostData),
+    BVDiscovery(_serviceData),
     BVComponent(_outMbx, _inMbx)
 {
     // // RegisterCallbacks for interesting events to Discovery
@@ -257,11 +257,12 @@ void MockDiscovery::DestroyResolveContext(std::unique_ptr<std::any> rcp)
 
 }
 
-MockApp::MockApp(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
-        std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
-        boost::asio::io_context& _ioContext) :
+MockApp::MockApp(const BVServiceData _thisMachineServiceData,
+                 std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+                 std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
+                 boost::asio::io_context& _ioContext) :
 BVComponent(_outMbx, _inMbx),
-BVApp(_ioContext),
+BVApp(_ioContext, _thisMachineServiceData),
 announceTimer(_ioContext),
 pauseDiscoveryTimer(_ioContext)
 {

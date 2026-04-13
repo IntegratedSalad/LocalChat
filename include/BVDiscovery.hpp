@@ -18,7 +18,7 @@ private:
     LinkedList_str* c_ll_p = NULL; // C linked list, for processing daemon responses
     // TODO: LinkedList_str should be wrapped in a unique ptr.
 
-    const BVServiceHostData hostData; // for service data
+    const BVServiceData hostData; // for service data
 
     virtual void CreateConnectionContext(void) = 0; // private member function which actually starts Discovery
     // This shouldn't be virtual, as there are problems to cast from unique/shared ptr pting to std::any
@@ -28,9 +28,7 @@ private:
     virtual void Setup(void) = 0;
     virtual void Browse() = 0;
 
-    // TODO: From BVComponent, concrete implementation of BVDiscovery inherits Stop().
-    // override this in implementations
-    std::thread worker_thread; // TODO: provide way to launching this thread
+    std::thread worker_thread;
 
 protected:
     std::list<BVServiceBrowseInstance> ReturnListFromBrowseResults(void)
@@ -89,7 +87,7 @@ protected:
     }
 
 public:
-    BVDiscovery(const BVServiceHostData _hostData) :
+    BVDiscovery(const BVServiceData _hostData) :
     hostData(_hostData)
     {
         this->c_ll_p = LinkedList_str_Constructor(NULL);
@@ -136,13 +134,13 @@ public:
         this->isBrowsingActive = f;
     }
 
-    BVServiceHostData GetHostData(void) const
+    BVServiceData GetHostData(void) const
     {
         return this->hostData;
     }
 
     // without '&' (reference),
-    // the function would return a automatically allocated
+    // the function would return an automatically allocated
     // copy of the pointer, of which the address would get deallocated when
     // returning from this function
     LinkedList_str*& GetLinkedList_p(void)

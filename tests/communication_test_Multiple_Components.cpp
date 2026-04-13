@@ -85,19 +85,20 @@ protected:
             throw std::runtime_error("Cannot init logging handle...");
         }
 
-        BVServiceHostData hostDataMock{.port = PORT,
+        BVServiceData serviceDataMock{.port = PORT,
                                         .hostname = "mock",
                                         .domain = ".local",
                                         .regtype = "_localchathost._tcp"};
         
         broker_p = std::make_unique<BVBroker>(std::make_shared<threadsafe_queue<BVMessage>>());
         discovery_mock_p = 
-            std::make_unique<MockDiscovery>(hostDataMock,
+            std::make_unique<MockDiscovery>(serviceDataMock,
                                             std::make_shared<threadsafe_queue<BVMessage>>(),
                                             std::make_shared<threadsafe_queue<BVMessage>>());
         discovery_mock_p->SetLogger(fileLogger);
 
-        app_mock_p = std::make_unique<MockApp>(std::make_shared<threadsafe_queue<BVMessage>>(),
+        app_mock_p = std::make_unique<MockApp>(serviceDataMock,
+                                               std::make_shared<threadsafe_queue<BVMessage>>(),
                                                std::make_shared<threadsafe_queue<BVMessage>>(),
                                                ioContext);
         app_mock_p->SetLogger(fileLogger);

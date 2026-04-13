@@ -33,6 +33,9 @@ private:
 
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
 
+    // TODO: Get this machine's service data
+    const BVServiceData thisMachineServiceData;
+
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
     std::vector<BVHost> hostsV; // after resolving
@@ -47,9 +50,11 @@ protected:
     virtual BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) = 0;
 
 public:
-    BVApp(boost::asio::io_context& _ioContext) :
+    BVApp(boost::asio::io_context& _ioContext,
+          const BVServiceData _thisMachineServiceData) :
     ioContext(_ioContext),
-    workGuard(boost::asio::make_work_guard(_ioContext))
+    workGuard(boost::asio::make_work_guard(_ioContext)),
+    thisMachineServiceData(_thisMachineServiceData)
     {};
 
     virtual ~BVApp()
@@ -127,5 +132,10 @@ public:
     void SetIsRunning(const bool state)
     {
         this->isRunning = state;
+    }
+
+    const BVServiceData& GetThisMachineServiceData(void) const
+    {
+        return this->thisMachineServiceData;
     }
 };

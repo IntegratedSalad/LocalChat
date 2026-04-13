@@ -4,7 +4,7 @@
 #define N_BYTES_REPLDOMN_MAX      (16)
 #define N_BYTES_SERVICE_STR_TOTAL (N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX + N_BYTES_REPLDOMN_MAX)
 #define N_SERVICES_MAX            (UINT8_MAX)
-#define SERVICETYPE_STR           "_localchathost._tcp"
+#define SERVICETYPE_STR           "_localchathost._tcp."
 #define PORT                      50001
 
 #define AVAHI_POLL_ITERATE_TIMEOUT_MS (500)

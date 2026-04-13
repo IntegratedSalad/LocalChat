@@ -19,7 +19,7 @@ protected:
         inMailBox_p = std::make_shared<threadsafe_queue<BVMessage>>();
         outMailBox_p = std::make_shared<threadsafe_queue<BVMessage>>();
 
-        BVServiceHostData hostDataMock{.port = PORT,
+        BVServiceData hostDataMock{.port = PORT,
                                         .hostname = "mock",
                                         .domain = ".local",
                                         .regtype = "_localchathost._tcp"};

@@ -1,6 +1,13 @@
 #include "bonjour_api.h"
 #include "bonjour_api_bridge.h"
 
+/* Excerpt from the dns_sd.h:
+ * "or similar problem and has to be deregistered, the callback will
+ * be invoked with the kDNSServiceFlagsAdd flag not set. The callback
+ * is *not* invoked in the case where the caller explicitly terminates
+ * the service registration by calling DNSServiceRefDeallocate(ref);"
+ * Deregistration MUST be handled when we're about to terminate the Discovery
+*/
 void C_ServiceBrowseReply(
     DNSServiceRef sdRef,
     DNSServiceFlags flags,

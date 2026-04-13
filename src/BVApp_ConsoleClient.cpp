@@ -1,9 +1,10 @@
 #include "BVApp_ConsoleClient.hpp"
 
-BVApp_ConsoleClient::BVApp_ConsoleClient(std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
+BVApp_ConsoleClient::BVApp_ConsoleClient(const BVServiceData _thisMachineServiceData,
+                                         std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                                          std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx,
                                          boost::asio::io_context& _ioContext) :
-BVApp(_ioContext),
+BVApp(_ioContext, _thisMachineServiceData),
 BVComponent(_outMbx, _inMbx)
 {
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE,
@@ -98,7 +99,8 @@ BVStatus BVApp_ConsoleClient::PrintServices(void)
     BVStatus status = BVStatus::BVSTATUS_OK;
     if (this->serviceV.size() == 0)
     {
-        std::cout << "None available" << std::endl;
+        std::cout << "None available apart from ourselves... :(" << std::endl;
+        std::cout << this->GetThisMachineServiceData().hostname << std::endl;
     }
     int i = 1;
     for (BVServiceBrowseInstance& bI : this->serviceV)
@@ -141,7 +143,19 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
         {
             if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
             {
-                // TODO: If serviceName of this machine, skip
+                const BVServiceData& thisMachineServiceData = GetThisMachineServiceData();
+                LogDebug(thisMachineServiceData.domain.c_str());
+                LogDebug(thisMachineServiceData.regtype.c_str());
+                LogDebug(thisMachineServiceData.hostname.c_str());
+                LogDebug(lElem.replyDomain.c_str());
+                LogDebug(lElem.regType.c_str());
+                LogDebug(lElem.serviceName.c_str());
+                if (lElem.regType == thisMachineServiceData.regtype &&
+                    lElem.serviceName == thisMachineServiceData.hostname &&
+                    lElem.replyDomain == thisMachineServiceData.domain)
+                {
+                    continue; // do not resolve service on the same machine
+                }
                 this->serviceV.push_back(lElem);
                 toResolve.push_back(lElem);
                 // Send request to resolve
