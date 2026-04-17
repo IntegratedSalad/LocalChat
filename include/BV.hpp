@@ -14,14 +14,6 @@ typedef enum class BVStatus
     BVSTATUS_MAX_COMPONENTS
 } BVStatus;
 
-struct BVHost
-{
-    std::string serviceName;
-    std::string hostname;
-    int port;
-    boost::asio::ip::address address;
-};
-
 struct BVServiceBrowseInstance
 {
     std::string serviceName;

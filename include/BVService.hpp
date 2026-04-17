@@ -35,6 +35,8 @@ public:
         this->hostname = _hostname;
         this->domain = _domain;
         uint16_t portH = static_cast<uint16_t>(_port);
+        // should this be inverted with ntohs later? Probably yes, as this has to be passed to DNSServiceRegister
+        // in network byte order
         this->port = static_cast<int>(htons(portH));
     }
 

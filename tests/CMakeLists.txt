@@ -60,6 +60,7 @@ add_executable(
   broker_test_Basic.cpp
   component_mocks.cpp
   ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPConnection.cpp
 )
 
 target_link_libraries(
@@ -74,6 +75,7 @@ add_executable(
   component_test_Discovery_Basic
   component_test_Discovery_Basic.cpp
   component_mocks.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPConnection.cpp
 )
 
 target_link_libraries(
@@ -89,6 +91,7 @@ add_executable(
   communication_test_Multiple_Components.cpp
   component_mocks.cpp
   ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPConnection.cpp
 )
 
 target_link_libraries(

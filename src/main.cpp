@@ -142,6 +142,7 @@ int main(int argc, char** argv)
                                       std::make_shared<threadsafe_queue<BVMessage>>(),
                                       ioContext};
     consoleClient.SetLogger(fileLogger);
+    consoleClient.GetConnectionManager().SetLogger(fileLogger);
 
     // Broker setup
     BVStatus attachStatusDiscovery = broker.Attach(discovery);

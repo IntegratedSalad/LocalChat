@@ -13,11 +13,12 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
+    this->GetConnectionManager().InitializeTCPConnectionForThisMachine();
 }
 
 void BVApp_ConsoleClient::Run(void)
 {
-    std::cerr << "stdin isatty = " << ::isatty(STDIN_FILENO) << '\n';
+    // std::cerr << "stdin isatty = " << ::isatty(STDIN_FILENO) << '\n';
     this->terminal.SetNonCanonicalMode();
     PrintAll();
     while (this->GetIsRunning())
@@ -206,12 +207,12 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    std::string hosttarget = res->hosttarget;
+    std::string hosttarget  = res->hosttarget;
     std::string serviceName = res->serviceName;
     int         port        = res->port;
 
     LogTrace("App: Resolved {} to hosttarget: {}", serviceName, hosttarget);
-    LogTrace("App: on port {}", res->port);
+    LogTrace("App: on port {}", port);
 
     BVHost host = ResolveServiceToEndpoint(hosttarget, serviceName, port);
     if (host.serviceName == "ERROR")
@@ -219,6 +220,11 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     hostsV.push_back(host);
+
+    // Initiate connection
+    // Open socket.
+
+    // Each host is required to have one acceptor
 
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
@@ -285,7 +291,8 @@ BVHost BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     BVHost host{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
-    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4(), */hosttarget, std::to_string(port), ec);
+    // TODO: probably we want to do ntohs on the port!
+    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4(), */hosttarget, std::to_string(port), ec); // make that async
 
     if (ec)
     {
@@ -298,10 +305,11 @@ BVHost BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
         host.serviceName = "ERROR";
         return host;
     }
-    boost::asio::ip::tcp::endpoint endpoint = results.begin()->endpoint();
+    boost::asio::ip::tcp::endpoint endpoint = results.begin()->endpoint(); // try first endpoint
     LogTrace("Successfuly resolved {} to {}", serviceName, endpoint.address().to_string());
     host.address = endpoint.address();
     host.hostname = hosttarget;
     host.serviceName = serviceName; 
+    host.results = results;
     return host;
 }

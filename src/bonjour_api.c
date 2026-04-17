@@ -6,7 +6,7 @@
  * be invoked with the kDNSServiceFlagsAdd flag not set. The callback
  * is *not* invoked in the case where the caller explicitly terminates
  * the service registration by calling DNSServiceRefDeallocate(ref);"
- * Deregistration MUST be handled when we're about to terminate the Discovery
+ * Deregistration MUST NOT be handled by the Discovery.
 */
 void C_ServiceBrowseReply(
     DNSServiceRef sdRef,

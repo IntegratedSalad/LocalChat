@@ -10,6 +10,7 @@
 #include <boost/asio.hpp>
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
+#include "BVTCPConnection.hpp"
 
 /*
  * class BVApp
@@ -34,7 +35,8 @@ private:
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
 
     // TODO: Get this machine's service data
-    const BVServiceData thisMachineServiceData;
+    BVServiceData thisMachineServiceData;
+    BVTCPConnectionManager tcpConnectionManager;
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
@@ -54,8 +56,10 @@ public:
           const BVServiceData _thisMachineServiceData) :
     ioContext(_ioContext),
     workGuard(boost::asio::make_work_guard(_ioContext)),
-    thisMachineServiceData(_thisMachineServiceData)
-    {};
+    thisMachineServiceData(_thisMachineServiceData),
+    tcpConnectionManager(_ioContext, _thisMachineServiceData)
+    {
+    };
 
     virtual ~BVApp()
     {}
@@ -138,4 +142,10 @@ public:
     {
         return this->thisMachineServiceData;
     }
+
+    BVTCPConnectionManager& GetConnectionManager(void)
+    {
+        return this->tcpConnectionManager;
+    }
+
 };
