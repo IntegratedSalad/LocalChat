@@ -1,6 +1,7 @@
 include(CMakePrintHelpers)
 cmake_minimum_required(VERSION 3.5)
 project(LocalChat)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(BOOST_ROOT /opt/homebrew/Cellar/boost)
@@ -27,7 +28,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVApp_ConsoleClient.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
-						 ${CMAKE_SOURCE_DIR}/src/BVTCPConnection.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
 )
 
 if(Boost_FOUND)
@@ -72,6 +73,9 @@ endif()
 target_link_libraries(LocalChat linked_list)
 target_link_libraries(LocalChat wxWidgets::wxWidgets)
 target_link_libraries(LocalChat spdlog::spdlog)
+#very bad solution to hard failing in BVTCPConnectionManager constructor in test environment
+target_compile_definitions(LocalChat PRIVATE RESOLUTION_POLICY_HARD_FAIL)
+
 
 # We can compile different targets - only BVService_Bonjour, BVService (for BonVoyage main app and for LocalChat) or we can export these classes
 # onto a separate git repository. Then, we could use it as a submodule for LC and BV.

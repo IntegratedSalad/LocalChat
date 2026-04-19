@@ -13,7 +13,16 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
-    this->GetConnectionManager().InitializeTCPConnectionForThisMachine();
+    this->GetConnectionManager().StartAcceptingConnections();
+
+    // TODO: Create an auxhilary object which listens to messages
+    //       coming from App to sessions and that should be routed from sessions
+    //       to App AND route its traffic to global queue
+    //       Or don't create other components - just make each session a component 
+    //       and somehow redirect their produced messages into global queue
+    //       We can just pass the pointer to the existing inMailbox_p
+    // 
+
 }
 
 void BVApp_ConsoleClient::Run(void)
@@ -214,17 +223,20 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     LogTrace("App: Resolved {} to hosttarget: {}", serviceName, hosttarget);
     LogTrace("App: on port {}", port);
 
-    BVHost host = ResolveServiceToEndpoint(hosttarget, serviceName, port);
-    if (host.serviceName == "ERROR")
+    BVNode node = ResolveServiceToEndpoint(hosttarget, serviceName, port);
+    if (node.serviceName == "ERROR")
     {
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
-    hostsV.push_back(host);
+    nodesV.push_back(node);
 
-    // Initiate connection
+    // Initiate connection (session)
     // Open socket.
-
-    // Each host is required to have one acceptor
+    // Spawn thread
+    // Will this connection listen to anything that other endpoint says?
+    // Will these connections be persistent?
+    // Start with initiating connection to an endpoint
+    this->GetConnectionManager().InitiateSessionWithNode(node);
 
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
@@ -286,9 +298,9 @@ std::optional<BVConsoleActionType> BVApp_ConsoleClient::ParseConsoleActionFromKe
     }
 }
 
-BVHost BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port)
+BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port)
 {
-    BVHost host{};
+    BVNode nodeData{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
     // TODO: probably we want to do ntohs on the port!
@@ -297,19 +309,20 @@ BVHost BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     if (ec)
     {
         LogError("App: Error while resolving to IPv4... {}", ec.to_string());
-        return host;
+        return nodeData;
     }
     if (results.empty())
     {
         LogError("App: Endpoints empty...");
-        host.serviceName = "ERROR";
-        return host;
+        nodeData.serviceName = "ERROR";
+        return nodeData;
     }
     boost::asio::ip::tcp::endpoint endpoint = results.begin()->endpoint(); // try first endpoint
     LogTrace("Successfuly resolved {} to {}", serviceName, endpoint.address().to_string());
-    host.address = endpoint.address();
-    host.hostname = hosttarget;
-    host.serviceName = serviceName; 
-    host.results = results;
-    return host;
+    nodeData.ep = endpoint;
+    nodeData.address = endpoint.address();
+    nodeData.hostname = hosttarget;
+    nodeData.serviceName = serviceName; 
+    nodeData.results = results;
+    return nodeData;
 }

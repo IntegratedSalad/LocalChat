@@ -117,7 +117,7 @@ private:
     int taskSleepMs = 1000;
 
 protected:
-    BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
+    BVNode ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
 
 public:
     MockApp(const BVServiceData _thisMachineServiceData,

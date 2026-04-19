@@ -6,6 +6,8 @@
 #include "BVLoggable.hpp"
 #include "BVService.hpp"
 #include <arpa/inet.h>
+#include <map>
+#include <mutex>
 
 // These are messages sent between hosts
 typedef enum class BVTCPMessageType
@@ -17,15 +19,17 @@ typedef enum class BVTCPMessageType
 
 } BVTCPMessageType;
 
-struct BVHost // TODO: maybe rename that to BVNode, as a connection node
+// BVNode is data regarding another host in the network.
+struct BVNode // BVNodeData?
 {
     std::string serviceName;
     std::string hostname;
     int port;
+    boost::asio::ip::tcp::endpoint ep;
     boost::asio::ip::address address;
     boost::asio::ip::basic_resolver_results<boost::asio::ip::tcp> results;
 
-    BVHost(const std::string& _serviceName,
+    BVNode(const std::string& _serviceName,
            const std::string& _hostname,
            int      _port,
            boost::asio::ip::address _address,
@@ -37,7 +41,7 @@ struct BVHost // TODO: maybe rename that to BVNode, as a connection node
         address     = _address;
         results     = _results;
     }
-    BVHost(const std::string& _serviceName,
+    BVNode(const std::string& _serviceName,
            const std::string& _hostname,
            int      _port,
            boost::asio::ip::address _address)
@@ -47,7 +51,7 @@ struct BVHost // TODO: maybe rename that to BVNode, as a connection node
         port        = _port;
         address     = _address;
     }
-    BVHost(const std::string& _serviceName,
+    BVNode(const std::string& _serviceName,
            const std::string& _hostname,
            int      _port,
            boost::asio::ip::basic_resolver_results<boost::asio::ip::tcp> _results)
@@ -58,49 +62,68 @@ struct BVHost // TODO: maybe rename that to BVNode, as a connection node
         results     = _results;
     }
 
-    BVHost() = default;
-};
-
-struct BVTCPData
-{
-
+    BVNode() = default;
 };
 
 struct BVUser
 {
     std::string name;
-    BVHost hostData;
+    BVNode hostData;
 };
 
-struct BVTCPConnectionData
+// TODO: Move this to BVTCPSession.hpp
+struct BVTCPNodeConnectionSessionData // needed?
 {
-    BVHost host;
-    boost::asio::ip::tcp::socket sock_out;
-    // Socket in?
-    // Socket out?
-    bool alive;
+    BVNode nodeData; // node data
+    boost::asio::ip::tcp::socket sock;
+    bool alive = false;
+
+    BVTCPNodeConnectionSessionData(BVNode _nodeData, boost::asio::io_context& _ioContext):
+    nodeData(_nodeData),
+    sock(_ioContext)
+    {
+
+    }
 };
+
+/*
+ * BVTCPConnectionManager
+ * As part of the BVTCP Suite.
+ * This class manages all connections - these coming in (we accept them)
+ * and those that we initiate (we connect to other).
+ * 
+ * 
+*/
 
 // Remember to open a different file to log the connections logs.
 class BVTCPConnectionManager : public BVLoggable // BVComponent?
 {
 private:
-    // maybe std::map with connections?
-    // key -> BVHost.serviceName?
 
+    // This machine is this Node in the network.
     const BVServiceData thisMachineServiceData;
-    BVHost              thisMachineHostData;
+    BVNode              thisMachineHostData;
     boost::asio::io_context& ioContext;
 
     boost::asio::ip::tcp::acceptor acceptorSocket;
 
+    // Map of active connections to other Nodes.
+    // Session can be created in one thread,
+    // But removed in the other.
+    // Maybe key should be NodeID.
+    std::map<std::string, std::shared_ptr<BVTCPNodeConnectionSessionData>> sessions_m;
+    std::mutex session_m_mutex;
+
+    // Communication queues with App.
+    
+    
 public:
     BVTCPConnectionManager(boost::asio::io_context& _ioContext,
-                           const BVServiceData _thisMachineServiceData); 
+                           const BVServiceData _thisMachineServiceData);
 
     // Upon construction of objects other than for test purposes, instantiate acceptor socket and initialize connection.
-    BVStatus InitializeTCPConnectionForThisMachine(void);
-
-    BVStatus CreateTCPConnection(const BVHost& hostData); // initialize and save in map
+    BVStatus StartAcceptingConnections(void);
+    BVStatus InitiateSessionWithNode(const BVNode hostData); // initialize and save in map
+    
     ~BVTCPConnectionManager();
 };

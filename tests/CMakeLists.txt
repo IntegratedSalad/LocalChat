@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(my_project)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(BOOST_ROOT /opt/homebrew/Cellar/boost)
@@ -60,7 +61,7 @@ add_executable(
   broker_test_Basic.cpp
   component_mocks.cpp
   ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
-  ${CMAKE_SOURCE_DIR}/src/BVTCPConnection.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
 )
 
 target_link_libraries(
@@ -75,7 +76,7 @@ add_executable(
   component_test_Discovery_Basic
   component_test_Discovery_Basic.cpp
   component_mocks.cpp
-  ${CMAKE_SOURCE_DIR}/src/BVTCPConnection.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
 )
 
 target_link_libraries(
@@ -91,7 +92,7 @@ add_executable(
   communication_test_Multiple_Components.cpp
   component_mocks.cpp
   ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
-  ${CMAKE_SOURCE_DIR}/src/BVTCPConnection.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
 )
 
 target_link_libraries(

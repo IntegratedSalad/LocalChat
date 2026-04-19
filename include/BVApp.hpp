@@ -10,7 +10,7 @@
 #include <boost/asio.hpp>
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
-#include "BVTCPConnection.hpp"
+#include "BVTCPConnectionManager.hpp"
 
 /*
  * class BVApp
@@ -26,6 +26,7 @@ class BVApp
 private:
     std::atomic<bool> isRunning = true;
     std::thread worker_thread;
+    // std::thread tcp_session_broker_thread?
     std::thread io_thread;
 
     boost::asio::io_context& ioContext; // App owns ioContext
@@ -34,13 +35,13 @@ private:
 
     BVStatus status = BVStatus::BVSTATUS_IN_PROGRESS;
 
-    // TODO: Get this machine's service data
     BVServiceData thisMachineServiceData;
     BVTCPConnectionManager tcpConnectionManager;
+    // Broker? internalTCPSessionBroker
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
-    std::vector<BVHost> hostsV; // after resolving
+    std::vector<BVNode> nodesV; // after resolving TODO: nodesV
     std::mutex serviceVectorMutex;
     // Maybe connection manager which gets a reference to io_context?
     // He will be making connections to users.
@@ -49,7 +50,7 @@ protected:
     // Or the endpoints need to be opened after browsing and resolution to hostname then IP?
 
     // Find IP
-    virtual BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) = 0;
+    virtual BVNode ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) = 0;
 
 public:
     BVApp(boost::asio::io_context& _ioContext,
@@ -60,6 +61,12 @@ public:
     tcpConnectionManager(_ioContext, _thisMachineServiceData)
     {
     };
+
+    // TODO: Use second constructor which does not initiate tcpConnectionManager (or utilizes default constructor)
+    //       ?And - maybe unique_ptr to them, so they do not have to be initialized?
+    //       Default TCPConnectionManager constructor which defaults the construction
+    //       when there's no BVServiceData provided to construct tcpConnectionManager.
+    //       This is 
 
     virtual ~BVApp()
     {}
@@ -127,6 +134,8 @@ public:
     // Probably has to be guarded with a mutex!
     virtual BVStatus HandlePublishedServices(std::unique_ptr<std::any>) = 0;
     virtual BVStatus HandleResolvedServices(std::unique_ptr<std::any>) = 0;
+
+    // Message from Nodes (Peers/Hosts) handlers
 
     const std::atomic<bool>& GetIsRunning(void)
     {

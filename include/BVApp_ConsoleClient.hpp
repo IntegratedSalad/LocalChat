@@ -204,7 +204,7 @@ private:
     BVTerminal terminal{};
 
 protected:
-    BVHost ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
+    BVNode ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) override;
 
 public:
     BVApp_ConsoleClient(const BVServiceData _thisMachineServiceData,

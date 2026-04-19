@@ -27,7 +27,6 @@ private:
 
     SubscriberID id;
 
-    // Callbacks?
     virtual BVStatus OnStart(std::unique_ptr<std::any>) = 0;
     virtual BVStatus OnPause(std::unique_ptr<std::any>) = 0;
     virtual BVStatus OnResume(std::unique_ptr<std::any>) = 0;
@@ -134,6 +133,12 @@ public:
     {
         return this->id;
     }
+
+    // TODO: Functions to get pointers to mailbox queues.
+    //       This will allow components to get a redirection point
+    //       and eliminate the need for instantiating another broker/making component
+    //       listen to multiple brokers.
+    //       This is utilized in BVApp, when we do not pass the Broker but want to share 
 
     void SetOutMailBox(std::shared_ptr<threadsafe_queue<BVMessage>> _outMailBox)
     {
