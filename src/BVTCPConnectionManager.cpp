@@ -39,14 +39,14 @@ acceptorSocket(_ioContext)
 // Initiate a Client connection with a Node
 BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode hostData)
 {
-    std::shared_ptr<BVTCPNodeConnectionSessionData> session_p =
+    std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
          std::make_shared<BVTCPNodeConnectionSessionData>(hostData, ioContext);
 
-    session_p->sock.open(session_p->nodeData.ep.protocol());
+    sessionData_p->sock.open(sessionData_p->nodeData.ep.protocol());
 
     {
         std::lock_guard<std::mutex> l(session_m_mutex);
-        sessions_m[hostData.serviceName] = session_p;
+        sessions_m[hostData.serviceName] = sessionData_p;
     }
 
     // TODO:  How will this session communicate with ConnectionManager and how will it communicate with App?
@@ -58,6 +58,15 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode hostData)
     // TODO: Pass inMailbox_p
     // Just share an inMailBox_p with every Session!
     // These messages will probably get shared with broker, but it doesn't matter.
+    // That's for reading messages and passing them to App, so incoming traffic
+    // But how to read from App?
+    // Maybe create a shared pointer to a thread_safe queue which will be
+    // a communication channel for outgoing messages to each Session ( App -> Session )
+    // Maybe we need a map keyed by sessionID/nodeID with a threadsafe_queue,
+    // something like in Broker, but not for internal messages but TCP traffic.
+    // This is BVTCPConnectionManager's map, but it will be gettable for App.
+    // App just pushes things outwards, incoming traffic is directed to App's inMailbox_p.
+    // This will be efficient, as BVTCPConnectionManager neither BVTCPSession will be Components. 
 
     return BVStatus::BVSTATUS_OK;
 }

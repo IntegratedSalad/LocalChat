@@ -78,6 +78,8 @@ struct BVTCPNodeConnectionSessionData // needed?
     boost::asio::ip::tcp::socket sock;
     bool alive = false;
 
+    // unique_ptr to thread?
+
     BVTCPNodeConnectionSessionData(BVNode _nodeData, boost::asio::io_context& _ioContext):
     nodeData(_nodeData),
     sock(_ioContext)
@@ -114,8 +116,10 @@ private:
     std::map<std::string, std::shared_ptr<BVTCPNodeConnectionSessionData>> sessions_m;
     std::mutex session_m_mutex;
 
-    // Communication queues with App.
-    
+    // Outwards communication queue with App.
+    // App just pushes to one of these, doesn't listen to them.
+    // Incoming messages from sessions are put right into App's inMailbox_p
+    // std::map<NodeID, threadsafe_queue>
     
 public:
     BVTCPConnectionManager(boost::asio::io_context& _ioContext,
