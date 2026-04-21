@@ -5,6 +5,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <optional>
+#include <limits>
 #include "BVApp.hpp"
 #include "BVComponent.hpp"
 #include "BVLoggable.hpp"
@@ -39,6 +40,12 @@ enum class BVConsoleActionType
     BVCONSOLEACTION_BLOCKHOST
 };
 
+struct ParsingResult
+{
+    BVConsoleActionType type;
+    std::optional<int> num;
+};
+
 struct ConsoleActionS
 {
     BVConsoleActionType type;
@@ -51,6 +58,34 @@ struct ConsoleActionS
 class BVTerminal
 {
 private:
+    class TerminalModeGuard
+    {
+    public:
+        TerminalModeGuard()
+        {
+            if (tcgetattr(STDIN_FILENO, &original_) == -1)
+            {
+                throw std::runtime_error("tcgetattr failed");
+            }
+
+            termios canonical = original_;
+            canonical.c_lflag |= ICANON;
+            canonical.c_lflag |= ECHO;
+
+            if (tcsetattr(STDIN_FILENO, TCSANOW, &canonical) == -1)
+            {
+                throw std::runtime_error("tcsetattr failed while enabling canonical mode");
+            }
+        }
+
+        ~TerminalModeGuard()
+        {
+            tcsetattr(STDIN_FILENO, TCSANOW, &original_);
+        }
+
+    private:
+        termios original_{};
+    };
     termios originalTerminal;
     termios currentTerminal;
     bool isInitialized{false};
@@ -62,6 +97,8 @@ private:
             throw std::runtime_error("Terminal not initialized");
         }
     }
+
+
 public:
     BVTerminal()
     {
@@ -192,6 +229,18 @@ public:
         }
         return line;
     }
+
+    std::string GetStringFromSTDIN(const std::string& prompt)
+    {
+        EnsureInitialized();
+        TerminalModeGuard guard{};
+        std::cout << prompt;
+        std::cout.flush();
+        std::string s;
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::getline(std::cin, s);
+        return s;
+    }
 };
 
 class BVApp_ConsoleClient : public BVApp,
@@ -222,18 +271,17 @@ public:
     BVStatus PrintServices(void);
     void PrintNewServicesNotification(void);
     void PrintAll(void);
-    std::optional<BVConsoleActionType> ParseConsoleActionFromKey(char key);
-    // void PrintAll(bool);
+    inline void ClearScreen(void);
+    std::optional<ParsingResult> ParseConsoleActionFromKey(char key);
+    std::unique_ptr<ChatMessage> ConstructChatMessageFromInput(
+        const std::string& inputString, const NodeID nodeID);
 
-    // void HandleServicesDiscoveredUpdateEvent(void) override;
-    // void HandleUserKeyboardInput(void) override;
-
+    // -------------------------------------------------------
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnResume(std::unique_ptr<std::any>) override;
     BVStatus OnShutdown(std::unique_ptr<std::any>) override;
     BVStatus OnRestart(std::unique_ptr<std::any>) override;
     BVStatus OnPause(std::unique_ptr<std::any>) override;
-
     // -------------------------------------------------------
 
     ~BVApp_ConsoleClient() {}

@@ -45,15 +45,15 @@ acceptorSocket(_ioContext)
 BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
 {
     static SessionID sid = 0;
-    std::unique_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-         std::make_unique<BVTCPNodeConnectionSessionData>(nodeData, ioContext, sid);
+    std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
+         std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, sid);
 
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     BVStatus registerStatus = 
         StartCommunicationSessionWithNode(sessionData_p->nodeData.id, sessionData_p->inMailbox_p);
     if (registerStatus == BVStatus::BVSTATUS_NOK)
     {
-        LogError("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
+        LogInfo("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
         return registerStatus;
     }
 
@@ -63,11 +63,11 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
     } catch (boost::system::system_error& e)
     {
         LogError(
-            "BVTCPConnectionManager::InitiateSessionWithNode Fatal error - establish connection with a socket: {}",
+            "BVTCPConnectionManager::InitiateSessionWithNode Fatal error - couldn't establish connection with a socket: {}",
             e.what());
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
-    std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(std::move(sessionData_p), ioContext);
+    std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
     {
         std::lock_guard<std::mutex> l(session_m_mutex);
         sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;

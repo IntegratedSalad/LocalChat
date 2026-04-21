@@ -132,15 +132,15 @@ public:
     }
 
     // Send data to chosen node. This is an interface for App
-    BVStatus SendDataToService(const std::string& serviceName, const BVMessage& msg)
+    BVStatus SendDataToService(const ChatMessage& msg)
     {
         BVStatus idStatus;
-        const NodeID nodeId = this->GetNodeIDByServiceName(serviceName, idStatus);
+        const NodeID nodeId = msg.metadata.recipient; //this->GetNodeIDByServiceName(serviceName, idStatus);
         if (idStatus == BVStatus::BVSTATUS_OK)
         {
             {
                 std::lock_guard<std::mutex> l(this->session_m_mutex);
-                // this->sessions_m.at(...)->Write();
+                this->sessions_m.at(nodeId)->RequestWrite(msg.textData);
                 // this->sessions_m.at(nodeId)->sock.async_write_some(); // to implement
             }
         } else

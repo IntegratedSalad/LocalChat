@@ -1,3 +1,4 @@
+#include <stdint.h>
 #define DISCOVERY_TIMER_TRIGGER_S (5)
 #define N_BYTES_SERVNAME_MAX      (24)
 #define N_BYTES_REGTYPE_MAX       (24)
@@ -6,5 +7,6 @@
 #define N_SERVICES_MAX            (UINT8_MAX)
 #define SERVICETYPE_STR           "_localchathost._tcp."
 #define PORT                      50001
+#define MAX_TEXT_DATA_MSG_BYTES   (UINT8_MAX+1)
 
 #define AVAHI_POLL_ITERATE_TIMEOUT_MS (500)

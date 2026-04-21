@@ -3,6 +3,7 @@
 #include "threadsafequeue.hpp"
 #include "BVMessage.hpp"
 #include <memory>
+#include "const.h"
 
 using NodeID = uint8_t;
 using SessionID = uint16_t;
@@ -54,6 +55,19 @@ struct BVNode // BVNodeData?
     BVNode() = default;
 };
 
+struct ChatMessageMetadata
+{
+    uint64_t      timestamp;
+    std::string   sender;
+    NodeID        recipient;
+};
+
+struct ChatMessage // move to separate?
+{
+    ChatMessageMetadata metadata;
+    std::string         textData;
+    // ...
+};
 
 struct BVUser
 {
@@ -71,8 +85,11 @@ struct BVTCPNodeConnectionSessionData
 
     // flag telling us who initiated it?
 
-    boost::asio::ip::tcp::socket sock;
+    boost::asio::ip::tcp::socket sock; // shared pointer?
     bool alive = false;
+
+    std::string buf;
+    std::size_t totalBytesWritten;
 
     // unique_ptr to thread?
 

@@ -39,15 +39,47 @@ void BVApp_ConsoleClient::Run(void)
         {
             continue; // actions not handled
         }
-        switch (*action)
+        auto type = (*action).type;
+        switch (type)
         {
             case BVConsoleActionType::BVCONSOLEACTION_REPRINT:
                 // send reprint event/message
                 PrintAll();
                 break;
             case BVConsoleActionType::BVCONSOLEACTION_SENDMSG:
+            {
                 // send sendmsg event/message
+                // Choose host
+                const auto hostChosen = (*action).num;
+                if (hostChosen.has_value())
+                {
+                    const NodeID val = static_cast<NodeID>(hostChosen.value());
+                    bool found = false;
+                    // validate if there's such host
+                    for (auto& node : nodesV)
+                    {
+                        if (node.id == val)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found)
+                    {
+                        ClearScreen();
+                        const std::string msgStr = this->terminal.GetStringFromSTDIN("Enter message: ");
+                        std::unique_ptr<ChatMessage> chatMsg = ConstructChatMessageFromInput(msgStr, val);
+
+                    } else
+                    {
+                        LogInfo("App: host with nodeID {} not found", val);
+                    }
+                } else
+                {
+                    LogError("App: Optional does not have value!");
+                }
                 break;
+            }
             case BVConsoleActionType::BVCONSOLEACTION_PAUSE_DISCOVERY:
                 LogTrace("App: Pause discovery message sent.");
                 SendMessage(BVMessage(
@@ -84,11 +116,16 @@ void BVApp_ConsoleClient::Run(void)
     }
 }
 
+inline void BVApp_ConsoleClient::ClearScreen(void)
+{
+    for (int i = 0; i < 200; i++) {std::cout << std::endl;}
+}
+
 // I think that any event that needs to draw something
 // must redraw everything
 void BVApp_ConsoleClient::PrintAll(void)
 {
-    for (int i = 0; i < 200; i++) {std::cout << std::endl;}
+    ClearScreen();
     std::cout << "LocalChat console client v0.2.2" << std::endl;
     std::cout << "Re(D)raw" << std::endl;
     std::cout << "Send (M)essage" << std::endl;
@@ -109,7 +146,7 @@ BVStatus BVApp_ConsoleClient::PrintServices(void)
     BVStatus status = BVStatus::BVSTATUS_OK;
     if (this->serviceV.size() == 0)
     {
-        std::cout << "None available apart from ourselves... :(" << std::endl;
+        std::cout << "None available apart from ours... :(" << std::endl;
         std::cout << this->GetThisMachineServiceData().hostname << std::endl;
     }
     int i = 1;
@@ -232,7 +269,6 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
 
     // Initiate connection (session)
     // Open socket.
-    // Spawn thread
     // Will this connection listen to anything that other endpoint says?
     // Will these connections be persistent?
     // Start with initiating connection to an endpoint
@@ -276,26 +312,32 @@ BVStatus BVApp_ConsoleClient::OnPause(std::unique_ptr<std::any>)
     return BVStatus::BVSTATUS_OK;
 }
 
-std::optional<BVConsoleActionType> BVApp_ConsoleClient::ParseConsoleActionFromKey
+std::optional<ParsingResult> BVApp_ConsoleClient::ParseConsoleActionFromKey
 (char key)
 {
+    unsigned char ukey = static_cast<unsigned char>(key);
     switch (static_cast<char>(std::tolower(static_cast<unsigned char>(key))))
     {
         case 'd':
-            return BVConsoleActionType::BVCONSOLEACTION_REPRINT;
+            return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_REPRINT, std::nullopt};
         case 'm':
-            return BVConsoleActionType::BVCONSOLEACTION_SENDMSG;
+            return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_SENDMSG, std::nullopt};
         case 'p':
-            return BVConsoleActionType::BVCONSOLEACTION_PAUSE_DISCOVERY;
+            return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_PAUSE_DISCOVERY, std::nullopt};
         case 'r':
-            return BVConsoleActionType::BVCONSOLEACTION_RESUME_DISCOVERY;
+            return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_RESUME_DISCOVERY, std::nullopt};
         case 'q':
-            return BVConsoleActionType::BVCONSOLEACTION_QUIT;
+            return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_QUIT, std::nullopt};
         case 'b':
-            return BVConsoleActionType::BVCONSOLEACTION_BLOCKHOST;
+            return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_BLOCKHOST, std::nullopt};
         default:
-            return std::nullopt;
+            break;
     }
+    if (std::isdigit(ukey))
+    {
+        return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_SENDMSG, key - '0'};
+    }
+    return std::nullopt;
 }
 
 BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port)
@@ -325,4 +367,20 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     nodeData.serviceName = serviceName; 
     nodeData.results = results;
     return nodeData;
+}
+
+std::unique_ptr<ChatMessage> BVApp_ConsoleClient::ConstructChatMessageFromInput(
+    const std::string& inputString, const NodeID nodeID)
+{
+    ChatMessage msg;
+
+    std::chrono::milliseconds ts = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch());
+    msg.metadata.timestamp = ts.count();
+    msg.metadata.sender = GetThisMachineServiceData().hostname;
+    msg.metadata.recipient = nodeID;
+    msg.textData = inputString.c_str();
+
+    return std::make_unique<ChatMessage>(msg);
 }
