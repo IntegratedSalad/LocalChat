@@ -123,6 +123,8 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     }
 
     try {
+
+        LogTrace("BVTCPConnectionManager: Accepting connections...");
         std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
             std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID);
         sessionData_p->appCommChannel_p = this->appInMailBox_p;
@@ -130,7 +132,11 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
         // session
         this->acceptorSocket.listen(N_SERVICES_MAX);
         boost::system::error_code ecAccept;
-        this->acceptorSocket.accept(s, ecAccept);
+        this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
+            [sessionData_p](const boost::system::error_code& error){
+
+        });
+
         // maybe try to accept sycnhronously for now.
         // this->acceptorSocket.async_accept()
         // Create new Session
