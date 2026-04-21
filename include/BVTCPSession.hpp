@@ -19,8 +19,7 @@
 class BVTCPSession : public BVLoggable
 {
 private:
-
-    boost::asio::io_context ioContext;
+    boost::asio::io_context& ioContext;
     std::unique_ptr<BVTCPNodeConnectionSessionData> sessionData_p;
     // std::thread worker_thread;
 
@@ -34,5 +33,10 @@ public:
     void Start(void);
     void Shutdown(void);
 
-    ~BVTCPNodeConnectionSessionData();
+    const BVTCPNodeConnectionSessionData* GetSessionData(void) const
+    {
+        return this->sessionData_p.get();
+    }
+
+    ~BVTCPSession() {};
 };

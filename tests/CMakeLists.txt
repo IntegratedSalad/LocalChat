@@ -62,6 +62,7 @@ add_executable(
   component_mocks.cpp
   ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
   ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPSession.cpp
 )
 
 target_link_libraries(
@@ -77,6 +78,7 @@ add_executable(
   component_test_Discovery_Basic.cpp
   component_mocks.cpp
   ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPSession.cpp
 )
 
 target_link_libraries(
@@ -93,6 +95,7 @@ add_executable(
   component_mocks.cpp
   ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
   ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
+  ${CMAKE_SOURCE_DIR}/src/BVTCPSession.cpp
 )
 
 target_link_libraries(

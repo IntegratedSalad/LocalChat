@@ -1,9 +1,11 @@
+#pragma once
 #include <boost/asio.hpp>
 #include "threadsafequeue.hpp"
 #include "BVMessage.hpp"
 #include <memory>
 
 using NodeID = uint8_t;
+using SessionID = uint16_t;
 
 // BVNode is data regarding another host in the network.
 struct BVNode // BVNodeData?
@@ -61,6 +63,7 @@ struct BVUser
 
 struct BVTCPNodeConnectionSessionData
 {
+    SessionID sessionID;
     BVNode nodeData;
     // Communication channel with app; outMailbox_p
     std::shared_ptr<threadsafe_queue<BVMessage>> appCommChannel_p;
@@ -73,9 +76,10 @@ struct BVTCPNodeConnectionSessionData
 
     // unique_ptr to thread?
 
-    BVTCPNodeConnectionSessionData(BVNode _nodeData, boost::asio::io_context& _ioContext):
+    BVTCPNodeConnectionSessionData(BVNode _nodeData, boost::asio::io_context& _ioContext, SessionID _sid):
     nodeData(_nodeData),
-    sock(_ioContext)
+    sock(_ioContext),
+    sessionID(_sid)
     {
 
     }

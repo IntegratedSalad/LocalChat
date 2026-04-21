@@ -8,6 +8,7 @@
 #include "threadsafequeue.hpp"
 #include "BVMessage.hpp"
 #include "BVTCPCommon.hpp"
+#include "BVTCPSession.hpp"
 #include <arpa/inet.h>
 #include <map>
 #include <mutex>
@@ -49,9 +50,9 @@ private:
     // But removed in the other.
     // Maybe key should be NodeID.
     // Yes, and it is saved in the session itself
-    // Maybe SessionID?
-    // value: not ConnectionSessionData but BVTCPSession itself!!
-    std::map<NodeID, std::shared_ptr<BVTCPNodeConnectionSessionData>> sessions_m;
+    // TODO: Maybe SessionID?
+    // TODO: value: not ConnectionSessionData but BVTCPSession itself!!
+    std::map<SessionID, std::shared_ptr<BVTCPSession>> sessions_m;
     std::mutex session_m_mutex;
 
     // Incoming messages from sessions are put right into App's inMailbox_p
@@ -62,6 +63,8 @@ private:
     // BVMessage is also used here as a payload.
     // SessionID, not nodeID as a key
     std::map<NodeID, std::shared_ptr<threadsafe_queue<BVMessage>>> outMailboxes_p;
+
+    std::map<std::string, NodeID> service_nodeid_m;
 
     // We have to also instantiate some object that will tie service with a nodeID.
     // or at least - provide an interface to App, so that it can just push message to
@@ -75,7 +78,7 @@ private:
         BVStatus status = BVStatus::BVSTATUS_NOK;
         for (auto const& [k, v] : sessions_m)
         {
-            if (_serviceName == v->nodeData.serviceName)
+            if (_serviceName == v->GetSessionData()->nodeData.serviceName)
             {
                 id = k;
                 status = BVStatus::BVSTATUS_OK;
@@ -137,6 +140,7 @@ public:
         {
             {
                 std::lock_guard<std::mutex> l(this->session_m_mutex);
+                // this->sessions_m.at(...)->Write();
                 // this->sessions_m.at(nodeId)->sock.async_write_some(); // to implement
             }
         } else

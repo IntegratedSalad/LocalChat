@@ -29,6 +29,7 @@ add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVApp_ConsoleClient.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
+						 src/BVTCPSession.cpp
 )
 
 if(Boost_FOUND)
