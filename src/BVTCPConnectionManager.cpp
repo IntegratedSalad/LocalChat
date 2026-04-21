@@ -44,9 +44,8 @@ acceptorSocket(_ioContext)
 // Initiate a Client connection with a Node
 BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
 {
-    static SessionID sid = 0;
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-         std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, sid);
+         std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, currentSessionID);
 
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     BVStatus registerStatus = 
@@ -56,15 +55,16 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         LogInfo("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
         return registerStatus;
     }
-
     try {
-        sessionData_p->sock.open(sessionData_p->nodeData.ep.protocol());
-        sessionData_p->sock.connect(sessionData_p->nodeData.ep);
+        sessionData_p->sock->open(sessionData_p->nodeData.ep.protocol());
+        // sessionData_p->sock->bind()
+        sessionData_p->sock->connect(sessionData_p->nodeData.ep);
     } catch (boost::system::system_error& e)
     {
         LogError(
             "BVTCPConnectionManager::InitiateSessionWithNode Fatal error - couldn't establish connection with a socket: {}",
             e.what());
+        LogError("Protocol: {} ", sessionData_p->nodeData.ep.protocol().protocol());
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
@@ -73,7 +73,7 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
     }
 
-    sid+=1;
+    currentSessionID+=1;
     LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: Initiated session with node {}", nodeData.serviceName);
     LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: SessionID: {} NodeID: {}", 
         session_p->GetSessionData()->sessionID, session_p->GetSessionData()->nodeData.id);
@@ -123,7 +123,17 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     }
 
     try {
-
+        std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
+            std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID);
+        sessionData_p->appCommChannel_p = this->appInMailBox_p;
+        boost::asio::ip::tcp::socket s(ioContext);
+        // session
+        this->acceptorSocket.listen(N_SERVICES_MAX);
+        boost::system::error_code ecAccept;
+        this->acceptorSocket.accept(s, ecAccept);
+        // maybe try to accept sycnhronously for now.
+        // this->acceptorSocket.async_accept()
+        // Create new Session
 
     } catch (boost::system::system_error& e)
     {

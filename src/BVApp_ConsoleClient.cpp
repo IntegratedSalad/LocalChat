@@ -50,29 +50,22 @@ void BVApp_ConsoleClient::Run(void)
             {
                 // send sendmsg event/message
                 // Choose host
+                LogDebug("App: Choosing sending message...");
                 const auto hostChosen = (*action).num;
                 if (hostChosen.has_value())
                 {
-                    const NodeID val = static_cast<NodeID>(hostChosen.value());
+                    const int idx = hostChosen.value(); // this is only the idx in the vector!
+                    LogDebug("App: chosen idx: {}", idx);
                     bool found = false;
-                    // validate if there's such host
-                    for (auto& node : nodesV)
-                    {
-                        if (node.id == val)
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found)
-                    {
+                    try {
+                        BVNode node = nodesV.at(idx);
                         ClearScreen();
                         const std::string msgStr = this->terminal.GetStringFromSTDIN("Enter message: ");
-                        std::unique_ptr<ChatMessage> chatMsg = ConstructChatMessageFromInput(msgStr, val);
+                        std::unique_ptr<ChatMessage> chatMsg = ConstructChatMessageFromInput(msgStr, node.id);
 
-                    } else
+                    } catch (const std::out_of_range& ex)
                     {
-                        LogInfo("App: host with nodeID {} not found", val);
+                        LogInfo("App: There's no Node at {}", idx);
                     }
                 } else
                 {
@@ -345,9 +338,8 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     BVNode nodeData{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
-    // TODO: probably we want to do ntohs on the port!
     auto results = resolver.resolve(/*boost::asio::ip::tcp::v4(), */hosttarget, std::to_string(port), ec); // make that async
-
+    // TODO: There's a problem with this resolution!! Probably 
     if (ec)
     {
         LogError("App: Error while resolving to IPv4... {}", ec.to_string());

@@ -43,7 +43,7 @@ private:
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
-    std::vector<BVNode> nodesV; // after resolving TODO: nodesV
+    std::vector<BVNode> nodesV;
     std::mutex serviceVectorMutex;
     // Maybe connection manager which gets a reference to io_context?
     // He will be making connections to users.

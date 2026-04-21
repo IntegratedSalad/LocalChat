@@ -85,7 +85,7 @@ struct BVTCPNodeConnectionSessionData
 
     // flag telling us who initiated it?
 
-    boost::asio::ip::tcp::socket sock; // shared pointer?
+    std::shared_ptr<boost::asio::ip::tcp::socket> sock; // shared pointer?
     bool alive = false;
 
     std::string buf;
@@ -95,7 +95,7 @@ struct BVTCPNodeConnectionSessionData
 
     BVTCPNodeConnectionSessionData(BVNode _nodeData, boost::asio::io_context& _ioContext, SessionID _sid):
     nodeData(_nodeData),
-    sock(_ioContext),
+    sock(std::make_shared<boost::asio::ip::tcp::socket>(_ioContext)),
     sessionID(_sid)
     {
 

@@ -42,7 +42,7 @@ private:
             return;
         }
 
-        sessionData_p->sock.async_write_some(
+        sessionData_p->sock->async_write_some(
             boost::asio::buffer(sessionData_p->buf),
             std::bind(&BVTCPSession::WriteCallback, this, std::placeholders::_1, std::placeholders::_2, this->sessionData_p)
         );

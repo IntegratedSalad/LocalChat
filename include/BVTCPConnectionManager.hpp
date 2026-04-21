@@ -38,6 +38,8 @@ class BVTCPConnectionManager : public BVLoggable // BVComponent?
 {
 private:
 
+    SessionID currentSessionID = 0;
+
     // This machine is this Node in the network.
     const BVServiceData thisMachineServiceData;
     BVNode              thisMachineHostData;
