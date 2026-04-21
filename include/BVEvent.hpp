@@ -20,6 +20,12 @@ typedef enum class BVEventType
 
     BVEVENTTYPE_TERMINATE_ALL, // ALL_TERMINATE?
 
+    // Events caused by TCP traffic
+    BVEVENTTYPE_APP_SERVICE_DEREGISTERED,
+
+    // Messages exchanged between Nodes
+    // ...
+
     // Test and Debug events
     BVEVENTTYPE_TEST_ECHO,
     BVEVENTTYPE_TEST_HEARTBEAT,
@@ -32,7 +38,5 @@ typedef enum class BVEventType
     BVEVENTTYPE_TEST_REQUEST_RESTART,
     BVEVENTTYPE_TEST_APP_ANNOUNCE_SERVICES, // App announces services
 
-    // Events caused by TCP traffic
-    BVEVENTTYPE_APP_SERVICE_DEREGISTERED
 
 } BVEventType;

@@ -37,7 +37,8 @@ private:
 
     BVServiceData thisMachineServiceData;
     BVTCPConnectionManager tcpConnectionManager;
-    // Broker? internalTCPSessionBroker
+
+    // virtual void SendMessageToPeer(NodeID);
 
 protected:
     std::vector<BVServiceBrowseInstance> serviceV; // iterable for services e.g. to display
@@ -61,12 +62,6 @@ public:
     tcpConnectionManager(_ioContext, _thisMachineServiceData)
     {
     };
-
-    // TODO: Use second constructor which does not initiate tcpConnectionManager (or utilizes default constructor)
-    //       ?And - maybe unique_ptr to them, so they do not have to be initialized?
-    //       Default TCPConnectionManager constructor which defaults the construction
-    //       when there's no BVServiceData provided to construct tcpConnectionManager.
-    //       This is 
 
     virtual ~BVApp()
     {}

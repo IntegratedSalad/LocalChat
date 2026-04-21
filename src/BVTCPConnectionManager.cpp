@@ -6,6 +6,11 @@ ioContext(_ioContext),
 thisMachineServiceData(_thisMachineServiceData),
 acceptorSocket(_ioContext)
 {
+    for (NodeID _id = 0; _id < N_SERVICES_MAX; _id++)
+    {
+        this->outMailboxes_p.emplace(std::make_pair(_id, nullptr));
+    }
+
     // boost::asio::
 
     // TODO: set host data - service name and hostname
@@ -37,17 +42,38 @@ acceptorSocket(_ioContext)
 }
 
 // Initiate a Client connection with a Node
-BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode hostData)
+BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
 {
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-         std::make_shared<BVTCPNodeConnectionSessionData>(hostData, ioContext);
+         std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext);
 
-    sessionData_p->sock.open(sessionData_p->nodeData.ep.protocol());
-
+    sessionData_p->appCommChannel_p = this->appInMailBox_p;
+    BVStatus registerStatus = 
+        StartCommunicationSessionWithNode(sessionData_p->nodeData.id, sessionData_p->inMailbox_p);
+    if (registerStatus == BVStatus::BVSTATUS_NOK)
     {
-        std::lock_guard<std::mutex> l(session_m_mutex);
-        sessions_m[hostData.serviceName] = sessionData_p;
+        LogError("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
+        return registerStatus;
     }
+
+    try {
+        sessionData_p->sock.open(sessionData_p->nodeData.ep.protocol());
+        {
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            sessions_m[sessionData_p->nodeData.id] = sessionData_p;
+        }
+        sessionData_p->sock.connect(sessionData_p->nodeData.ep);
+    } catch (boost::system::system_error& e)
+    {
+        LogError(
+            "BVTCPConnectionManager::InitiateSessionWithNode Fatal error - establish connection with a socket: {}",
+            e.what());
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+
+    // How to notify session that it needs to write something?
+    // Shouldn't manager become a Component?
+    // Or App just calls a manager function (interface)
 
     // TODO:  How will this session communicate with ConnectionManager and how will it communicate with App?
     // via the same broker?
@@ -64,7 +90,8 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode hostData)
     // a communication channel for outgoing messages to each Session ( App -> Session )
     // Maybe we need a map keyed by sessionID/nodeID with a threadsafe_queue,
     // something like in Broker, but not for internal messages but TCP traffic.
-    // This is BVTCPConnectionManager's map, but it will be gettable for App.
+    // This is BVTCPConnectionManager's map, but it will be gettable for App. -> functions
+    // providing an interface with the map
     // App just pushes things outwards, incoming traffic is directed to App's inMailbox_p.
     // This will be efficient, as BVTCPConnectionManager neither BVTCPSession will be Components. 
 

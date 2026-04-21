@@ -13,6 +13,7 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
+    this->GetConnectionManager().SetAppInMailBoxP(_inMbx);
     this->GetConnectionManager().StartAcceptingConnections();
 
     // TODO: Create an auxhilary object which listens to messages
@@ -22,7 +23,6 @@ BVComponent(_outMbx, _inMbx)
     //       and somehow redirect their produced messages into global queue
     //       We can just pass the pointer to the existing inMailbox_p
     // 
-
 }
 
 void BVApp_ConsoleClient::Run(void)
