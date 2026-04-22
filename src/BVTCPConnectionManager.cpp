@@ -132,43 +132,52 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     // boost::asio::ip::tcp::resolver resolver{ioContext};
     // auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/this->thisMachineServiceData.hostname, std::to_string(ntohs(thisMachineServiceData.port)), ec); // make that async
 
+    boost::system::error_code ec;
     boost::asio::ip::tcp::endpoint ep{boost::asio::ip::address_v6::any(), ntohs(thisMachineServiceData.port)};
     this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext, ep.protocol()};
-
-    boost::system::error_code ec;
+    this->acceptorSocket.open(ep.protocol(), ec);
+    if (ec)
+    {
+        LogError("BVTCPConnectionManager: Couldn't open the acceptor socket. {} - {}", ec.value(), ec.message());
+        throw std::runtime_error("Couldn't open the acceptor socket.");
+    }
     this->acceptorSocket.set_option(boost::asio::socket_base::reuse_address(true), ec);
-    this->acceptorSocket.set_option(boost::asio::ip::v6_only{false});
+    if (ec)
+    {
+        LogError("BVTCPConnectionManager: Couldn't set option 'reuse_address' for the acceptor socket. {} - {}", ec.value(), ec.message());
+        throw std::runtime_error("Couldn't set option for the acceptor socket.");
+    }
+    this->acceptorSocket.set_option(boost::asio::ip::v6_only{false}, ec);
+    if (ec)
+    {
+        LogError("BVTCPConnectionManager: Couldn't set option 'v6_only' for the acceptor socket. {} - {}", ec.value(), ec.message());
+        throw std::runtime_error("Couldn't set option for the acceptor socket.");
+    }
     this->acceptorSocket.bind(ep, ec);
-
     if (ec)
     {
         LogError("BVTCPConnectionManager: Couldn't bind the acceptor socket. {} - {}", ec.value(), ec.message());
         throw std::runtime_error("Couldn't bind the acceptor socket.");
     }
-    try {
+    LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}...",
+        ep.address().to_string(), ep.port());
+    std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
+        std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID);
+    sessionData_p->appCommChannel_p = this->appInMailBox_p;
+    this->acceptorSocket.listen(N_SERVICES_MAX, ec);
+    if (ec)
+    {
+        LogError("BVTCPConnectionManager: Acceptor couldn't perform listening: {} - {}", ec.value(), ec.message());
+        throw std::runtime_error("Acceptor couldn't perform listening");
+    }
+    this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
+        [sessionData_p](const boost::system::error_code& error){
 
-        LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}...",
-            ep.address().to_string(), ep.port());
-        std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-            std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID);
-        sessionData_p->appCommChannel_p = this->appInMailBox_p;
-        boost::asio::ip::tcp::socket s(ioContext);
-        // session
-        this->acceptorSocket.listen(N_SERVICES_MAX);
-        boost::system::error_code ecAccept;
-        this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
-            [sessionData_p](const boost::system::error_code& error){
-
-        });
+    });
 
         // maybe try to accept sycnhronously for now.
         // this->acceptorSocket.async_accept()
         // Create new Session
-
-    } catch (boost::system::system_error& e)
-    {
-        // LogError("")
-    }
 
     // listen
     // N_SERVICES_MAX
