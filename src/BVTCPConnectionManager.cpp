@@ -126,13 +126,13 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     // get endpoint
 
     // Resolve first???
-    boost::system::error_code ec;
-    boost::asio::ip::tcp::resolver resolver{ioContext};
-    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/this->thisMachineServiceData.hostname, std::to_string(ntohs(thisMachineServiceData.port)), ec); // make that async
+    // boost::asio::ip::tcp::resolver resolver{ioContext};
+    // auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/this->thisMachineServiceData.hostname, std::to_string(ntohs(thisMachineServiceData.port)), ec); // make that async
 
-    boost::asio::ip::tcp::endpoint ep = results.begin()->endpoint();
+    boost::asio::ip::tcp::endpoint ep{boost::asio::ip::address_v6::any(), ntohs(thisMachineServiceData.port)};
     this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext, ep.protocol()};
 
+    boost::system::error_code ec;
     this->acceptorSocket.bind(ep, ec);
 
     if (ec)
@@ -140,7 +140,6 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
         LogError("BVTCPConnectionManager: Couldn't bind the acceptor socket. {}", ec.value());
         throw std::runtime_error("Couldn't bind the acceptor socket.");
     }
-
     try {
 
         LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}...",
