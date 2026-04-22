@@ -135,6 +135,15 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     boost::system::error_code ec;
     boost::asio::ip::tcp::endpoint ep{boost::asio::ip::address_v6::any(), ntohs(thisMachineServiceData.port)};
     this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext, ep.protocol()};
+    if (this->acceptorSocket.is_open())
+    {
+        this->acceptorSocket.close(ec);
+        if (ec)
+        {
+            LogError("BVTCPConnectionManager: Couldn't close the acceptor socket. {} - {}", ec.value(), ec.message());
+            throw std::runtime_error("Couldn't close the acceptor socket.");
+        }
+    }
     this->acceptorSocket.open(ep.protocol(), ec);
     if (ec)
     {
