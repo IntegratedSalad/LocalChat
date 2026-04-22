@@ -5,7 +5,7 @@
             "name": "Launch LocalChat (LLDB)",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/LocalChat",
+            "program": "${workspaceFolder}/build/LocalChat",
             "args": [],
             "cwd": "${workspaceFolder}",
             "env": {},

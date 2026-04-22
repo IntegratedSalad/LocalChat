@@ -13,6 +13,8 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
+    
+    LogTrace("App: About to listen on acceptor socket...");
     this->GetConnectionManager().SetAppInMailBoxP(_inMbx);
     this->GetConnectionManager().StartAcceptingConnections();
 
@@ -338,7 +340,7 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     BVNode nodeData{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
-    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4(), */hosttarget, std::to_string(port), ec); // make that async
+    auto results = resolver.resolve(boost::asio::ip::tcp::v4(), hosttarget, std::to_string(port), ec); // make that async
     // TODO: There's a problem with this resolution!! Probably 
     if (ec)
     {
