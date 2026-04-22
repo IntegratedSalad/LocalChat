@@ -16,6 +16,8 @@ otool -L LocalChat -> list object files
 nm -g .dylib -> list symbols within shared lib
 nm -D /path/to/.so -> list symbols in file.
 
+lsof -iTCP:50001 -sTCP:LISTEN -n -P -> check if this machine is listening at 50001
+
 ## Useful dirs
 /usr/bin -> binaries
 /var/run -> daemons

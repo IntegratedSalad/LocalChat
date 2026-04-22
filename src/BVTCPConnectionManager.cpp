@@ -55,6 +55,7 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         LogInfo("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
         return registerStatus;
     }
+    bool connected = false;
     for (const auto& entry : sessionData_p->nodeData.results)
     {
         auto ep = entry.endpoint();
@@ -76,9 +77,11 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
             sessionData_p->nodeData.ep = ep;
             break;
         }
-
-        LogError("Couldn't connect to {}:{} : {}", 
-            ep.address().to_string(), ep.port(), ec_connect.message());
+        LogWarn("Couldn't connect to {}:{} reason : [{}:{}] {}", 
+            ep.address().to_string(), ep.port(), ec_connect.category().name(), ec_connect.value(), ec_connect.message());
+    }
+    if (!connected)
+    {
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
@@ -133,11 +136,13 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext, ep.protocol()};
 
     boost::system::error_code ec;
+    this->acceptorSocket.set_option(boost::asio::socket_base::reuse_address(true), ec);
+    this->acceptorSocket.set_option(boost::asio::ip::v6_only{false});
     this->acceptorSocket.bind(ep, ec);
 
     if (ec)
     {
-        LogError("BVTCPConnectionManager: Couldn't bind the acceptor socket. {}", ec.value());
+        LogError("BVTCPConnectionManager: Couldn't bind the acceptor socket. {} - {}", ec.value(), ec.message());
         throw std::runtime_error("Couldn't bind the acceptor socket.");
     }
     try {

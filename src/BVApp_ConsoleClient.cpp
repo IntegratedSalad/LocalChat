@@ -228,6 +228,7 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
 
 BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> dp)
 {
+    BVStatus status = BVStatus::BVSTATUS_OK;
     LogTrace("App: HandleResolvedServices ENTER");
     if (dp == nullptr)
     {
@@ -266,11 +267,19 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     // Will this connection listen to anything that other endpoint says?
     // Will these connections be persistent?
     // Start with initiating connection to an endpoint
-    this->GetConnectionManager().InitiateSessionWithNode(node);
+
+    status = this->GetConnectionManager().InitiateSessionWithNode(node);
+
+    if (status == BVStatus::BVSTATUS_FATAL_ERROR)
+    {
+        LogError("Couldn't Initiate Session with a node! {}:{} [{}]", node.hostname, node.port, node.address.to_string());
+    }
+
+    // When I'm launching the program
 
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
-    return BVStatus::BVSTATUS_OK;
+    return status;
 }
 
 void BVApp_ConsoleClient::PrintNewServicesNotification(void)
@@ -336,6 +345,7 @@ std::optional<ParsingResult> BVApp_ConsoleClient::ParseConsoleActionFromKey
 
 BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port)
 {
+    LogTrace("BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host {} on port: {}", hosttarget, port);
     BVNode nodeData{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
@@ -343,8 +353,8 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     // TODO: There's a problem with this resolution!! Probably 
     if (ec)
     {
-        LogError("App: Error while resolving to IPv4... {}", ec.to_string());
-        return nodeData;
+        LogWarn("App: Error while resolving to... {}", ec.to_string());
+        LogWarn("App: Warning: other endpoints might be ok.");
     }
     if (results.empty())
     {
@@ -359,6 +369,7 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     nodeData.hostname = hosttarget;
     nodeData.serviceName = serviceName; 
     nodeData.results = results;
+    nodeData.port = port;
     return nodeData;
 }
 
