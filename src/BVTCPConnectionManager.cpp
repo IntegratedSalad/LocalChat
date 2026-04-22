@@ -63,18 +63,20 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
 
         boost::system::error_code ec_open;
         boost::system::error_code ec_connect;
-        sessionData_p->sock->close();
-        sessionData_p->sock->open(ep.protocol(), ec_open);
+        auto temp_sock = std::make_shared<boost::asio::ip::tcp::socket>(ioContext);
+        temp_sock->open(ep.protocol(), ec_open);
         if (ec_open)
         {
             LogInfo("Couldn't open: {}", ec_open.message());
             continue;
         }
 
-        sessionData_p->sock->connect(ep, ec_connect);
+        temp_sock->connect(ep, ec_connect);
         if (!ec_connect)
         {
+            sessionData_p->sock = temp_sock;
             sessionData_p->nodeData.ep = ep;
+            connected = true;
             break;
         }
         LogWarn("Couldn't connect to {}:{} reason : [{}:{}] {}", 
@@ -180,8 +182,14 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
         throw std::runtime_error("Acceptor couldn't perform listening");
     }
     this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
-        [sessionData_p](const boost::system::error_code& error){
-
+        [sessionData_p, this](const boost::system::error_code& error){
+            if (!error)
+            {
+                this->LogTrace("Accept successful!");
+            } else
+            {
+                this->LogError("Accept failed.");
+            }
     });
 
         // maybe try to accept sycnhronously for now.
