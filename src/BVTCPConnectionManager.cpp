@@ -55,16 +55,30 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         LogInfo("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
         return registerStatus;
     }
-    try {
-        sessionData_p->sock->open(sessionData_p->nodeData.ep.protocol());
-        // sessionData_p->sock->bind()
-        sessionData_p->sock->connect(sessionData_p->nodeData.ep);
-    } catch (boost::system::system_error& e)
+    for (const auto& entry : sessionData_p->nodeData.results)
     {
-        LogError(
-            "BVTCPConnectionManager::InitiateSessionWithNode Fatal error - couldn't establish connection with a socket: {}",
-            e.what());
-        LogError("Protocol: {} ", sessionData_p->nodeData.ep.protocol().protocol());
+        auto ep = entry.endpoint();
+        LogTrace("Trying {}:{}", ep.address().to_string(), ep.port());
+
+        boost::system::error_code ec_open;
+        boost::system::error_code ec_connect;
+        sessionData_p->sock->close();
+        sessionData_p->sock->open(ep.protocol(), ec_open);
+        if (ec_open)
+        {
+            LogInfo("Couldn't open: {}", ec_open.message());
+            continue;
+        }
+
+        sessionData_p->sock->connect(ep, ec_connect);
+        if (!ec_connect)
+        {
+            sessionData_p->nodeData.ep = ep;
+            break;
+        }
+
+        LogError("Couldn't connect to {}:{} : {}", 
+            ep.address().to_string(), ep.port(), ec_connect.message());
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
@@ -114,7 +128,7 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     // Resolve first???
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{ioContext};
-    auto results = resolver.resolve(boost::asio::ip::tcp::v4(), this->thisMachineServiceData.hostname, std::to_string(ntohs(thisMachineServiceData.port)), ec); // make that async
+    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/this->thisMachineServiceData.hostname, std::to_string(ntohs(thisMachineServiceData.port)), ec); // make that async
 
     boost::asio::ip::tcp::endpoint ep = results.begin()->endpoint();
     this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext, ep.protocol()};
@@ -129,7 +143,8 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
 
     try {
 
-        LogTrace("BVTCPConnectionManager: Accepting connections...");
+        LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}...",
+            ep.address().to_string(), ep.port());
         std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
             std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID);
         sessionData_p->appCommChannel_p = this->appInMailBox_p;

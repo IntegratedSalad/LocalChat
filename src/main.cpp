@@ -143,6 +143,8 @@ int main(int argc, char** argv)
                                       ioContext};
     consoleClient.SetLogger(fileLogger);
     consoleClient.GetConnectionManager().SetLogger(fileLogger);
+    // we Start Accepting Connections here, after setting the logger.
+    consoleClient.GetConnectionManager().StartAcceptingConnections();
 
     // Broker setup
     BVStatus attachStatusDiscovery = broker.Attach(discovery);

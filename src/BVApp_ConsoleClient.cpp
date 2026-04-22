@@ -14,9 +14,8 @@ BVComponent(_outMbx, _inMbx)
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
     
-    LogTrace("App: About to listen on acceptor socket...");
     this->GetConnectionManager().SetAppInMailBoxP(_inMbx);
-    this->GetConnectionManager().StartAcceptingConnections();
+    
 
     // TODO: Create an auxhilary object which listens to messages
     //       coming from App to sessions and that should be routed from sessions
@@ -186,12 +185,12 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
             if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
             {
                 const BVServiceData& thisMachineServiceData = GetThisMachineServiceData();
-                LogDebug(thisMachineServiceData.domain.c_str());
-                LogDebug(thisMachineServiceData.regtype.c_str());
-                LogDebug(thisMachineServiceData.hostname.c_str());
-                LogDebug(lElem.replyDomain.c_str());
-                LogDebug(lElem.regType.c_str());
-                LogDebug(lElem.serviceName.c_str());
+                // LogDebug(thisMachineServiceData.domain.c_str());
+                // LogDebug(thisMachineServiceData.regtype.c_str());
+                // LogDebug(thisMachineServiceData.hostname.c_str());
+                // LogDebug(lElem.replyDomain.c_str());
+                // LogDebug(lElem.regType.c_str());
+                // LogDebug(lElem.serviceName.c_str());
                 if (lElem.regType == thisMachineServiceData.regtype &&
                     lElem.serviceName == thisMachineServiceData.hostname &&
                     lElem.replyDomain == thisMachineServiceData.domain)
@@ -340,7 +339,7 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     BVNode nodeData{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
-    auto results = resolver.resolve(boost::asio::ip::tcp::v4(), hosttarget, std::to_string(port), ec); // make that async
+    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/hosttarget, std::to_string(port), ec); // make that async
     // TODO: There's a problem with this resolution!! Probably 
     if (ec)
     {
