@@ -5,6 +5,8 @@
 #include <memory>
 #include "const.h"
 
+#define MAX_MESSAGE_SIZE_BYTES 128
+
 using NodeID = uint8_t;
 using SessionID = uint16_t;
 
@@ -94,8 +96,10 @@ struct BVTCPNodeConnectionSessionData
     std::shared_ptr<boost::asio::ip::tcp::socket> sock; // shared pointer?
     bool alive = false;
 
-    std::string buf;
+    std::string writeBuf;
+    std::unique_ptr<char[]> readBuf;
     std::size_t totalBytesWritten;
+    std::size_t totalBytesRead;
 
     // unique_ptr to thread?
 

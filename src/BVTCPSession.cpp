@@ -21,18 +21,19 @@ void BVTCPSession::Shutdown(void)
 void BVTCPSession::Read(void)
 {
 
+
 }
 
 void BVTCPSession::Write(void)
 {
     this->sessionData_p->sock->async_write_some(
-        boost::asio::buffer(this->sessionData_p->buf),
-        std::bind(&BVTCPSession::WriteCallback, this, std::placeholders::_1, std::placeholders::_2, this->sessionData_p)
+        boost::asio::buffer(this->sessionData_p->writeBuf),
+        std::bind(&BVTCPSession::WriteCallback, this, std::placeholders::_1, std::placeholders::_2)
     );
 }
 
 void BVTCPSession::RequestWrite(const std::string& data)
 {
-    this->sessionData_p->buf = data;
+    this->sessionData_p->writeBuf = data;
     this->Write();
 }

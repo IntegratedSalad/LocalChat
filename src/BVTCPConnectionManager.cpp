@@ -188,6 +188,11 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
                 // and say for sure that the session with it wasn't initiated by connecting to it!
                 // After that, when they send the id of sorts, we check the map.
 
+                // Construct session.
+                // Communicate and let them send us serviceName.
+                // If this is a new peer/node -> at to map.
+                // If not - discard
+
                 {
                     std::lock_guard<std::mutex> l(session_m_mutex);
                     // write a function that increments the sessionID.

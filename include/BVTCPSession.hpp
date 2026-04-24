@@ -16,7 +16,7 @@
 */
 
 // Sessions can call manager's callbacks
-class BVTCPSession : public BVLoggable, std::enable_shared_from_this<BVTCPSession>
+class BVTCPSession : public BVLoggable, public std::enable_shared_from_this<BVTCPSession>
 {
 private:
     boost::asio::io_context& ioContext;
@@ -24,27 +24,48 @@ private:
     // std::thread worker_thread;
 
     void Read(void);
-    void Write(void);
+    void Write(void); // data? or is it written in session Data
     void WriteCallback(const boost::system::error_code& ec,
-                       std::size_t bytes_transferred,
-                       std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p)
+                       std::size_t bytes_transferred)
     {
         if (ec)
         {
-            std::cerr << "Error while writing to a socket! " << ec.value() << std::endl;
-            std::cerr << "Message: " << sessionData_p->buf << std::endl;
-            return; // TODO: 
+            LogError("Session [{}]: Error while writing to a socket! {}, {}. Message: {}",  
+                this->GetSessionData()->sessionID, ec.value(), ec.message(), sessionData_p->writeBuf);
+                return;
+            return;
         }
-        sessionData_p->totalBytesWritten += bytes_transferred;
+        this->sessionData_p->totalBytesWritten += bytes_transferred;
 
-        if (sessionData_p->totalBytesWritten == sessionData_p->buf.length())
+        if (this->sessionData_p->totalBytesWritten == this->sessionData_p->writeBuf.length())
         {
             return;
         }
 
-        sessionData_p->sock->async_write_some(
-            boost::asio::buffer(sessionData_p->buf),
-            std::bind(&BVTCPSession::WriteCallback, this, std::placeholders::_1, std::placeholders::_2, this->sessionData_p)
+        this->sessionData_p->sock->async_write_some(
+            boost::asio::buffer(sessionData_p->writeBuf),
+            std::bind(&BVTCPSession::WriteCallback, this, std::placeholders::_1, std::placeholders::_2)
+        );
+    }
+
+    void ReadCallback(const boost::system::error_code& ec,
+                      std::size_t bytes_transferred)
+    {
+        if (ec)
+        {
+            LogError("Session [{}]: Error in read callback: {}, {}",  
+                this->GetSessionData()->sessionID, ec.value(), ec.message());
+                return;
+        }
+        this->sessionData_p->totalBytesRead += bytes_transferred;
+        if (this->sessionData_p->totalBytesRead == MAX_MESSAGE_SIZE_BYTES)
+        {
+            return;
+        }
+        this->sessionData_p->sock->async_read_some(
+            boost::asio::buffer(this->sessionData_p->readBuf.get() + this->sessionData_p->totalBytesRead,
+                MAX_MESSAGE_SIZE_BYTES - this->sessionData_p->totalBytesRead),
+            std::bind(&BVTCPSession::ReadCallback, this, std::placeholders::_1, std::placeholders::_2)
         );
     }
 
