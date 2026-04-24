@@ -44,6 +44,7 @@ acceptorSocket(_ioContext)
 // Initiate a Client connection with a Node
 BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
 {
+    // Wait - is there already a connection with this peer/node?
     if (IsSessionAlreadyPresent(nodeData))
     {
         LogTrace("Session for {} already present (probably we accepted it).", nodeData.serviceName);
@@ -51,7 +52,6 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
     }
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
          std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, currentSessionID);
-
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     BVStatus registerStatus = 
         StartCommunicationSessionWithNode(sessionData_p->nodeData.id, sessionData_p->inMailbox_p);
@@ -60,28 +60,11 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         LogInfo("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
         return registerStatus;
     }
-    boost::system::error_code ec;
-
-    // Wait - is there already a connection with this peer/node?
-    auto connected_it = boost::asio::connect(*sessionData_p->sock, sessionData_p->nodeData.results, ec);
-    if (ec)
-    {
-        LogError("Couldn't connect to any endpoint reason : [{}:{}] {}", 
-            ec.category().name(), ec.value(), ec.message());
-        LogTrace("Endpoint: {}", connected_it.address().to_string());
-        // return BVStatus::BVSTATUS_FATAL_ERROR;
-        if (IsSessionAlreadyPresent(nodeData))
-        {
-            LogTrace("Session for {} already present (probably we accepted it).", nodeData.serviceName);
-            return BVStatus::BVSTATUS_OK;
-        }
-    } else
-    {
-        LogTrace("Successfully connected to: {}:{}", connected_it.address().to_string(), connected_it.port());
-        LogTrace("Endpoint: {}", connected_it.address().to_string());
-    }
-    sessionData_p->nodeData.ep = connected_it;
-
+    boost::asio::async_connect(*sessionData_p->sock, sessionData_p->nodeData.results, 
+        std::bind(&BVTCPConnectionManager::ConnectHandler, this, std::placeholders::_1, std::placeholders::_2, sessionData_p));
+    LogTrace("App: Trying to connect asynchronously...");
+    // boost::asio::async_conn
+    // boost::asio::async_connect()
     /*
         Okay, I have to research it more closely:
         In P2P connection, we do not create two sessions - one for incoming traffic and one for outgoing.
@@ -92,49 +75,16 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         And certainly, we cannot create two sessions simultaneously.
         TCP connection is already bidirectional.
     */
-
-
-    // bool connected = false;
-    // for (const auto& entry : sessionData_p->nodeData.results)
+    // std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
     // {
-    //     auto ep = entry.endpoint();
-    //     LogTrace("Trying {}:{}", ep.address().to_string(), ep.port());
-
-    //     boost::system::error_code ec_open;
-    //     boost::system::error_code ec_connect;
-    //     auto temp_sock = std::make_shared<boost::asio::ip::tcp::socket>(ioContext);
-    //     temp_sock->open(ep.protocol(), ec_open);
-    //     if (ec_open)
-    //     {
-    //         LogInfo("Couldn't open: {}", ec_open.message());
-    //         continue;
-    //     }
-
-    //     temp_sock->connect(ep, ec_connect);
-    //     if (!ec_connect)
-    //     {
-    //         sessionData_p->sock = temp_sock;
-    //         sessionData_p->nodeData.ep = ep;
-    //         connected = true;
-    //         break;
-    //     }
-    //     LogWarn("Couldn't connect to {}:{} reason : [{}:{}] {}", 
-    //         ep.address().to_string(), ep.port(), ec_connect.category().name(), ec_connect.value(), ec_connect.message());
+    //     std::lock_guard<std::mutex> l(session_m_mutex);
+    //     sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
+    //     currentSessionID+=1;
     // }
-    // if (!connected)
-    // {
-    //     return BVStatus::BVSTATUS_FATAL_ERROR;
-    // }
-    std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
-    {
-        std::lock_guard<std::mutex> l(session_m_mutex);
-        sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
-        currentSessionID+=1;
-    }
 
-    LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: Initiated session with node {}", nodeData.serviceName);
-    LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: SessionID: {} NodeID: {}", 
-        session_p->GetSessionData()->sessionID, session_p->GetSessionData()->nodeData.id);
+    // LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: Initiated session with node {}", nodeData.serviceName);
+    // LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: SessionID: {} NodeID: {}", 
+    //     session_p->GetSessionData()->sessionID, session_p->GetSessionData()->nodeData.id);
     // How to notify session that it needs to write something?
     // Shouldn't manager become a Component?
     // Or App just calls a manager function (interface)
@@ -176,7 +126,6 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     boost::system::error_code ec;
     boost::asio::ip::tcp::endpoint ep{boost::asio::ip::address_v6::any(), ntohs(thisMachineServiceData.port)};
     this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext};
-
 
     if (this->acceptorSocket.is_open())
     {
@@ -232,6 +181,7 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
                     std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
 
                 this->LogTrace("Accept successful!");
+                // construct session
 
                 // We need to establish a handshake of sorts.
                 // This node/peer has to send us back its service name/anything that we can identify it
@@ -241,8 +191,8 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
                 {
                     std::lock_guard<std::mutex> l(session_m_mutex);
                     // write a function that increments the sessionID.
-                    sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
-                    currentSessionID+=1;
+                    this->sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
+                    this->currentSessionID+=1;
                 }
 
             } else

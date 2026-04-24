@@ -26,6 +26,8 @@ lsof -i tcp:50001 -> check processes listening on 500001
 ## Wireshark filters
 ip.addr == 192.168.0.0/16 and tcp.port == 50001
 tcp.flags.reset == 1 -> connections refused
+udp.port == 5353 and ip.addr == 192.168.0.0/16 -> verify mDNS
+
 502 -> PID
 
 # Solution:

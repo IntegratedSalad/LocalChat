@@ -165,6 +165,31 @@ public:
             return BVStatus::BVSTATUS_NOK;
         }
     }
-    
+
+    void ConnectHandler(const boost::system::error_code& error, 
+                        const boost::asio::ip::tcp::endpoint ep,
+                        std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p)
+    {
+        if (error)
+        {
+            LogError("ConnectHandler Error: {} {} {}", error.value(), error.message(), error.category().name());
+            return;
+        }
+        if (this->IsSessionAlreadyPresent(sessionData_p->nodeData))
+        {
+            LogInfo("ConnectHandler: Session associated with service {} already present.", sessionData_p->nodeData.serviceName);
+            return;
+        }
+        {
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            sessionData_p->nodeData.ep = ep;
+            std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
+            sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
+            currentSessionID+=1;
+        }
+        LogTrace("ConnectHandler: Successfuly connected to {}: {}:{}", 
+            sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), sessionData_p->nodeData.ep.port());
+    }
+
     ~BVTCPConnectionManager();
 };
