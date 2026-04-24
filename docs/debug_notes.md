@@ -17,6 +17,7 @@ nm -g .dylib -> list symbols within shared lib
 nm -D /path/to/.so -> list symbols in file.
 
 lsof -iTCP:50001 -sTCP:LISTEN -n -P -> check if this machine is listening at 50001
+lsof -i tcp:50001 -> check processes listening on 500001
 
 ## Useful dirs
 /usr/bin -> binaries

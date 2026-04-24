@@ -55,44 +55,71 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         LogInfo("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
         return registerStatus;
     }
-    bool connected = false;
-    for (const auto& entry : sessionData_p->nodeData.results)
-    {
-        auto ep = entry.endpoint();
-        LogTrace("Trying {}:{}", ep.address().to_string(), ep.port());
+    boost::system::error_code ec;
 
-        boost::system::error_code ec_open;
-        boost::system::error_code ec_connect;
-        auto temp_sock = std::make_shared<boost::asio::ip::tcp::socket>(ioContext);
-        temp_sock->open(ep.protocol(), ec_open);
-        if (ec_open)
-        {
-            LogInfo("Couldn't open: {}", ec_open.message());
-            continue;
-        }
-
-        temp_sock->connect(ep, ec_connect);
-        if (!ec_connect)
-        {
-            sessionData_p->sock = temp_sock;
-            sessionData_p->nodeData.ep = ep;
-            connected = true;
-            break;
-        }
-        LogWarn("Couldn't connect to {}:{} reason : [{}:{}] {}", 
-            ep.address().to_string(), ep.port(), ec_connect.category().name(), ec_connect.value(), ec_connect.message());
-    }
-    if (!connected)
+    // Wait - is there already a connection with this peer/node?
+    auto connected_it = boost::asio::connect(*sessionData_p->sock, sessionData_p->nodeData.results, ec);
+    if (ec)
     {
+        LogError("Couldn't connect to any endpoint reason : [{}:{}] {}", 
+            ec.category().name(), ec.value(), ec.message());
         return BVStatus::BVSTATUS_FATAL_ERROR;
+    } else
+    {
+        LogTrace("Successfully connected to: {}:{}", connected_it.address().to_string(), connected_it.port());
     }
+    sessionData_p->nodeData.ep = connected_it;
+
+    /*
+        Okay, I have to research it more closely:
+        In P2P connection, we do not create two sessions - one for incoming traffic and one for outgoing.
+        Instead, we try to initiate/try to connect: if the peer (service) has already connected to US (we accepted),
+        we use this session with its socket. If the peer (service) has already accepted our connection trial (we connected),
+        then we use this session and socket. WE DO NOT create one listening session and one writing session - this causes a collision.
+        So one session handles EVERY and ANY traffic between two peers/nodes.
+        And certainly, we cannot create two sessions simultaneously.
+        TCP connection is already bidirectional.
+    */
+
+
+    // bool connected = false;
+    // for (const auto& entry : sessionData_p->nodeData.results)
+    // {
+    //     auto ep = entry.endpoint();
+    //     LogTrace("Trying {}:{}", ep.address().to_string(), ep.port());
+
+    //     boost::system::error_code ec_open;
+    //     boost::system::error_code ec_connect;
+    //     auto temp_sock = std::make_shared<boost::asio::ip::tcp::socket>(ioContext);
+    //     temp_sock->open(ep.protocol(), ec_open);
+    //     if (ec_open)
+    //     {
+    //         LogInfo("Couldn't open: {}", ec_open.message());
+    //         continue;
+    //     }
+
+    //     temp_sock->connect(ep, ec_connect);
+    //     if (!ec_connect)
+    //     {
+    //         sessionData_p->sock = temp_sock;
+    //         sessionData_p->nodeData.ep = ep;
+    //         connected = true;
+    //         break;
+    //     }
+    //     LogWarn("Couldn't connect to {}:{} reason : [{}:{}] {}", 
+    //         ep.address().to_string(), ep.port(), ec_connect.category().name(), ec_connect.value(), ec_connect.message());
+    // }
+    // if (!connected)
+    // {
+    //     return BVStatus::BVSTATUS_FATAL_ERROR;
+    // }
     std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
     {
         std::lock_guard<std::mutex> l(session_m_mutex);
         sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
+        currentSessionID+=1;
     }
 
-    currentSessionID+=1;
     LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: Initiated session with node {}", nodeData.serviceName);
     LogTrace("BVTCPConnectionManager::InitiateSessionWithNode: SessionID: {} NodeID: {}", 
         session_p->GetSessionData()->sessionID, session_p->GetSessionData()->nodeData.id);
@@ -136,7 +163,9 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
 
     boost::system::error_code ec;
     boost::asio::ip::tcp::endpoint ep{boost::asio::ip::address_v6::any(), ntohs(thisMachineServiceData.port)};
-    this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext, ep.protocol()};
+    this->acceptorSocket = boost::asio::ip::tcp::acceptor{ioContext};
+
+
     if (this->acceptorSocket.is_open())
     {
         this->acceptorSocket.close(ec);
@@ -170,10 +199,10 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
         LogError("BVTCPConnectionManager: Couldn't bind the acceptor socket. {} - {}", ec.value(), ec.message());
         throw std::runtime_error("Couldn't bind the acceptor socket.");
     }
-    LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}...",
-        ep.address().to_string(), ep.port());
+    LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}... for service: {}",
+        ep.address().to_string(), ep.port(), thisMachineServiceData.hostname);
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-        std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID);
+        std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID); // TODO: not thisMachineHostData!
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     this->acceptorSocket.listen(N_SERVICES_MAX, ec);
     if (ec)
@@ -181,11 +210,29 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
         LogError("BVTCPConnectionManager: Acceptor couldn't perform listening: {} - {}", ec.value(), ec.message());
         throw std::runtime_error("Acceptor couldn't perform listening");
     }
+    // we pass the socket of this session
     this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
         [sessionData_p, this](const boost::system::error_code& error){
             if (!error)
             {
+                // Wait - is there already a connection session with this peer/node?
+                std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
+
                 this->LogTrace("Accept successful!");
+
+
+                // We need to establish a handshake of sorts.
+                // This node/peer has to send us back its service name/anything that we can identify it
+                // and say for sure that the session with it wasn't initiated by connecting to it!
+                // After that, when they send the id of sorts, we check the map.
+
+                {
+                    std::lock_guard<std::mutex> l(session_m_mutex);
+                    // write a function that increments the sessionID.
+                    sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
+                    currentSessionID+=1;
+                }
+
             } else
             {
                 this->LogError("Accept failed.");
@@ -195,9 +242,6 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
         // maybe try to accept sycnhronously for now.
         // this->acceptorSocket.async_accept()
         // Create new Session
-
-    // listen
-    // N_SERVICES_MAX
 
     /*
         Asynchronously accept other connections.

@@ -50,10 +50,6 @@ private:
     // Map of active connections to other Nodes.
     // Session can be created in one thread,
     // But removed in the other.
-    // Maybe key should be NodeID.
-    // Yes, and it is saved in the session itself
-    // TODO: Maybe SessionID?
-    // TODO: value: not ConnectionSessionData but BVTCPSession itself!!
     std::map<SessionID, std::shared_ptr<BVTCPSession>> sessions_m;
     std::mutex session_m_mutex;
 
@@ -109,6 +105,7 @@ public:
     }
 
     // Set communication channel towards the Node. (their inMailbox_p)
+    // TODO: Rename it to set mailbox p or something - this does not start a communication session!
     BVStatus StartCommunicationSessionWithNode(NodeID& nid, std::shared_ptr<threadsafe_queue<BVMessage>>& nodeInMailbox_p)
     {
         static NodeID current_id = 0;
@@ -132,6 +129,8 @@ public:
         current_id = (current_id % N_SERVICES_MAX) + 1;
         return status;
     }
+
+    // bool IsSessionAlreadyPresent()
 
     // Send data to chosen node. This is an interface for App
     BVStatus SendDataToService(const ChatMessage& msg)
