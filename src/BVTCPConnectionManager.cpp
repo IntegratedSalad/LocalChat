@@ -44,6 +44,11 @@ acceptorSocket(_ioContext)
 // Initiate a Client connection with a Node
 BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
 {
+    if (IsSessionAlreadyPresent(nodeData))
+    {
+        LogTrace("Session for {} already present (probably we accepted it).", nodeData.serviceName);
+        return BVStatus::BVSTATUS_OK;
+    }
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
          std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, currentSessionID);
 
@@ -63,10 +68,17 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
     {
         LogError("Couldn't connect to any endpoint reason : [{}:{}] {}", 
             ec.category().name(), ec.value(), ec.message());
-        return BVStatus::BVSTATUS_FATAL_ERROR;
+        LogTrace("Endpoint: {}", connected_it.address().to_string());
+        // return BVStatus::BVSTATUS_FATAL_ERROR;
+        if (IsSessionAlreadyPresent(nodeData))
+        {
+            LogTrace("Session for {} already present (probably we accepted it).", nodeData.serviceName);
+            return BVStatus::BVSTATUS_OK;
+        }
     } else
     {
         LogTrace("Successfully connected to: {}:{}", connected_it.address().to_string(), connected_it.port());
+        LogTrace("Endpoint: {}", connected_it.address().to_string());
     }
     sessionData_p->nodeData.ep = connected_it;
 
@@ -202,7 +214,7 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}... for service: {}",
         ep.address().to_string(), ep.port(), thisMachineServiceData.hostname);
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-        std::make_shared<BVTCPNodeConnectionSessionData>(thisMachineHostData, ioContext, currentSessionID); // TODO: not thisMachineHostData!
+        std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID); // TODO: not thisMachineHostData!
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     this->acceptorSocket.listen(N_SERVICES_MAX, ec);
     if (ec)
@@ -216,10 +228,10 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
             if (!error)
             {
                 // Wait - is there already a connection session with this peer/node?
-                std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
+                std::shared_ptr<BVTCPSession> session_p = 
+                    std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
 
                 this->LogTrace("Accept successful!");
-
 
                 // We need to establish a handshake of sorts.
                 // This node/peer has to send us back its service name/anything that we can identify it

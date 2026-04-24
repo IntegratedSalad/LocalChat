@@ -84,31 +84,101 @@ void C_ResolveReply(
     const unsigned char *txtRecord,
     void *context)
 {
-    if (errorCode == kDNSServiceErr_NoError)
+    (void)sdRef;
+    (void)flags;
+
+    if (errorCode != kDNSServiceErr_NoError)
     {
-        if (context != NULL)
-        {
-            ResolveCallbackContext* resolve_callback_context_p = GetResolveCallbackContext(context);
-            DNSResolutionResult* resolution_result_p = (DNSResolutionResult*)malloc(sizeof(DNSResolutionResult));
-            const size_t fullname_len = strlen(fullname);
-            const size_t hosttarget_len = strlen(hosttarget);
-            const size_t txtRecord_len = strlen(txtRecord);
-            memcpy(resolution_result_p->fullname, fullname, fullname_len);
-            memcpy(resolution_result_p->hosttarget, hosttarget, hosttarget_len);
-            memcpy(resolution_result_p->txtRecord, txtRecord, txtRecord_len);
-            resolution_result_p->port = ntohs(port);
-            resolution_result_p->txtLen = txtLen;
-            memcpy(resolution_result_p->serviceName, resolve_callback_context_p->serviceName, N_BYTES_SERVNAME_MAX);
-            memcpy(resolution_result_p->regType, resolve_callback_context_p->regType, N_BYTES_REGTYPE_MAX);
-            memcpy(resolution_result_p->replyDomain, resolve_callback_context_p->replyDomain, N_BYTES_REPLDOMN_MAX);
-            SendServiceResolvedMessageToApp(resolution_result_p, resolve_callback_context_p->discovery_p);
-        } else
-        {
-            fprintf(stderr, "Context not provided to C_ResolveReply callback!");
-            replyError = true;
-        }
-    } else {
-        fprintf(stderr, "An error occured while trying to resolve %s\n", fullname);
+        fprintf(stderr, "An error occurred while trying to resolve %s\n",
+                fullname ? fullname : "<null>");
         replyError = true;
+        return;
     }
+
+    if (context == NULL)
+    {
+        fprintf(stderr, "Context not provided to C_ResolveReply callback!\n");
+        replyError = true;
+        return;
+    }
+
+    ResolveCallbackContext* resolve_callback_context_p =
+        GetResolveCallbackContext(context);
+
+    DNSResolutionResult* resolution_result_p =
+        (DNSResolutionResult*)calloc(1, sizeof(DNSResolutionResult));
+
+    if (resolution_result_p == NULL)
+    {
+        fprintf(stderr, "Failed to allocate DNSResolutionResult\n");
+        replyError = true;
+        return;
+    }
+
+    if (fullname != NULL)
+    {
+        size_t len = strlen(fullname);
+        if (len >= sizeof(resolution_result_p->fullname))
+            len = sizeof(resolution_result_p->fullname) - 1;
+
+        memcpy(resolution_result_p->fullname, fullname, len);
+        resolution_result_p->fullname[len] = '\0';
+    }
+
+    if (hosttarget != NULL)
+    {
+        size_t len = strlen(hosttarget);
+        if (len >= sizeof(resolution_result_p->hosttarget))
+            len = sizeof(resolution_result_p->hosttarget) - 1;
+
+        memcpy(resolution_result_p->hosttarget, hosttarget, len);
+        resolution_result_p->hosttarget[len] = '\0';
+    }
+
+    if (resolve_callback_context_p->serviceName != NULL)
+    {
+        size_t len = strlen(resolve_callback_context_p->serviceName);
+        if (len >= sizeof(resolution_result_p->serviceName))
+            len = sizeof(resolution_result_p->serviceName) - 1;
+
+        memcpy(resolution_result_p->serviceName, resolve_callback_context_p->serviceName, len);
+        resolution_result_p->serviceName[len] = '\0';
+    }
+
+    if (resolve_callback_context_p->regType != NULL)
+    {
+        size_t len = strlen(resolve_callback_context_p->regType);
+        if (len >= sizeof(resolution_result_p->regType))
+            len = sizeof(resolution_result_p->regType) - 1;
+
+        memcpy(resolution_result_p->regType, resolve_callback_context_p->regType, len);
+        resolution_result_p->regType[len] = '\0';
+    }
+
+    if (resolve_callback_context_p->replyDomain != NULL)
+    {
+        size_t len = strlen(resolve_callback_context_p->replyDomain);
+        if (len >= sizeof(resolution_result_p->replyDomain))
+            len = sizeof(resolution_result_p->replyDomain) - 1;
+
+        memcpy(resolution_result_p->replyDomain, resolve_callback_context_p->replyDomain, len);
+        resolution_result_p->replyDomain[len] = '\0';
+    }
+
+    resolution_result_p->port = ntohs(port);
+    resolution_result_p->txtLen = txtLen;
+
+    if (txtRecord != NULL && txtLen > 0)
+    {
+        size_t copy_len = txtLen;
+        if (copy_len > sizeof(resolution_result_p->txtRecord))
+            copy_len = sizeof(resolution_result_p->txtRecord);
+
+        memcpy(resolution_result_p->txtRecord, txtRecord, copy_len);
+    }
+
+    SendServiceResolvedMessageToApp(
+        resolution_result_p,
+        resolve_callback_context_p->discovery_p
+    );
 }

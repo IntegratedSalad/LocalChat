@@ -349,12 +349,21 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     BVNode nodeData{};
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
-    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/hosttarget, std::to_string(port), ec); // make that async
-    // TODO: There's a problem with this resolution!! Probably 
+    
+    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/hosttarget, std::to_string(port), 
+        boost::asio::ip::resolver_base::flags::address_configured, 
+        ec); // make that async
+    // TODO: There's a problem with this resolution!! Probably
+
+    /* 
+        This sometimes fail.
+        We have to use DNSServiceGetAddrInfo...
+    */
+
     if (ec)
     {
         LogWarn("App: Error while resolving to... {}", ec.to_string());
-        LogWarn("App: Warning: other endpoints might be ok.");
+        LogWarn("App: Error while resolving info {} {}", ec.message(), ec.category().name());
     }
     if (results.empty())
     {

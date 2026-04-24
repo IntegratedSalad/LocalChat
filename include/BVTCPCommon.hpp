@@ -8,6 +8,12 @@
 using NodeID = uint8_t;
 using SessionID = uint16_t;
 
+typedef enum class BVSessionControlMessage
+{
+    BVSESSIONCONTROLLMESSAGE_HELLO
+
+} BVSessionControlMessage;
+
 // BVNode is data regarding another host in the network.
 struct BVNode // BVNodeData?
 {

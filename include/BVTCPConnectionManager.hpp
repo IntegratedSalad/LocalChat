@@ -130,7 +130,23 @@ public:
         return status;
     }
 
-    // bool IsSessionAlreadyPresent()
+    bool IsSessionAlreadyPresent(const BVNode& nodeData)
+    {
+        bool found = false;
+        {
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            for (const auto& [k,v] : this->sessions_m)
+            {
+                if (v->GetSessionData()->nodeData.serviceName ==
+                    nodeData.serviceName)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        return found;
+    }
 
     // Send data to chosen node. This is an interface for App
     BVStatus SendDataToService(const ChatMessage& msg)

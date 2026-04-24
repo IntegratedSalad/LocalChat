@@ -23,6 +23,9 @@ lsof -i tcp:50001 -> check processes listening on 500001
 /usr/bin -> binaries
 /var/run -> daemons
 
+## Wireshark filters
+ip.addr == 192.168.0.0/16 and tcp.port == 50001
+tcp.flags.reset == 1 -> connections refused
 502 -> PID
 
 # Solution:
