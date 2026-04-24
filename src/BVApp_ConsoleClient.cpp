@@ -350,27 +350,47 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     boost::system::error_code ec;
     boost::asio::ip::tcp::resolver resolver{GetIoContext()};
     
-    auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/hosttarget, std::to_string(port), 
-        boost::asio::ip::resolver_base::flags::address_configured, 
-        ec); // make that async
+    boost::asio::ip::tcp::resolver::results_type results;
+    for (int attempt = 0; attempt < 5; attempt++)
+    {
+        ec.clear();
+        results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/hosttarget, std::to_string(port), ec); // make that async
+        if (!ec && !results.empty())
+        {
+            break;
+        }
+        LogWarn("App: Resolve attempt failed... Retrying...");
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    }
+
+    if (ec && results.empty())
+    {
+        LogError("App: Error while resolving to... {}", ec.to_string());
+        LogError("App: Error while resolving info {} {}", ec.message(), ec.category().name());
+        nodeData.serviceName = "ERROR";
+        return nodeData;
+    }
+
+    // auto results = resolver.resolve(/*boost::asio::ip::tcp::v4()*/hosttarget, std::to_string(port), ec); // make that async
     // TODO: There's a problem with this resolution!! Probably
 
     /* 
         This sometimes fail.
         We have to use DNSServiceGetAddrInfo...
+        For now, this workaround is ok.
     */
 
-    if (ec)
-    {
-        LogWarn("App: Error while resolving to... {}", ec.to_string());
-        LogWarn("App: Error while resolving info {} {}", ec.message(), ec.category().name());
-    }
-    if (results.empty())
-    {
-        LogError("App: Endpoints empty...");
-        nodeData.serviceName = "ERROR";
-        return nodeData;
-    }
+    // if (ec)
+    // {
+    //     LogWarn("App: Error while resolving to... {}", ec.to_string());
+    //     LogWarn("App: Error while resolving info {} {}", ec.message(), ec.category().name());
+    // }
+    // if (results.empty())
+    // {
+    //     LogError("App: Endpoints empty...");
+    //     nodeData.serviceName = "ERROR";
+    //     return nodeData;
+    // }
     boost::asio::ip::tcp::endpoint endpoint = results.begin()->endpoint(); // try first endpoint
     LogTrace("Successfuly resolved {} to {}", serviceName, endpoint.address().to_string());
     nodeData.ep = endpoint;
