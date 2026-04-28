@@ -148,6 +148,23 @@ public:
         return found;
     }
 
+    bool IsSessionAlreadyPresent(const std::string& _serviceName)
+    {
+        bool found = false;
+        {
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            for (const auto& [k,v] : this->sessions_m)
+            {
+                if (v->GetSessionData()->nodeData.serviceName == _serviceName)
+                {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        return found;
+    }
+
     // Send data to chosen node. This is an interface for App
     template<typename PayloadType>
     BVStatus SendDataToService(const BVTCPMessage<PayloadType> msg)
@@ -191,6 +208,26 @@ public:
         }
         LogTrace("ConnectHandler: Successfuly connected to {}: {}:{}", 
             sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), sessionData_p->nodeData.ep.port());
+    }
+
+    void HandleSessionIdentification(const std::string& serviceName, std::shared_ptr<BVTCPSession> caller)
+    {
+        if (!IsSessionAlreadyPresent(serviceName))
+        {
+            caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
+            {
+                std::lock_guard<std::mutex> l(session_m_mutex);
+
+                // Set nodeData - this is not set when accepting!
+                StartCommunicationSessionWithNode(caller->GetSessionData()->nodeData.id, caller->GetSessionData()->inMailbox_p);
+                this->sessions_m[caller->GetSessionData()->nodeData.id] = caller;
+                this->currentSessionID+=1;
+            }
+            caller->RequestReadingFrames();
+        } else
+        {
+            caller->Close(); // close the duplicate session
+        }
     }
 
     ~BVTCPConnectionManager();

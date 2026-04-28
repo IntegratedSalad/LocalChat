@@ -1,3 +1,4 @@
+#pragma once
 #include "BV.hpp"
 #include <boost/asio.hpp>
 #include "threadsafequeue.hpp"
@@ -45,6 +46,7 @@ private:
         if (this->sessionData_p->totalBytesWritten == this->sessionData_p->writeBuf.length())
         {
             // And of writing. Just return
+            ClearWriteBuffer();
             return;
         }
 
@@ -66,6 +68,7 @@ private:
         this->sessionData_p->totalBytesRead += bytes_transferred;
         if (this->sessionData_p->totalBytesRead == MAX_MESSAGE_SIZE_BYTES)
         {
+            ClearReadBuffer();
             return;
         }
         this->sessionData_p->sock->async_read_some(
@@ -85,6 +88,7 @@ private:
                 return;
         }
         this->sessionData_p->totalBytesRead += bytes_transferred;
+        LogTrace("Session [{}]: Read {} bytes", this->sessionData_p->sessionID, bytes_transferred);
         if (this->sessionData_p->totalBytesRead == MESSAGE_FRAME_SIZE_BYTES)
         {   
             // assert maybe?
@@ -102,7 +106,8 @@ private:
             {
                 OnReceiveStandardFrame();
             }
-            // TODO: Implement ClearReadBuffer() and ClearWriteBuffer;
+            LogTrace("Session [{}]: Read all bytes {}", this->sessionData_p->sessionID, bytes_transferred);
+            ClearReadBuffer();
             return;
         }
         boost::asio::async_read(*this->sessionData_p->sock, 
@@ -130,8 +135,11 @@ private:
             return;
         }
         this->sessionData_p->totalBytesWritten += bytes_transferred;
+        LogTrace("Session [{}]: Written {} bytes", this->sessionData_p->sessionID, bytes_transferred);
         if (this->sessionData_p->totalBytesWritten == this->sessionData_p->writeBuf.length())
         {
+            LogTrace("Session [{}]: Written all bytes", this->sessionData_p->sessionID, bytes_transferred);
+            ClearWriteBuffer();
             return;
         }
         boost::asio::async_write(*this->sessionData_p->sock,
@@ -156,7 +164,7 @@ public:
     void Start(void);
     void Shutdown(void);
 
-    const BVTCPNodeConnectionSessionData* GetSessionData(void) const
+    BVTCPNodeConnectionSessionData* GetSessionData(void)
     {
         return this->sessionData_p.get();
     }
@@ -171,11 +179,24 @@ public:
         return this->origin;
     }
 
+    void SetState(const BVSessionState& _state)
+    {
+        this->state = _state;
+    }
+
+    BVSessionState GetState(void)
+    {
+        return this->state;
+    }
+
     // for now only text
     void RequestSomeWrite(const std::string& data);
     void OnReceiveHelloFrame(void);
     void OnReceiveHelloBackFrame(void);
     void OnReceiveStandardFrame(void);
+    // Upon receiving chat message,
+    // call BVTCPConnectionManager function
+    // or, construct BVMessage and directly put it in appCommChannel_p.
 
     void RequestReadingFrames(void)
     {
@@ -220,6 +241,26 @@ public:
         }
 
         return this->sessionData_p->readBuf.get() + HEADER_SIZE_BYTES;
+    }
+
+    void ClearReadBuffer(void)
+    {
+        this->sessionData_p->readBuf.reset();
+        this->sessionData_p->totalBytesRead = 0;
+    }
+
+    void ClearWriteBuffer(void)
+    {
+        this->sessionData_p->writeBuf.clear();
+        this->sessionData_p->totalBytesWritten = 0;
+    }
+
+    void Close(void)
+    {
+        this->state = BVSessionState::BVSESSIONSTATE_CLOSED;
+        this->sessionData_p->sock->cancel();
+        this->sessionData_p->readBuf.reset();
+        this->sessionData_p->writeBuf.erase();
     }
 
     ~BVTCPSession() {};

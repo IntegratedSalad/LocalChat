@@ -1,4 +1,5 @@
 #include "BVTCPSession.hpp"
+#include "BVTCPConnectionManager.hpp" // to call manager's functions
 
 BVTCPSession::BVTCPSession(std::shared_ptr<BVTCPNodeConnectionSessionData> _sessionData_p,
                            boost::asio::io_context& _ioContext) :
@@ -72,10 +73,19 @@ void BVTCPSession::OnReceiveHelloBackFrame(void)
     using CharPayload128B = std::array<char, 128>;
     using HelloBackMsg = BVTCPMessage<CharPayload128B>;
     const auto* msg = reinterpret_cast<const HelloBackMsg*>(this->sessionData_p->readBuf.get());
+    if (msg->header.msgType != static_cast<uint8_t>(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK))
+    {
+        LogError("Session [{}]: OnReceiveHelloBackFrame called for wrong msgType={}", this->GetSessionData()->sessionID,
+            static_cast<int>(msg->header.msgType));
+        return;
+    }
 
-    // call manager's function
-    // TODO: ...
-
+    LogTrace(
+        "Session [{}]: Received BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK. Calling Manager' function to handle session identification.",
+            this->GetSessionData()->sessionID);
+    
+    std::string payloadStr(std::begin(msg->payload), std::end(msg->payload));
+    manager_p->HandleSessionIdentification(payloadStr, shared_from_this());
 }
 
 void BVTCPSession::OnReceiveStandardFrame(void)
@@ -83,4 +93,10 @@ void BVTCPSession::OnReceiveStandardFrame(void)
     // Parse
     // copy to buffer 10 bytes and read message type
     // needed?
+
+    LogTrace(
+        "Session [{}]: Received a standard frame, parsing...",
+            this->GetSessionData()->sessionID);
+    
+    
 }
