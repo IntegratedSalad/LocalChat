@@ -8,6 +8,8 @@ ioContext(_ioContext)
 {
     this->sessionData_p->alive = true;
     this->sessionData_p->readBuf = std::make_unique<char[]>(MESSAGE_FRAME_SIZE_BYTES);
+    this->ClearReadBuffer();
+    this->ClearWriteBuffer();
     // async read
     // maybe read 138 bytes
     // this->StartReadingFrames();
