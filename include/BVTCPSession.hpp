@@ -85,7 +85,11 @@ private:
         {
             LogError("Session [{}]: Error in ReadMessageFrame callback: {}, {}",  
                 this->GetSessionData()->sessionID, ec.value(), ec.message());
-                return;
+            
+            LogDebug("Read buffer: {} Read buffer is a nullpointer: {} Bytes read: {} Bytes transferred: {} Address in nodeData: {} Endpoint address: {} State: {}", 
+                this->sessionData_p->readBuf.get(), this->sessionData_p->readBuf == nullptr, this->sessionData_p->totalBytesRead, bytes_transferred, 
+                    this->sessionData_p->nodeData.address.to_string(), this->sessionData_p->nodeData.ep.address().to_string(), static_cast<int>(this->state));
+            return;
         }
         this->sessionData_p->totalBytesRead += bytes_transferred;
         LogTrace("Session [{}]: Read {} bytes", this->sessionData_p->sessionID, bytes_transferred);
