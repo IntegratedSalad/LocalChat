@@ -66,6 +66,7 @@ void BVTCPSession::OnReceiveHelloFrame(void)
     std::copy(serviceNameToCopy.begin(), serviceNameToCopy.end(), payloadRaw.data());
     BVTCPMessageHeader replyHeader = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK);
     BVTCPMessage<CharPayload128B> replyMsg = ConstructMessage(replyHeader, payloadRaw);
+    replyMsg.header.dataLen = serviceNameToCopy.length();
     WriteMessageFrame(replyMsg);
     this->sessionData_p->writeBuf.erase();
     StartReadingFrames();
@@ -100,6 +101,7 @@ void BVTCPSession::OnReceiveHelloBackFrame()
         return;
     }
 
+    // This gets the payload - might be useful to put that into function
     std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
 
     LogTrace("Session [{}]: Received HELLOBACK with payload='{}'. Calling Manager handler.",

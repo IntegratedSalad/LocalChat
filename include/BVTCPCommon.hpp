@@ -173,7 +173,7 @@ template<typename PayloadType>
 inline BVTCPMessage<PayloadType> ConstructMessage(BVTCPMessageHeader header, PayloadType payload)
 {
     BVTCPMessage<PayloadType> msg;
-    header.dataLen = sizeof(msg.payload);
+    header.dataLen = sizeof(msg.payload); // wrong
     msg.header = header;
     msg.payload = payload;
     return msg;

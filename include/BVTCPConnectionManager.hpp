@@ -63,6 +63,7 @@ private:
     std::map<NodeID, std::shared_ptr<threadsafe_queue<BVMessage>>> outMailboxes_p;
 
     std::map<std::string, NodeID> service_nodeid_m;
+    // maybe share all BVNodes with app, and app updates them?
 
     // We have to also instantiate some object that will tie service with a nodeID.
     // or at least - provide an interface to App, so that it can just push message to
