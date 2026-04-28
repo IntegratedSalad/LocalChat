@@ -203,6 +203,8 @@ public:
             sessionData_p->nodeData.ep = ep;
             std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
             session_p->SetLogger(GetLogger());
+            session_p->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
+            session_p->RequestReadingFrames();
             sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
             currentSessionID+=1;
         }

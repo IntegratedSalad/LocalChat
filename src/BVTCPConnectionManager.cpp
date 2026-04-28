@@ -60,6 +60,7 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         LogInfo("BVTCPConnectionManager::InitiateSessionWithNode: Couldn't register communication channel");
         return registerStatus;
     }
+
     boost::asio::async_connect(*sessionData_p->sock, sessionData_p->nodeData.results, 
         std::bind(&BVTCPConnectionManager::ConnectHandler, this, std::placeholders::_1, std::placeholders::_2, sessionData_p));
     LogTrace("App: Trying to connect asynchronously...");
