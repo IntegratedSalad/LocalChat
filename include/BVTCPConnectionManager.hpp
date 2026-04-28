@@ -199,11 +199,12 @@ public:
             return;
         }
         {
+            // We probably provide not the host machine, but the service name of the session that we are connecting to. 
+            // On the other machine it will be their name
             std::lock_guard<std::mutex> l(session_m_mutex);
             sessionData_p->nodeData.ep = ep;
             std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
             session_p->SetLogger(GetLogger());
-            // TODO: BVSESSIONSTATE_UNPREPARED!
             StartCommunicationSessionWithNode(session_p->GetSessionData()->nodeData.id, session_p->GetSessionData()->inMailbox_p);
             session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
             session_p->RequestReadingFrames();
@@ -221,16 +222,24 @@ public:
         {
             // This session is not a duplicate - we accepted it, it wasn't added (we didn't know who it was)
             // Now we know - we can add it, didn't connect to it before.
-            LogTrace("BVTCPConnectionManager: Established connection with node: {}", caller->GetSessionData()->nodeData.serviceName);
             caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
             {
                 std::lock_guard<std::mutex> l(session_m_mutex);
 
                 // Set nodeData - this is not set when accepting!
                 StartCommunicationSessionWithNode(caller->GetSessionData()->nodeData.id, caller->GetSessionData()->inMailbox_p);
+                caller->GetSessionData()->nodeData.serviceName = serviceName;
                 this->sessions_m[caller->GetSessionData()->nodeData.id] = caller;
                 this->currentSessionID+=1;
             }
+            LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}", 
+                caller->GetSessionData()->nodeData.serviceName, caller->GetSessionData()->nodeData.address.to_string());
+
+            // When we now have serviceName, we have to get the ip address with that service name
+            // Although that's weird, because we should already have their IP.
+            // We have their IP when we connect, but when we accept, we do not.
+            // We should get that IP From app, or the node should send it themselves.
+            // The session with which we talk, is the session to US.
             LogTrace("BVTCPConnectionManager: Current sessions:");
             {
                 std::lock_guard<std::mutex> l(session_m_mutex);

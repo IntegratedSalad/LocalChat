@@ -61,7 +61,7 @@ void BVTCPSession::OnReceiveHelloFrame(void)
     LogTrace("Session [{}]: Received BVSESSIONCONTROLLMESSAGETYPE_HELLO. Sending _HELLOBACK", 
         this->GetSessionData()->sessionID);
     
-    const std::string& serviceNameToCopy = this->sessionData_p->nodeData.serviceName;
+    const std::string& serviceNameToCopy = this->sessionData_p->thisMachineServiceName;
     CharPayload128B payloadRaw;
     std::copy(serviceNameToCopy.begin(), serviceNameToCopy.end(), payloadRaw.data());
     BVTCPMessageHeader replyHeader = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK);

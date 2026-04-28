@@ -144,12 +144,15 @@ struct BVTCPNodeConnectionSessionData
     std::size_t totalBytesWritten;
     std::size_t totalBytesRead;
 
+    const std::string thisMachineServiceName;
     // unique_ptr to thread?
 
-    BVTCPNodeConnectionSessionData(BVNode _nodeData, boost::asio::io_context& _ioContext, SessionID _sid):
+    BVTCPNodeConnectionSessionData(BVNode _nodeData, boost::asio::io_context& _ioContext, SessionID _sid,
+        const std::string& _thisMachineServiceName):
     nodeData(_nodeData),
     sock(std::make_shared<boost::asio::ip::tcp::socket>(_ioContext)),
-    sessionID(_sid)
+    sessionID(_sid),
+    thisMachineServiceName(_thisMachineServiceName)
     {
 
     }

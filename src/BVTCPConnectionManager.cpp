@@ -51,7 +51,7 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         return BVStatus::BVSTATUS_OK;
     }
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-         std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, currentSessionID);
+         std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, currentSessionID, thisMachineHostData.serviceName);
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     BVStatus registerStatus = 
         StartCommunicationSessionWithNode(sessionData_p->nodeData.id, sessionData_p->inMailbox_p);
@@ -164,7 +164,7 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     LogTrace("BVTCPConnectionManager: Accepting connections on {}:{}... for service: {}",
         ep.address().to_string(), ep.port(), thisMachineServiceData.hostname);
     std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-        std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID); // TODO: not thisMachineHostData!
+        std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID, thisMachineHostData.serviceName);
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     this->acceptorSocket.listen(N_SERVICES_MAX, ec);
     if (ec)
