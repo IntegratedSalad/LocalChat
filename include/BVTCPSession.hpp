@@ -139,6 +139,7 @@ private:
             return;
         }
         this->sessionData_p->totalBytesWritten += bytes_transferred;
+        LogDebug("Session [{}]: Writebuffer: {}", this->sessionData_p->sessionID, this->sessionData_p->writeBuf);
         LogTrace("Session [{}]: Written {} bytes", this->sessionData_p->sessionID, bytes_transferred);
         if (this->sessionData_p->totalBytesWritten == this->sessionData_p->writeBuf.length())
         {
@@ -225,6 +226,8 @@ public:
             return;
         }
 
+        LogDebug("WriteMessageFrame: data size: {}", sizeof(message.payload));
+        LogDebug("WriteMessageFrame: dataLen: {}", message.header.dataLen);
         char* buf = this->sessionData_p->writeBuf.data();
         buf[0] = static_cast<char>(message.header.dataLen);
         std::memcpy(buf + 1,
@@ -234,6 +237,8 @@ public:
         std::memcpy(buf + headerSize,
             &message.payload,
             sizeof(PayloadType));
+
+        assert(this->sessionData_p->writeBuf.size() != 0);
 
         auto self = shared_from_this();
         boost::asio::async_write(
@@ -271,6 +276,7 @@ public:
     {
         this->sessionData_p->writeBuf.clear();
         this->sessionData_p->totalBytesWritten = 0;
+        this->sessionData_p->writeBuf.assign(MESSAGE_FRAME_SIZE_BYTES, '\0');
     }
 
     void Close(void)
