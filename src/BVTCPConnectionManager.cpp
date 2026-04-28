@@ -179,8 +179,25 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
                 // Wait - is there already a connection session with this peer/node?
                 std::shared_ptr<BVTCPSession> session_p = 
                     std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
+                session_p->SetLogger(GetLogger());
+                session_p->SetManager_p(this);
 
-                this->LogTrace("Accept successful!");
+                // session_p now identifies socket with that socket.
+                this->LogTrace("Accept successful. Requesting identification from the peer.");
+                // session_p->
+                // Construct message
+                BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLO);
+                BVTCPMessage<std::array<char, 128>> helloMsg = ConstructMessage(header, std::array<char,128>()); // empty payload
+                session_p->WriteMessageFrame(helloMsg);
+                session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_INGOING);
+                session_p->RequestReadingFrames();
+                
+                // Asynchronous write
+
+                // Send BVSESSIONCONTROLLMESSAGETYPE_HELLO
+                // Read response - get name
+                // Is session already in map?
+
                 // construct session
 
                 // We need to establish a handshake of sorts.
@@ -226,6 +243,8 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
 
     return BVStatus::BVSTATUS_OK;
 }
+
+
 
 BVTCPConnectionManager::~BVTCPConnectionManager()
 {

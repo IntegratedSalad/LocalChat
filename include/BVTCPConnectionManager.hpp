@@ -149,7 +149,8 @@ public:
     }
 
     // Send data to chosen node. This is an interface for App
-    BVStatus SendDataToService(const ChatMessage& msg)
+    template<typename PayloadType>
+    BVStatus SendDataToService(const BVTCPMessage<PayloadType> msg)
     {
         BVStatus idStatus;
         const NodeID nodeId = msg.metadata.recipient; //this->GetNodeIDByServiceName(serviceName, idStatus);
@@ -157,7 +158,7 @@ public:
         {
             {
                 std::lock_guard<std::mutex> l(this->session_m_mutex);
-                this->sessions_m.at(nodeId)->RequestWrite(msg.textData);
+                this->sessions_m.at(nodeId)->RequestSomeWrite(msg.textData);
                 // this->sessions_m.at(nodeId)->sock.async_write_some(); // to implement
             }
         } else
@@ -184,6 +185,7 @@ public:
             std::lock_guard<std::mutex> l(session_m_mutex);
             sessionData_p->nodeData.ep = ep;
             std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
+            session_p->SetLogger(GetLogger());
             sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
             currentSessionID+=1;
         }

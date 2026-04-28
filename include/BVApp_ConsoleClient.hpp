@@ -273,7 +273,8 @@ public:
     void PrintAll(void);
     inline void ClearScreen(void);
     std::optional<ParsingResult> ParseConsoleActionFromKey(char key);
-    std::unique_ptr<ChatMessage> ConstructChatMessageFromInput(
+
+    std::unique_ptr<BVTCPMessage<BVChatMessage>> ConstructChatMessageFromInput(
         const std::string& inputString, const NodeID nodeID);
 
     // -------------------------------------------------------

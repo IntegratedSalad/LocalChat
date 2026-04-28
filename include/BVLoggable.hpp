@@ -50,4 +50,10 @@ public:
     {
         logger = std::move(_logger);
     }
+
+    std::shared_ptr<spdlog::logger> GetLogger(void)
+    {
+        return this->logger;
+    }
+
 };

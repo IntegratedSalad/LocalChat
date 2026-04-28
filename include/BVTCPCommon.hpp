@@ -5,16 +5,53 @@
 #include <memory>
 #include "const.h"
 
-#define MAX_MESSAGE_SIZE_BYTES 128
+#define MAX_MESSAGE_SIZE_BYTES   256
+#define MESSAGE_FRAME_SIZE_BYTES 138
+#define HEADER_SIZE_BYTES        10
+#define PAYLOAD_SIZE_BYTES       128
+static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_BYTES));
 
 using NodeID = uint8_t;
 using SessionID = uint16_t;
 
-typedef enum class BVSessionControlMessage
-{
-    BVSESSIONCONTROLLMESSAGE_HELLO
+/*
+    BVTCPMessage structure
+    | HEADER | PAYLOAD
+        10      128
 
-} BVSessionControlMessage;
+    HEADER:     10 bytes
+     DataLen:   1  byte 
+     MsgType:   1  byte
+     timestamp: 8  bytes
+
+    TOTAL: 138 BYTES
+
+    Are MSG START and MSG END byte control characters needed?
+*/
+
+
+enum class BVSessionState
+{
+    BVSESSIONSTATE_UNPREPARED,
+    BVSESSIONSTATE_ESTABLISHED,
+    BVSESSIONSTATE_CLOSING
+};
+
+enum class BVSessionOrigin
+{
+    BVSESSIONORIGIN_INGOING,
+    BVSESSIONORIGIN_OUTGOING
+};
+
+// We can send longer messages:
+// e.g. _TYPE_AGGREGATE | _TYPE_CHATMESSAGE
+
+namespace BVTCPMessageType
+{
+    const uint8_t BVSESSIONCONTROLLMESSAGETYPE_HELLO     = 0; // handshake
+    const uint8_t BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK = 1; // handshake reply
+}
+
 
 // BVNode is data regarding another host in the network.
 struct BVNode // BVNodeData?
@@ -63,18 +100,23 @@ struct BVNode // BVNodeData?
     BVNode() = default;
 };
 
-struct ChatMessageMetadata
+struct BVTCPMessageHeader
 {
-    uint64_t      timestamp;
-    std::string   sender;
-    NodeID        recipient;
+    uint8_t  dataLen;
+    uint64_t timestamp;
+    uint8_t  msgType;
 };
 
-struct ChatMessage // move to separate?
+template<typename PayloadType>
+struct BVTCPMessage
 {
-    ChatMessageMetadata metadata;
-    std::string         textData;
-    // ...
+    BVTCPMessageHeader header;
+    PayloadType        payload;  
+};
+
+struct BVChatMessage // payload of a certain type
+{
+    std::string textData;
 };
 
 struct BVUser
@@ -98,6 +140,7 @@ struct BVTCPNodeConnectionSessionData
 
     std::string writeBuf;
     std::unique_ptr<char[]> readBuf;
+    
     std::size_t totalBytesWritten;
     std::size_t totalBytesRead;
 
@@ -111,3 +154,24 @@ struct BVTCPNodeConnectionSessionData
 
     }
 };
+
+inline BVTCPMessageHeader ConstructHeader(const uint8_t msgType)
+{
+    BVTCPMessageHeader header;
+    std::chrono::milliseconds ts = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch());
+    header.timestamp = ts.count();
+    header.msgType = msgType;
+    return header;
+}
+
+template<typename PayloadType>
+inline BVTCPMessage<PayloadType> ConstructMessage(BVTCPMessageHeader header, PayloadType payload)
+{
+    BVTCPMessage<PayloadType> msg;
+    header.dataLen = sizeof(msg.payload);
+    msg.header = header;
+    msg.payload = payload;
+    return msg;
+}

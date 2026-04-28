@@ -62,7 +62,7 @@ void BVApp_ConsoleClient::Run(void)
                         BVNode node = nodesV.at(idx);
                         ClearScreen();
                         const std::string msgStr = this->terminal.GetStringFromSTDIN("Enter message: ");
-                        std::unique_ptr<ChatMessage> chatMsg = ConstructChatMessageFromInput(msgStr, node.id);
+                        // std::unique_ptr<BVChatMessage> chatMsg = ConstructChatMessageFromInput(msgStr, node.id);
 
                     } catch (const std::out_of_range& ex)
                     {
@@ -402,18 +402,18 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     return nodeData;
 }
 
-std::unique_ptr<ChatMessage> BVApp_ConsoleClient::ConstructChatMessageFromInput(
+std::unique_ptr<BVTCPMessage<BVChatMessage>> BVApp_ConsoleClient::ConstructChatMessageFromInput(
     const std::string& inputString, const NodeID nodeID)
 {
-    ChatMessage msg;
-
+    BVTCPMessage<BVChatMessage> msg;
     std::chrono::milliseconds ts = 
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch());
-    msg.metadata.timestamp = ts.count();
-    msg.metadata.sender = GetThisMachineServiceData().hostname;
-    msg.metadata.recipient = nodeID;
-    msg.textData = inputString.c_str();
+    msg.header.timestamp = ts.count();
 
-    return std::make_unique<ChatMessage>(msg);
+    // msgType
+    // dataLen
+    msg.payload.textData = inputString;
+
+    return std::make_unique<BVTCPMessage<BVChatMessage>>(msg);
 }
