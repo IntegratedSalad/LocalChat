@@ -189,6 +189,7 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
                 // Construct message
                 BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLO);
                 BVTCPMessage<std::array<char, 128>> helloMsg = ConstructMessage(header, std::array<char,128>()); // empty payload
+                session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
                 session_p->WriteMessageFrame(helloMsg);
                 session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_INGOING);
                 session_p->RequestReadingFrames();
