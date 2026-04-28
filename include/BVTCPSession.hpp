@@ -214,12 +214,26 @@ public:
                     "BVTCPMessage must be trivially copyable to send as raw bytes.");
 
         this->sessionData_p->totalBytesWritten = 0;
+        
+        constexpr std::size_t headerSize = 10;
+        constexpr std::size_t payloadSize = MESSAGE_FRAME_SIZE_BYTES - headerSize;
 
-        const auto* dataPtr =
-            reinterpret_cast<const char*>(&message);
-        const std::size_t dataSize = sizeof(BVTCPMessage<PayloadType>);
+        if (sizeof(PayloadType) > payloadSize)
+        {
+            LogError("Session [{}]: WriteMessageFrame: payload too large. payloadSize={}, max={}",
+                this->sessionData_p->sessionID, sizeof(PayloadType), payloadSize);
+            return;
+        }
 
-        this->sessionData_p->writeBuf.assign(dataPtr, dataSize);
+        char* buf = this->sessionData_p->writeBuf.data();
+        buf[0] = static_cast<char>(message.header.dataLen);
+        std::memcpy(buf + 1,
+            &message.header.timestamp,
+            sizeof(message.header.timestamp));
+        buf[9] = static_cast<char>(message.header.msgType);
+        std::memcpy(buf + headerSize,
+            &message.payload,
+            sizeof(PayloadType));
 
         auto self = shared_from_this();
         boost::asio::async_write(
