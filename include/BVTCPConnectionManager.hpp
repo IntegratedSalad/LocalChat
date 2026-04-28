@@ -221,6 +221,7 @@ public:
         {
             // This session is not a duplicate - we accepted it, it wasn't added (we didn't know who it was)
             // Now we know - we can add it, didn't connect to it before.
+            LogTrace("BVTCPConnectionManager: Established connection with node: {}", caller->GetSessionData()->nodeData.serviceName);
             caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
             {
                 std::lock_guard<std::mutex> l(session_m_mutex);
@@ -230,11 +231,22 @@ public:
                 this->sessions_m[caller->GetSessionData()->nodeData.id] = caller;
                 this->currentSessionID+=1;
             }
+            LogTrace("BVTCPConnectionManager: Current sessions:");
+            {
+                std::lock_guard<std::mutex> l(session_m_mutex);
+                int sidx = 0;
+                for (const auto& [k,v] : this->sessions_m)
+                {
+                    LogTrace("Session {} : ID: {}, service: {}", sidx, v->GetSessionData()->sessionID, v->GetSessionData()->nodeData.serviceName);
+                    sidx++;
+                }
+            }
             caller->RequestReadingFrames();
         } else
         {
             // This session is a duplicate - we might've accepted and connected at the same time.
             // Now we know who it is; we have this peer as a session, so we can close this one.
+            LogTrace("BVTCPConnectionManager: Found duplicate session for {}. Closing.", caller->GetSessionData()->nodeData.serviceName);
             caller->Close(); // close the duplicate session
         }
     }
