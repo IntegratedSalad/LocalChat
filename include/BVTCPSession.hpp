@@ -141,7 +141,8 @@ private:
         this->sessionData_p->totalBytesWritten += bytes_transferred;
         LogDebug("Session [{}]: Writebuffer: {}", this->sessionData_p->sessionID, this->sessionData_p->writeBuf);
         LogTrace("Session [{}]: Written {} bytes", this->sessionData_p->sessionID, bytes_transferred);
-        if (this->sessionData_p->totalBytesWritten == this->sessionData_p->writeBuf.length())
+        if (this->sessionData_p->totalBytesWritten == this->sessionData_p->writeBuf.length() || this->sessionData_p->writeBuf.empty() 
+            || this->sessionData_p->totalBytesWritten == MESSAGE_FRAME_SIZE_BYTES)
         {
             LogTrace("Session [{}]: Written all bytes", this->sessionData_p->sessionID, bytes_transferred);
             ClearWriteBuffer();
