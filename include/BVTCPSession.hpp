@@ -268,7 +268,7 @@ public:
 
     void ClearReadBuffer(void)
     {
-        this->sessionData_p->readBuf.reset();
+        std::memset(this->sessionData_p->readBuf.get(), 0, MESSAGE_FRAME_SIZE_BYTES);
         this->sessionData_p->totalBytesRead = 0;
     }
 
