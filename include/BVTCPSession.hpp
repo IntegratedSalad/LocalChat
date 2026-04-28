@@ -52,7 +52,7 @@ private:
 
         this->sessionData_p->sock->async_write_some(
             boost::asio::buffer(sessionData_p->writeBuf),
-            std::bind(&BVTCPSession::WriteSomeCallback, this, std::placeholders::_1, std::placeholders::_2)
+            std::bind(&BVTCPSession::WriteSomeCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2)
         );
     }
 
@@ -113,7 +113,7 @@ private:
         boost::asio::async_read(*this->sessionData_p->sock, 
             boost::asio::buffer(this->sessionData_p->readBuf.get() + this->sessionData_p->totalBytesRead,
                 MESSAGE_FRAME_SIZE_BYTES - this->sessionData_p->totalBytesRead), 
-            std::bind(&BVTCPSession::ReadMessageFrameCallback, this, std::placeholders::_1, std::placeholders::_2));
+            std::bind(&BVTCPSession::ReadMessageFrameCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
     void StartReadingFrames(void)
@@ -121,7 +121,7 @@ private:
         boost::asio::async_read(*this->sessionData_p->sock, 
             boost::asio::buffer(this->sessionData_p->readBuf.get() + this->sessionData_p->totalBytesRead,
                 MESSAGE_FRAME_SIZE_BYTES - this->sessionData_p->totalBytesRead), 
-                  std::bind(&BVTCPSession::ReadMessageFrameCallback, this, std::placeholders::_1, std::placeholders::_2));
+                  std::bind(&BVTCPSession::ReadMessageFrameCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
     void WriteMessageFrameCallback(const boost::system::error_code& ec,
@@ -144,7 +144,7 @@ private:
         }
         boost::asio::async_write(*this->sessionData_p->sock,
             boost::asio::buffer(sessionData_p->writeBuf),
-                std::bind(&BVTCPSession::WriteMessageFrameCallback, this, std::placeholders::_1, std::placeholders::_2));
+                std::bind(&BVTCPSession::WriteMessageFrameCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
     BVTCPMessageHeader GetMsgHeader(void)
