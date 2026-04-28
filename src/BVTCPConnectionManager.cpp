@@ -178,6 +178,7 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
             if (!error)
             {
                 // Wait - is there already a connection session with this peer/node?
+                // Create a connection but not add it yet to the map.
                 std::shared_ptr<BVTCPSession> session_p = 
                     std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
                 session_p->SetLogger(GetLogger());
@@ -212,12 +213,12 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
                 // If this is a new peer/node -> at to map.
                 // If not - discard
 
-                {
-                    std::lock_guard<std::mutex> l(session_m_mutex);
-                    // write a function that increments the sessionID.
-                    this->sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
-                    this->currentSessionID+=1;
-                }
+                // {
+                //     std::lock_guard<std::mutex> l(session_m_mutex);
+                //     // write a function that increments the sessionID.
+                //     this->sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
+                //     this->currentSessionID+=1;
+                // }
 
             } else
             {

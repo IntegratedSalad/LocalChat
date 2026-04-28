@@ -203,8 +203,11 @@ public:
             sessionData_p->nodeData.ep = ep;
             std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
             session_p->SetLogger(GetLogger());
-            session_p->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
+            // TODO: BVSESSIONSTATE_UNPREPARED!
+            StartCommunicationSessionWithNode(session_p->GetSessionData()->nodeData.id, session_p->GetSessionData()->inMailbox_p);
+            session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
             session_p->RequestReadingFrames();
+            session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
             sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
             currentSessionID+=1;
         }
@@ -216,6 +219,8 @@ public:
     {
         if (!IsSessionAlreadyPresent(serviceName))
         {
+            // This session is not a duplicate - we accepted it, it wasn't added (we didn't know who it was)
+            // Now we know - we can add it, didn't connect to it before.
             caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
             {
                 std::lock_guard<std::mutex> l(session_m_mutex);
@@ -228,6 +233,8 @@ public:
             caller->RequestReadingFrames();
         } else
         {
+            // This session is a duplicate - we might've accepted and connected at the same time.
+            // Now we know who it is; we have this peer as a session, so we can close this one.
             caller->Close(); // close the duplicate session
         }
     }

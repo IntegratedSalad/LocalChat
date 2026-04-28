@@ -71,23 +71,41 @@ void BVTCPSession::OnReceiveHelloFrame(void)
     StartReadingFrames();
 }
 
-void BVTCPSession::OnReceiveHelloBackFrame(void)
+void BVTCPSession::OnReceiveHelloBackFrame()
 {
-    using CharPayload128B = std::array<char, 128>;
-    using HelloBackMsg = BVTCPMessage<CharPayload128B>;
-    const auto* msg = reinterpret_cast<const HelloBackMsg*>(this->sessionData_p->readBuf.get());
-    if (msg->header.msgType != static_cast<uint8_t>(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK))
+    BVTCPMessageHeader header = GetMsgHeader();
+
+    if (header.msgType != static_cast<uint8_t>(
+            BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK))
     {
-        LogError("Session [{}]: OnReceiveHelloBackFrame called for wrong msgType={}", this->GetSessionData()->sessionID,
-            static_cast<int>(msg->header.msgType));
+        LogError("Session [{}]: OnReceiveHelloBackFrame called for wrong msgType={}",
+                 this->GetSessionData()->sessionID,
+                 static_cast<int>(header.msgType));
         return;
     }
 
-    LogTrace(
-        "Session [{}]: Received BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK. Calling Manager' function to handle session identification.",
-            this->GetSessionData()->sessionID);
-    
-    std::string payloadStr(std::begin(msg->payload), std::end(msg->payload));
+    if (header.dataLen > 128)
+    {
+        LogError("Session [{}]: Invalid HELLOBACK payload length={}",
+                 this->GetSessionData()->sessionID,
+                 static_cast<unsigned>(header.dataLen));
+        return;
+    }
+
+    const char* payloadPtr = GetPayloadPtr();
+    if (!payloadPtr)
+    {
+        LogError("Session [{}]: Payload pointer is null.",
+                 this->GetSessionData()->sessionID);
+        return;
+    }
+
+    std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
+
+    LogTrace("Session [{}]: Received HELLOBACK with payload='{}'. Calling Manager handler.",
+             this->GetSessionData()->sessionID,
+             payloadStr);
+
     manager_p->HandleSessionIdentification(payloadStr, shared_from_this());
 }
 
@@ -100,6 +118,7 @@ void BVTCPSession::OnReceiveStandardFrame(void)
     LogTrace(
         "Session [{}]: Received a standard frame, parsing...",
             this->GetSessionData()->sessionID);
+    
     
     
 }
