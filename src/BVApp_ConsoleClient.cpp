@@ -13,9 +13,10 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
-    
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED,
+                     std::bind(&BVApp_ConsoleClient::HandleServiceDeregistration, this, std::placeholders::_1));
+
     this->GetConnectionManager().SetAppInMailBoxP(_inMbx);
-    
 
     // TODO: Create an auxhilary object which listens to messages
     //       coming from App to sessions and that should be routed from sessions
@@ -85,12 +86,28 @@ void BVApp_ConsoleClient::Run(void)
                     BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESUME, nullptr));
                 break;
             case BVConsoleActionType::BVCONSOLEACTION_QUIT:
+            {
+                using CharPayload128B = std::array<char, 128>;
+                using GoodbyeMsg = BVTCPMessage<CharPayload128B>;
+                // Send message that we are deregistering
+                // TODO ...
+                BVTCPMessageHeader header = ConstructHeader(
+                    BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE);
+                CharPayload128B payloadRaw;
+                const std::string& serviceNameToCopy = 
+                    this->GetThisMachineServiceData().hostname;
+                std::copy(serviceNameToCopy.begin(), serviceNameToCopy.end(), payloadRaw.data());
+                GoodbyeMsg goodbyeMsg = ConstructMessage(header, payloadRaw);
+                goodbyeMsg.header.dataLen = this->GetThisMachineServiceData().hostname.length();
+                this->GetConnectionManager().SendDataToEveryone(goodbyeMsg);
+
                 // send quit event/message
                 SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr));
                 SetIsRunning(false);
                 LogTrace("App: quitting. Sent TERMINATE_ALL message");
                 break;
+            }
             case BVConsoleActionType::BVCONSOLEACTION_BLOCKHOST:
                 // send blockhost event/message
                 break;
@@ -280,6 +297,13 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
     return status;
+}
+
+BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::any> dp)
+{
+    assert(0==1);
+
+    return BVStatus::BVSTATUS_OK;
 }
 
 void BVApp_ConsoleClient::PrintNewServicesNotification(void)

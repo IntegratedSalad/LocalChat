@@ -168,7 +168,7 @@ public:
 
     // Send data to chosen node. This is an interface for App
     template<typename PayloadType>
-    BVStatus SendDataToService(const BVTCPMessage<PayloadType> msg)
+    BVStatus SendDataToService(const BVTCPMessage<PayloadType> msg) // pass only service or NodeID.
     {
         BVStatus idStatus;
         const NodeID nodeId = msg.metadata.recipient; //this->GetNodeIDByServiceName(serviceName, idStatus);
@@ -176,13 +176,49 @@ public:
         {
             {
                 std::lock_guard<std::mutex> l(this->session_m_mutex);
-                this->sessions_m.at(nodeId)->RequestSomeWrite(msg.textData);
+                // this->sessions_m.at(nodeId)->RequestSomeWrite(msg.textData);
                 // this->sessions_m.at(nodeId)->sock.async_write_some(); // to implement
             }
         } else
         {
             return BVStatus::BVSTATUS_NOK;
         }
+    }
+
+    template<typename PayloadType>
+    BVStatus SendDataToEveryone(const BVTCPMessage<PayloadType> msg)
+    {
+        // try? what if it fails?
+        {
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            for (auto& [k, v] : sessions_m)
+            {
+                v->WriteMessageFrame(msg);
+            }
+        }
+        return BVStatus::BVSTATUS_OK;
+    }
+
+    void PutMessageIntoAppMailbox(const BVEventType& type, std::unique_ptr<std::any> dp)
+    {
+        this->appInMailBox_p->push(BVMessage(type, std::move(dp)));
+        // this->appInMailBox_p
+    }
+
+    // Would be better to assign an ID to a session
+    // And then remove session by ID
+    BVStatus RemoveSession(std::shared_ptr<BVTCPSession> sp)
+    {
+
+        return BVStatus::BVSTATUS_OK;
+    }
+
+    BVStatus RemoveSession(const SessionID& sid)
+    {
+        std::lock_guard<std::mutex> l(session_m_mutex);
+        std::size_t n_erased = sessions_m.erase(sid);
+        if (n_erased == 0) return BVStatus::BVSTATUS_NOK;
+        return BVStatus::BVSTATUS_OK;
     }
 
     void ConnectHandler(const boost::system::error_code& error, 
@@ -231,6 +267,9 @@ public:
                 StartCommunicationSessionWithNode(caller->GetSessionData()->nodeData.id, caller->GetSessionData()->inMailbox_p);
                 caller->GetSessionData()->nodeData.serviceName = serviceName;
                 this->sessions_m[caller->GetSessionData()->nodeData.id] = caller;
+                // We do not need an IP address of this service! We already have the socket!
+                caller->GetSessionData()->nodeData.address = caller->GetSessionData()->sock->remote_endpoint().address();
+                caller->GetSessionData()->nodeData.ep = caller->GetSessionData()->sock->remote_endpoint();
                 this->currentSessionID+=1;
             }
             LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}", 

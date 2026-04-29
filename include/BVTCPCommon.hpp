@@ -2,6 +2,7 @@
 #include <boost/asio.hpp>
 #include "threadsafequeue.hpp"
 #include "BVMessage.hpp"
+#include "BVEvent.hpp"
 #include <memory>
 #include "const.h"
 
@@ -48,8 +49,9 @@ enum class BVSessionOrigin
 
 namespace BVTCPMessageType
 {
-    const uint8_t BVSESSIONCONTROLLMESSAGETYPE_HELLO     = 0; // handshake
-    const uint8_t BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK = 1; // handshake reply
+    const uint8_t BVSESSIONCONTROLMESSAGETYPE_HELLO               = 0; // handshake
+    const uint8_t BVSESSIONCONTROLMESSAGETYPE_HELLOBACK           = 1; // handshake reply
+    const uint8_t BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE = 3; // service is deregistering
 }
 
 
@@ -173,7 +175,7 @@ template<typename PayloadType>
 inline BVTCPMessage<PayloadType> ConstructMessage(BVTCPMessageHeader header, PayloadType payload)
 {
     BVTCPMessage<PayloadType> msg;
-    header.dataLen = sizeof(msg.payload); // wrong
+    header.dataLen = sizeof(msg.payload); // wrong for string
     msg.header = header;
     msg.payload = payload;
     return msg;

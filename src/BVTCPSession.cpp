@@ -51,20 +51,22 @@ void BVTCPSession::OnReceiveHelloFrame(void)
     using HelloMsg = BVTCPMessage<CharPayload128B>;
     const auto* msg = reinterpret_cast<const HelloMsg*>(this->sessionData_p->readBuf.get());
 
-    if (msg->header.msgType != static_cast<uint8_t>(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLO))
+    if (msg->header.msgType != static_cast<uint8_t>(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO))
     {
         LogError("Session [{}]: OnReceiveHelloFrame called for wrong msgType={}", this->GetSessionData()->sessionID,
             static_cast<int>(msg->header.msgType));
         return;
     }
 
-    LogTrace("Session [{}]: Received BVSESSIONCONTROLLMESSAGETYPE_HELLO. Sending _HELLOBACK", 
+    LogTrace("Session [{}]: Received BVSESSIONCONTROLMESSAGETYPE_HELLO. Sending _HELLOBACK", 
         this->GetSessionData()->sessionID);
     
+
+    // This is sending text data (from string) -> maybe put into function
     const std::string& serviceNameToCopy = this->sessionData_p->thisMachineServiceName;
     CharPayload128B payloadRaw;
     std::copy(serviceNameToCopy.begin(), serviceNameToCopy.end(), payloadRaw.data());
-    BVTCPMessageHeader replyHeader = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK);
+    BVTCPMessageHeader replyHeader = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLOBACK);
     BVTCPMessage<CharPayload128B> replyMsg = ConstructMessage(replyHeader, payloadRaw);
     replyMsg.header.dataLen = serviceNameToCopy.length();
     WriteMessageFrame(replyMsg);
@@ -77,7 +79,7 @@ void BVTCPSession::OnReceiveHelloBackFrame()
     BVTCPMessageHeader header = GetMsgHeader();
 
     if (header.msgType != static_cast<uint8_t>(
-            BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK))
+            BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLOBACK))
     {
         LogError("Session [{}]: OnReceiveHelloBackFrame called for wrong msgType={}",
                  this->GetSessionData()->sessionID,
@@ -111,6 +113,28 @@ void BVTCPSession::OnReceiveHelloBackFrame()
     manager_p->HandleSessionIdentification(payloadStr, shared_from_this());
 }
 
+void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
+{
+    using CharPayload128B = std::array<char, 128>;
+    using HelloMsg = BVTCPMessage<CharPayload128B>;
+
+    BVTCPMessageHeader header = GetMsgHeader();
+    const char* payloadPtr = GetPayloadPtr();
+    std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
+
+    // Maybe we have the serviceName here in nodeData here?
+    assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ???
+    // this will be the endpoint's serviceName?
+
+    manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
+        std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
+    manager_p->RemoveSession(this->sessionData_p->sessionID);
+    Close();
+    // Put message in app mailbox so it can react
+    // BVTCPSession remove it from the map
+    // Close this session
+}
+
 void BVTCPSession::OnReceiveStandardFrame(void)
 {
     // Parse
@@ -121,6 +145,17 @@ void BVTCPSession::OnReceiveStandardFrame(void)
         "Session [{}]: Received a standard frame, parsing...",
             this->GetSessionData()->sessionID);
     
-    
-    
+    BVTCPMessageHeader header = GetMsgHeader();
+    switch (header.msgType)
+    {
+        case BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE:
+        {
+            LogTrace(
+                "Session [{}]: Received BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE frame.", 
+                    this->GetSessionData()->sessionID);
+            OnReceiveNodeGoodbyeFrame();
+        }
+        default: 
+        {}
+    }
 }

@@ -177,6 +177,8 @@ int main(int argc, char** argv)
     // this is needed to exit listening on mailbox!
     BVStatus subStatusAppRequestTerminate = 
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    BVStatus subStatusAppServiceDeregistered = 
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED);
     if (subStatusDiscoveryRequestStart    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestPause    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestResume   != BVStatus::BVSTATUS_OK ||
@@ -186,7 +188,8 @@ int main(int argc, char** argv)
         subStatusDiscoveryRequestResolve  != BVStatus::BVSTATUS_OK ||
         subStatusAppRequestRestart        != BVStatus::BVSTATUS_OK ||
         subStatusAppServiceResolved       != BVStatus::BVSTATUS_OK ||
-        subStatusAppRequestTerminate      != BVStatus::BVSTATUS_OK)
+        subStatusAppRequestTerminate      != BVStatus::BVSTATUS_OK ||
+        subStatusAppServiceDeregistered   != BVStatus::BVSTATUS_OK)
     {
         std::cerr << "Fatal error: Broker couldn't subscribe to a crucial event" << std::endl;
         exit(-1);

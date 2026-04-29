@@ -102,9 +102,9 @@ private:
             BVTCPMessageHeader header = GetMsgHeader();
             if (state == BVSessionState::BVSESSIONSTATE_UNPREPARED)
             {
-                if (header.msgType == BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLO)
+                if (header.msgType == BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO)
                     OnReceiveHelloFrame();
-                if (header.msgType == BVTCPMessageType::BVSESSIONCONTROLLMESSAGETYPE_HELLOBACK)
+                if (header.msgType == BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLOBACK)
                     OnReceiveHelloBackFrame();
             } else
             {
@@ -195,11 +195,22 @@ public:
         return this->state;
     }
 
+    void SetSessionID(const SessionID& sid)
+    {
+        this->sessionData_p->sessionID = sid;
+    }
+
+    SessionID GetSessionID(void)
+    {
+        return this->sessionData_p->sessionID;
+    }
+
     // for now only text
     void RequestSomeWrite(const std::string& data);
     void OnReceiveHelloFrame(void);
     void OnReceiveHelloBackFrame(void);
     void OnReceiveStandardFrame(void);
+    void OnReceiveNodeGoodbyeFrame(void);
     // Upon receiving chat message,
     // call BVTCPConnectionManager function
     // or, construct BVMessage and directly put it in appCommChannel_p.
