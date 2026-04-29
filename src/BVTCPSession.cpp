@@ -134,7 +134,7 @@ void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
     // Close this session
 }
 
-void BVTCPSession::OnReceiveStandardFrame(void)
+bool BVTCPSession::OnReceiveStandardFrame(void)
 {
     // Parse
     // copy to buffer 10 bytes and read message type
@@ -150,7 +150,8 @@ void BVTCPSession::OnReceiveStandardFrame(void)
         case BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE:
         {
             OnReceiveNodeGoodbyeFrame();
-            break;
+            LogTrace("Returning early after closing the session - received goodbye.");
+            return true;
         }
         default: 
         {
@@ -159,4 +160,5 @@ void BVTCPSession::OnReceiveStandardFrame(void)
                     this->GetSessionData()->sessionID);
         }
     }
+    return false;
 }

@@ -54,7 +54,6 @@ namespace BVTCPMessageType
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE = 3; // service is deregistering
 }
 
-
 // BVNode is data regarding another host in the network.
 struct BVNode // BVNodeData?
 {

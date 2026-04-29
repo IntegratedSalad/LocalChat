@@ -68,3 +68,6 @@ bt
 frame 0 // find the frame in this example 0:
 where
 ```
+
+On macOS, the same, also:
+thread backtrace all

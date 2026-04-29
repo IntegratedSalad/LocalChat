@@ -108,7 +108,10 @@ private:
                     OnReceiveHelloBackFrame();
             } else
             {
-                OnReceiveStandardFrame();
+                if (OnReceiveStandardFrame() == true)
+                {
+                    return;
+                }
             }
             LogTrace("Session [{}]: Read all bytes {}", this->sessionData_p->sessionID, bytes_transferred);
             ClearReadBuffer();
@@ -209,7 +212,8 @@ public:
     void RequestSomeWrite(const std::string& data);
     void OnReceiveHelloFrame(void);
     void OnReceiveHelloBackFrame(void);
-    void OnReceiveStandardFrame(void);
+    // Returns true if we have to return early.
+    bool OnReceiveStandardFrame(void);
     void OnReceiveNodeGoodbyeFrame(void);
     // Upon receiving chat message,
     // call BVTCPConnectionManager function
