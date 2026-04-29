@@ -105,7 +105,7 @@ void BVApp_ConsoleClient::Run(void)
                 SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr));
                 SetIsRunning(false);
-                LogTrace("App: quitting. Sent TERMINATE_ALL message");
+                LogTrace("App: quitting. Sent TERMINATE_ALL message and BVEVENTTYPE_APP_SERVICE_DEREGISTERED to everyone");
                 break;
             }
             case BVConsoleActionType::BVCONSOLEACTION_BLOCKHOST:
@@ -301,7 +301,7 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
 
 BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::any> dp)
 {
-    assert(0==1);
+    LogTrace("BVApp_ConsoleClient: HandleServiceDeregistration called");
 
     return BVStatus::BVSTATUS_OK;
 }

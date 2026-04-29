@@ -22,6 +22,7 @@ typedef enum class BVEventType
 
     // Events caused by TCP traffic
     BVEVENTTYPE_APP_SERVICE_DEREGISTERED,
+    BVEVENTTYPE_APP_MESSAGE_INCOMING,
 
     // Messages exchanged between Nodes
     // ...
@@ -37,6 +38,4 @@ typedef enum class BVEventType
     BVEVENTTYPE_TEST_REQUEST_SHUTDOWN,
     BVEVENTTYPE_TEST_REQUEST_RESTART,
     BVEVENTTYPE_TEST_APP_ANNOUNCE_SERVICES, // App announces services
-
-
 } BVEventType;

@@ -218,6 +218,7 @@ public:
         std::lock_guard<std::mutex> l(session_m_mutex);
         std::size_t n_erased = sessions_m.erase(sid);
         if (n_erased == 0) return BVStatus::BVSTATUS_NOK;
+        LogTrace("BVTCPConnectionManager: Removed session with SessionID: {}", sid);
         return BVStatus::BVSTATUS_OK;
     }
 

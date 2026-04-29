@@ -60,7 +60,6 @@ void BVTCPSession::OnReceiveHelloFrame(void)
 
     LogTrace("Session [{}]: Received BVSESSIONCONTROLMESSAGETYPE_HELLO. Sending _HELLOBACK", 
         this->GetSessionData()->sessionID);
-    
 
     // This is sending text data (from string) -> maybe put into function
     const std::string& serviceNameToCopy = this->sessionData_p->thisMachineServiceName;
@@ -106,7 +105,7 @@ void BVTCPSession::OnReceiveHelloBackFrame()
     // This gets the payload - might be useful to put that into function
     std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
 
-    LogTrace("Session [{}]: Received HELLOBACK with payload='{}'. Calling Manager handler.",
+    LogTrace("Session [{}]: Received _HELLOBACK with payload='{}'. Calling Manager handler.",
              this->GetSessionData()->sessionID,
              payloadStr);
 
@@ -115,12 +114,12 @@ void BVTCPSession::OnReceiveHelloBackFrame()
 
 void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
 {
-    using CharPayload128B = std::array<char, 128>;
-    using HelloMsg = BVTCPMessage<CharPayload128B>;
-
     BVTCPMessageHeader header = GetMsgHeader();
     const char* payloadPtr = GetPayloadPtr();
     std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
+
+    LogTrace("Session [{}]: Received _NODESESSION_GOODBYE from {}", 
+        this->GetSessionData()->sessionID, this->GetSessionData()->nodeData.serviceName);
 
     // Maybe we have the serviceName here in nodeData here?
     assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ???
@@ -150,12 +149,14 @@ void BVTCPSession::OnReceiveStandardFrame(void)
     {
         case BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE:
         {
-            LogTrace(
-                "Session [{}]: Received BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE frame.", 
-                    this->GetSessionData()->sessionID);
             OnReceiveNodeGoodbyeFrame();
+            break;
         }
         default: 
-        {}
+        {
+            LogWarn(
+                "Session [{}]: Received a standard, unrecognized frame..",
+                    this->GetSessionData()->sessionID);
+        }
     }
 }
