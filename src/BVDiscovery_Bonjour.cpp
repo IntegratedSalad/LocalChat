@@ -172,6 +172,17 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
         return BVStatus::BVSTATUS_NOK; // setup a flag maybe?
     }
     BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+    // Very weird. We receive this on disconnecting the other host.
+    // Apparently, there is a flag that tells us if
+    // callback has been called for adding or removing a service:
+    /* From dns_sd.h:
+    /* Flags for domain enumeration and browse/query reply callbacks.
+     * "Default" applies only to enumeration and is only valid in
+     * conjunction with "Add". An enumeration callback with the "Add"
+     * flag NOT set indicates a "Remove", i.e. the domain is no longer
+     * valid.
+     */
+    // So service deregistration can be handled from the mDNS side...
     LogTrace("Discovery, ProcessDNSServiceBrowseResult: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...");
     SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
