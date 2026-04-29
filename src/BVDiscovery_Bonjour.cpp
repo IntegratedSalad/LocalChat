@@ -172,6 +172,7 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
         return BVStatus::BVSTATUS_NOK; // setup a flag maybe?
     }
     BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+    LogTrace("Discovery, ProcessDNSServiceBrowseResult: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...");
     SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
                         std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));

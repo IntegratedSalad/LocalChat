@@ -116,14 +116,15 @@ void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
 {
     BVTCPMessageHeader header = GetMsgHeader();
     const char* payloadPtr = GetPayloadPtr();
-    std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
+    // std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
+    std::string payloadStr("GUUUUUUUUWNO");
 
     LogTrace("Session [{}]: Received _NODESESSION_GOODBYE from {}", 
         this->GetSessionData()->sessionID, this->GetSessionData()->nodeData.serviceName);
 
     // Maybe we have the serviceName here in nodeData here?
-    assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ???
-    // this will be the endpoint's serviceName?
+    // assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ??? Yes!
+    // this will be the endpoint's serviceName? Yes! TODO: We don't need to send serviceName!
 
     manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
         std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
@@ -150,7 +151,7 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
         case BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE:
         {
             OnReceiveNodeGoodbyeFrame();
-            LogTrace("Returning early after closing the session - received goodbye.");
+            LogTrace("Returning early after closing the session - received _GOODBYE.");
             return true;
         }
         default: 
