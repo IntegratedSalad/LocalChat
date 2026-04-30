@@ -112,6 +112,8 @@ void BVTCPSession::OnReceiveHelloBackFrame()
     manager_p->HandleSessionIdentification(payloadStr, shared_from_this());
 }
 
+// TODO: This is probably not needed,
+// as deregistration can be handled from the mDNS side.
 void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
 {
     BVTCPMessageHeader header = GetMsgHeader();
@@ -129,7 +131,6 @@ void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
     manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
         std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
     manager_p->RemoveSession(this->sessionData_p->sessionID);
-    Close();
     // Put message in app mailbox so it can react
     // BVTCPSession remove it from the map
     // Close this session

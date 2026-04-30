@@ -106,6 +106,8 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
         Browsing goes indefinitely, until the DNSServiceRef is passed to
         DNSServiceRefDeallocate.
     */
+    // We probably have to create an outer structure to fit
+    // isRemoved flag. 
     const BVServiceData hd = this->GetHostData();
     LogTrace("Discovery: Browsing for {}.{}", hd.regtype, hd.domain);
     DNSServiceErrorType error = DNSServiceBrowse(&this->dnsRef,
@@ -177,10 +179,10 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
     // callback has been called for adding or removing a service:
     /* From dns_sd.h:
     /* Flags for domain enumeration and browse/query reply callbacks.
-     * "Default" applies only to enumeration and is only valid in
+     * ""Default" applies only to enumeration and is only valid in
      * conjunction with "Add". An enumeration callback with the "Add"
      * flag NOT set indicates a "Remove", i.e. the domain is no longer
-     * valid.
+     * valid."
      */
     // So service deregistration can be handled from the mDNS side...
     LogTrace("Discovery, ProcessDNSServiceBrowseResult: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...");

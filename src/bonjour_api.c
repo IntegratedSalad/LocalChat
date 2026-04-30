@@ -7,7 +7,17 @@
  * is *not* invoked in the case where the caller explicitly terminates
  * the service registration by calling DNSServiceRefDeallocate(ref);"
  * Deregistration MUST NOT be handled by the Discovery.
-*/
+ * ^ I read that wrong. This is in case of DNSServiceRegisterReply, not
+ * BrowseReply.
+ * Excerpt from dns_sd.h:
+ * "kDNSServiceFlagsAdd     = 0x2,
+ *  kDNSServiceFlagsDefault = 0x4,
+ *  Flags for domain enumeration and browse/query reply callbacks.
+ * "Default" applies only to enumeration and is only valid in
+ * conjunction with "Add". An enumeration callback with the "Add"
+ * flag NOT set indicates a "Remove", i.e. the domain is no longer
+ * valid."
+ */
 void C_ServiceBrowseReply(
     DNSServiceRef sdRef,
     DNSServiceFlags flags,
@@ -21,6 +31,19 @@ void C_ServiceBrowseReply(
     setbuf(stdout, NULL);
     if (errorCode == kDNSServiceErr_NoError)
     {
+        // We handle deregistration from the mDNS side.
+        if ( (flags & kDNSServiceFlagsAdd ) == 0x0 )
+        {
+            printf("Service %s.%s in %s has been deregistered\n", serviceName, regtype, replyDomain);
+
+
+
+            // TODO: ...
+
+
+            return;
+        }
+
         printf("Found %s.%s in %s!\n", serviceName, regtype, replyDomain);
         if (context != NULL)
         {

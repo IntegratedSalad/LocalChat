@@ -303,5 +303,8 @@ public:
         this->sessionData_p->writeBuf.erase();
     }
 
-    ~BVTCPSession() {};
+    ~BVTCPSession() 
+    {
+        Close();
+    }
 };
