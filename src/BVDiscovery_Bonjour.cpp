@@ -125,7 +125,7 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
                                                 hd.regtype.c_str(),
                                                 hd.domain.c_str(),
                                                 C_ServiceBrowseReply,
-                                                &this->GetLinkedList_p());
+                                                this->GetLinkedList_p());
     if (!(error == kDNSServiceErr_NoError))
     {
         this->SetStatus(BVStatus::BVSTATUS_FATAL_ERROR);
@@ -187,21 +187,20 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
     // Apparently, there is a flag that tells us if
     // callback has been called for adding or removing a service:
     /* From dns_sd.h:
-    /* Flags for domain enumeration and browse/query reply callbacks.
-     * ""Default" applies only to enumeration and is only valid in
+    /* "Flags for domain enumeration and browse/query reply callbacks.
+     * "Default" applies only to enumeration and is only valid in
      * conjunction with "Add". An enumeration callback with the "Add"
      * flag NOT set indicates a "Remove", i.e. the domain is no longer
      * valid."
      */
     // So service deregistration can be handled from the mDNS side...
-
-    if (GetDidServiceRegister())
+    if (GetDidServiceRegister() == 1)
     {
         LogTrace("Discovery: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...");
         SendMessage(BVMessage(
                         BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
                             std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
-    } else
+    } else if (GetDidServiceRegister() == 0)
     {
         LogTrace("Discovery: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_DEREGISTERED_SERVICE to App...");
         SendMessage(BVMessage(

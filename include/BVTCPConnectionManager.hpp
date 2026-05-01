@@ -62,7 +62,8 @@ private:
     // SessionID, not nodeID as a key
     std::map<NodeID, std::shared_ptr<threadsafe_queue<BVMessage>>> outMailboxes_p;
 
-    std::map<std::string, NodeID> service_nodeid_m;
+    std::map<std::string, SessionID> service_sessionid_m;
+    // std::map<std::string, NodeID> service_nodeid_m;
     // maybe share all BVNodes with app, and app updates them?
 
     // We have to also instantiate some object that will tie service with a nodeID.
@@ -222,6 +223,20 @@ public:
         return BVStatus::BVSTATUS_OK;
     }
 
+    BVStatus RemoveSession(const std::string& _serviceName)
+    {
+        try
+        {
+            const SessionID id = service_sessionid_m.at(_serviceName);
+            sessions_m.erase(id);
+        } catch(const std::out_of_range& ex)
+        {
+            LogError("BVTCPConnectionManager: No session with: {}", _serviceName);
+            return BVStatus::BVSTATUS_NOK;
+        }
+        return BVStatus::BVSTATUS_OK;
+    }
+
     void ConnectHandler(const boost::system::error_code& error, 
                         const boost::asio::ip::tcp::endpoint ep,
                         std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p)
@@ -248,6 +263,7 @@ public:
             session_p->RequestReadingFrames();
             session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
             sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
+            service_sessionid_m[sessionData_p->nodeData.serviceName] = session_p->GetSessionID();
             currentSessionID+=1;
         }
         LogTrace("ConnectHandler: Successfuly connected to {}: {}:{}", 
@@ -271,6 +287,7 @@ public:
                 // We do not need an IP address of this service! We already have the socket!
                 caller->GetSessionData()->nodeData.address = caller->GetSessionData()->sock->remote_endpoint().address();
                 caller->GetSessionData()->nodeData.ep = caller->GetSessionData()->sock->remote_endpoint();
+                service_sessionid_m[serviceName] = caller->GetSessionID();
                 this->currentSessionID+=1;
             }
             LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}", 

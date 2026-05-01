@@ -88,7 +88,7 @@ protected:
 
     uint8_t GetDidServiceRegister(void)
     {
-        return this->GetLinkedList_p()->didRegister;
+        return this->c_ll_p->didRegister;
     }
 
 public:

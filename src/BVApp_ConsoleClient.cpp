@@ -60,9 +60,10 @@ void BVApp_ConsoleClient::Run(void)
                     LogDebug("App: chosen idx: {}", idx);
                     bool found = false;
                     try {
-                        BVNode node = nodesV.at(idx);
-                        ClearScreen();
-                        const std::string msgStr = this->terminal.GetStringFromSTDIN("Enter message: ");
+
+                        // BVNode node = nodesV.at(idx);
+                        // ClearScreen();
+                        // const std::string msgStr = this->terminal.GetStringFromSTDIN("Enter message: ");
                         // std::unique_ptr<BVChatMessage> chatMsg = ConstructChatMessageFromInput(msgStr, node.id);
 
                     } catch (const std::out_of_range& ex)
@@ -264,7 +265,7 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     {
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
-    nodesV.push_back(node);
+    nodesM[serviceName] = node;
 
     // Initiate connection (session)
     // Open socket.
@@ -290,6 +291,43 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
 {
     LogTrace("BVApp_ConsoleClient: HandleServiceDeregistration called");
 
+    // Remove from vector.
+    // Remove from nodes.
+    // Notify BVTCPConnectionManager
+
+    using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+    if (dp == nullptr)
+    {
+        LogError("App: No new services received.");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    BVServiceBrowseInstanceList newServicesList;
+    try
+    {
+        newServicesList = std::any_cast<BVServiceBrowseInstanceList>(*dp);    
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        LogError("App: Bad cast in BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE callback.");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    {
+        std::lock_guard<std::mutex> l(serviceVectorMutex);
+        for (auto& lElem : newServicesList)
+        {
+            if ( serviceV.erase(std::remove(serviceV.begin(), serviceV.end(), lElem), serviceV.end()) !=
+                serviceV.end())
+            {
+                nodesM.erase(lElem.serviceName);
+                LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
+                this->GetConnectionManager().RemoveSession(lElem.serviceName);
+            } else
+            {
+                LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
+            }
+        }
+    }
+    PrintAll();
     return BVStatus::BVSTATUS_OK;
 }
 
