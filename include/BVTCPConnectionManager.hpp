@@ -228,7 +228,15 @@ public:
         try
         {
             const SessionID id = service_sessionid_m.at(_serviceName);
-            sessions_m.erase(id);
+            auto it = sessions_m.find(id);
+            if (it != sessions_m.end())
+            {
+                sessions_m.erase(it);
+            } else if (it == sessions_m.end())
+            {
+                it = sessions_m.begin();
+                sessions_m.erase(it);
+            }
         } catch(const std::out_of_range& ex)
         {
             LogError("BVTCPConnectionManager: No session with: {}", _serviceName);
