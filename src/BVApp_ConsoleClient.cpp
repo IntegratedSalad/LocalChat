@@ -312,18 +312,33 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     {
+        // TODO: debug this...
         std::lock_guard<std::mutex> l(serviceVectorMutex);
         for (auto& lElem : newServicesList)
         {
-            if ( serviceV.erase(std::remove(serviceV.begin(), serviceV.end(), lElem), serviceV.end()) !=
-                serviceV.end())
+            if (serviceV.size() != 1)
             {
-                nodesM.erase(lElem.serviceName);
-                LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
-                this->GetConnectionManager().RemoveSession(lElem.serviceName);
+                if ( serviceV.erase(std::remove(serviceV.begin(), serviceV.end(), lElem), serviceV.end()) !=
+                    serviceV.end())
+                {
+                    nodesM.erase(lElem.serviceName);
+                    LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
+                    this->GetConnectionManager().RemoveSession(lElem.serviceName);
+                } else
+                {
+                    LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
+                }
             } else
             {
-                LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
+                if (lElem == serviceV[0])
+                {
+                    nodesM.erase(lElem.serviceName);
+                    LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
+                    this->GetConnectionManager().RemoveSession(lElem.serviceName);
+                } else
+                {
+                    LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
+                }
             }
         }
     }
