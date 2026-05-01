@@ -128,8 +128,8 @@ void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
     // assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ??? Yes!
     // this will be the endpoint's serviceName? Yes! TODO: We don't need to send serviceName!
 
-    manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
-        std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
+    // manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
+    //     std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
     manager_p->RemoveSession(this->sessionData_p->sessionID);
     // Put message in app mailbox so it can react
     // BVTCPSession remove it from the map

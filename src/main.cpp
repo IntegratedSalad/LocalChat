@@ -178,7 +178,7 @@ int main(int argc, char** argv)
     BVStatus subStatusAppRequestTerminate = 
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
     BVStatus subStatusAppServiceDeregistered = 
-        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED);
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_DEREGISTERED_SERVICE);
     if (subStatusDiscoveryRequestStart    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestPause    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestResume   != BVStatus::BVSTATUS_OK ||
