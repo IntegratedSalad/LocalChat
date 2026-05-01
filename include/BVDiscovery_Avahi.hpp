@@ -54,7 +54,7 @@ protected:
 public:
     BVDiscovery_Avahi(std::unique_ptr<AvahiClient, AvahiClientDeleter> _client_p,
                       boost::asio::io_context& _ioContext, // probably not needed
-                      const BVServiceHostData _hostData,
+                      const BVServiceData _hostData,
                       std::shared_ptr<AvahiSimplePoll> _simple_poll_p,
                       std::shared_ptr<threadsafe_queue<BVMessage>> _outMbx,
                       std::shared_ptr<threadsafe_queue<BVMessage>> _inMbx);
@@ -67,6 +67,21 @@ public:
                         BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
                             std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
         LinkedList_str_ClearList(this->GetLinkedList_p());
+    }
+
+    void OnServiceRemoved(void)
+    {
+        using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
+        BVServiceBrowseInstanceList browseInstanceList = ReturnListFromBrowseResults();
+        SendMessage(BVMessage(
+                        BVEventType::BVEVENTTYPE_APP_DEREGISTERED_SERVICE, 
+                            std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+        LinkedList_str_ClearList(this->GetLinkedList_p());
+    }
+    
+    const char* OnThisMachineHostNameRequest(void)
+    {
+        return this->GetHostData().hostname.c_str();
     }
 
     AvahiSimplePoll* GetSimplePoll(void)

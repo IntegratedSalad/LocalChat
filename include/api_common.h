@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include <const.h>
+#include "const.h"
 #define MAX_DNS_RESOLUTION_FIELD_SIZE 256
 
 typedef struct ResolveCallbackContext

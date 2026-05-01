@@ -54,7 +54,7 @@ void resolve_callback(
             memcpy(resolution_result_p->hosttarget, host_name, strlen(host_name));
             memcpy(resolution_result_p->fullname, a, strlen(a));
             memcpy(resolution_result_p->txtRecord, t, strlen(t));
-            resolution_result_p->port = ntohs(port);
+            resolution_result_p->port = port;
             resolution_result_p->txtLen = strlen(t);
             on_service_resolved(userdata, resolution_result_p); // Sends Message
         }
@@ -130,8 +130,17 @@ void browse_callback(
             // Service Resolution
             /*
              * In case of Avahi, resolution is done immediately after service was found
-             *
             */
+            // Do not resolve this machine
+            fprintf(stderr, "DEBUG\n");
+            fprintf(stderr, on_this_machine_host_name_request(userdata));
+            fprintf(stderr, "\n");
+            fprintf(stderr, name);
+            fprintf(stderr, "\n");
+            if (strncmp(on_this_machine_host_name_request(userdata), name, N_BYTES_SERVNAME_MAX) == 0)
+            {
+                break;
+            }
             if (!(avahi_service_resolver_new(avahi_service_browser_get_client(sb), 
                                              interface, 
                                              protocol, 
@@ -149,13 +158,43 @@ void browse_callback(
         }
         case AVAHI_BROWSER_REMOVE:
         {
+            setbuf(stdout, NULL);
+            printf("Found %s.%s in %s!\n", name, type, domain);
+
+            // This is just a copy of what's above.
+            char buff[N_BYTES_SERVICE_STR_TOTAL];
+            const size_t servLen = strlen(name);
+            const size_t regLen = strlen(type);
+            const size_t replDmnLen = strlen(domain);
+            for (int i = 0; i < N_BYTES_SERVICE_STR_TOTAL; i++)
+            {
+                buff[i] = ' ';
+            }
+            if (servLen < N_BYTES_SERVNAME_MAX)
+            {
+                memcpy(buff, name, servLen);
+            }
+            if (regLen < N_BYTES_REGTYPE_MAX)
+            {
+                memcpy(buff + N_BYTES_SERVNAME_MAX, type, regLen);
+            }
+            if (replDmnLen < N_BYTES_REPLDOMN_MAX)
+            {
+                memcpy(buff + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, domain, replDmnLen);
+            }
+            buff[N_BYTES_SERVICE_STR_TOTAL-1] = '\0';
+            LinkedListElement_str* lle_p = LinkedListElement_str_Constructor(buff, NULL);
+            LinkedList_str_AddElement((LinkedList_str*)on_service_add(userdata), lle_p);
+
+            on_service_removed(userdata);
+
             fprintf(stdout, "Service was removed... TODO \n");
             break;
         }
         case AVAHI_BROWSER_ALL_FOR_NOW:
         case AVAHI_BROWSER_CACHE_EXHAUSTED:
         {
-            fprintf(stdout, "Cache exhuast or all for now... TODO");
+            fprintf(stdout, "Cache exhuast or all for now...");
             break;
         }
     }

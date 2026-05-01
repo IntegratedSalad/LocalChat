@@ -9,6 +9,17 @@ void on_service_found(void* obj)
     static_cast<BVDiscovery_Avahi*>(obj)->OnServiceFound();
 }
 
+void on_service_removed(void* obj)
+{
+    static_cast<BVDiscovery_Avahi*>(obj)->OnServiceRemoved();
+}
+
+const char* on_this_machine_host_name_request(void* obj)
+{
+    return static_cast<
+        BVDiscovery_Avahi*>(obj)->OnThisMachineHostNameRequest();
+}
+
 AvahiSimplePoll* on_browser_failure(void* obj)
 {
     return static_cast<BVDiscovery_Avahi*>(obj)->GetSimplePoll();
