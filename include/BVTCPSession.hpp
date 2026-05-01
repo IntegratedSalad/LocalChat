@@ -114,7 +114,10 @@ private:
                 }
             }
             LogTrace("Session [{}]: Read all bytes {}", this->sessionData_p->sessionID, bytes_transferred);
-            ClearReadBuffer();
+            if (state != BVSessionState::BVSESSIONSTATE_CLOSED)
+            {
+                ClearReadBuffer();
+            }
             return;
         }
         boost::asio::async_read(*this->sessionData_p->sock, 
@@ -148,7 +151,10 @@ private:
             || this->sessionData_p->totalBytesWritten == MESSAGE_FRAME_SIZE_BYTES)
         {
             LogTrace("Session [{}]: Written all bytes", this->sessionData_p->sessionID, bytes_transferred);
-            ClearWriteBuffer();
+            if (state != BVSessionState::BVSESSIONSTATE_CLOSED)
+            {
+                ClearWriteBuffer();
+            }
             return;
         }
         boost::asio::async_write(*this->sessionData_p->sock,
@@ -305,6 +311,9 @@ public:
 
     ~BVTCPSession() 
     {
-        Close();
+        if (this->state != BVSessionState::BVSESSIONSTATE_CLOSED)
+        {
+            Close();
+        }
     }
 };
