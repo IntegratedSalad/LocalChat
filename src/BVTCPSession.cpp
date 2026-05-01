@@ -151,9 +151,9 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
     {
         case BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE:
         {
-            OnReceiveNodeGoodbyeFrame();
-            LogTrace("Returning early after closing the session - received _GOODBYE.");
-            return true;
+            // OnReceiveNodeGoodbyeFrame();
+            // LogTrace("Returning early after closing the session - received _GOODBYE.");
+            // return true;
         }
         default: 
         {

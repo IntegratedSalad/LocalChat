@@ -13,7 +13,7 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::OnShutdown, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED,
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
-    RegisterCallback(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED,
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_DEREGISTERED_SERVICE,
                      std::bind(&BVApp_ConsoleClient::HandleServiceDeregistration, this, std::placeholders::_1));
 
     this->GetConnectionManager().SetAppInMailBoxP(_inMbx);
@@ -87,20 +87,19 @@ void BVApp_ConsoleClient::Run(void)
                 break;
             case BVConsoleActionType::BVCONSOLEACTION_QUIT:
             {
-                using CharPayload128B = std::array<char, 128>;
-                using GoodbyeMsg = BVTCPMessage<CharPayload128B>;
-                // Send message that we are deregistering
-                // TODO ...
-                BVTCPMessageHeader header = ConstructHeader(
-                    BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE);
-                CharPayload128B payloadRaw;
-                const std::string& serviceNameToCopy = 
-                    this->GetThisMachineServiceData().hostname;
-                std::copy(serviceNameToCopy.begin(), serviceNameToCopy.end(), payloadRaw.data());
-                GoodbyeMsg goodbyeMsg = ConstructMessage(header, payloadRaw);
-                goodbyeMsg.header.dataLen = this->GetThisMachineServiceData().hostname.length();
-                this->GetConnectionManager().SendDataToEveryone(goodbyeMsg);
-
+                // using CharPayload128B = std::array<char, 128>;
+                // using GoodbyeMsg = BVTCPMessage<CharPayload128B>;
+                // // Send message that we are deregistering
+                // // TODO ...
+                // BVTCPMessageHeader header = ConstructHeader(
+                //     BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE);
+                // CharPayload128B payloadRaw;
+                // const std::string& serviceNameToCopy = 
+                //     this->GetThisMachineServiceData().hostname;
+                // std::copy(serviceNameToCopy.begin(), serviceNameToCopy.end(), payloadRaw.data());
+                // GoodbyeMsg goodbyeMsg = ConstructMessage(header, payloadRaw);
+                // goodbyeMsg.header.dataLen = this->GetThisMachineServiceData().hostname.length();
+                // this->GetConnectionManager().SendDataToEveryone(goodbyeMsg);
                 // send quit event/message
                 SendMessage(BVMessage(
                     BVEventType::BVEVENTTYPE_TERMINATE_ALL, nullptr));
@@ -112,18 +111,6 @@ void BVApp_ConsoleClient::Run(void)
                 // send blockhost event/message
                 break;
         }
-
-        // I don't know if this is right,
-        // but I think every implementaiton of a UI
-        // has to perform on it, only from the main thread.
-        // If this is the case, the App shouldn't be blocked at all,
-        // only tasks should be put on queue/something? and app only performs these tasks.
-
-        // For now - let's make echoless input...
-        // If write message input:
-        // 1.Print new console - don't redraw it untill on main screen
-        // 2.Choose a recipient - new screen with all hosts
-        // 3.Choose message - turn echo on.
     }
 }
 

@@ -12,6 +12,7 @@ LinkedList_str* LinkedList_str_Constructor(LinkedListElement_str* head_p)
     {
         ll_p->head_p = head_p;
     }
+    ll_p->didRegister = 0;
     return ll_p;
 }
 
@@ -88,6 +89,7 @@ void LinkedList_str_RemoveElement(LinkedList_str* ll_p,
 
 void LinkedList_str_ClearList(LinkedList_str* ll_p)
 {
+    ll_p->didRegister = 0;
     LinkedListElement_str* head_p = ll_p->head_p;
     if (head_p == NULL) return;
 

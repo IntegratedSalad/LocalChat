@@ -31,22 +31,19 @@ void C_ServiceBrowseReply(
     setbuf(stdout, NULL);
     if (errorCode == kDNSServiceErr_NoError)
     {
-        // We handle deregistration from the mDNS side.
-        if ( (flags & kDNSServiceFlagsAdd ) == 0x0 )
-        {
-            printf("Service %s.%s in %s has been deregistered\n", serviceName, regtype, replyDomain);
-
-
-
-            // TODO: ...
-
-
-            return;
-        }
-
-        printf("Found %s.%s in %s!\n", serviceName, regtype, replyDomain);
         if (context != NULL)
         {
+            LinkedList_str* ll_p = (LinkedList_str*)context;
+            // We handle deregistration from the mDNS side.
+            if ( (flags & kDNSServiceFlagsAdd ) == 0x0 )
+            {
+                printf("Service %s.%s in %s has been deregistered\n", serviceName, regtype, replyDomain);
+                ll_p->didRegister = 0;
+            } else
+            {
+                printf("Found %s.%s in %s!\n", serviceName, regtype, replyDomain);
+                ll_p->didRegister = 1;
+            }
             char buff[N_BYTES_SERVICE_STR_TOTAL];
             const size_t servLen = strlen(serviceName);
             const size_t regLen = strlen(regtype);
@@ -68,7 +65,6 @@ void C_ServiceBrowseReply(
                 memcpy(buff + N_BYTES_SERVNAME_MAX + N_BYTES_REGTYPE_MAX, replyDomain, replDmnLen);
             }
             buff[N_BYTES_SERVICE_STR_TOTAL-1] = '\0';
-            LinkedList_str* ll_p = (LinkedList_str*)context;
             LinkedListElement_str* lle_p = LinkedListElement_str_Constructor(buff, NULL);
             LinkedList_str_AddElement(ll_p, lle_p);
         }

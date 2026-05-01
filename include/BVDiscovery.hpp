@@ -86,6 +86,11 @@ protected:
         return ResolveService(bI);
     }
 
+    uint8_t GetDidServiceRegister(void)
+    {
+        return this->GetLinkedList_p()->didRegister;
+    }
+
 public:
     BVDiscovery(const BVServiceData _hostData) :
     hostData(_hostData)

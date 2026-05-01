@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 
 #define MAX_DATA_SIZE 256
 
@@ -16,6 +17,7 @@ typedef struct LinkedListElement_str
 typedef struct LinkedList_str
 {
     LinkedListElement_str* head_p;
+    uint8_t                didRegister;
     // tail_p
 } LinkedList_str;
 

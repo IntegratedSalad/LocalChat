@@ -106,10 +106,19 @@ void BVDiscovery_Bonjour::CreateConnectionContext(void)
         Browsing goes indefinitely, until the DNSServiceRef is passed to
         DNSServiceRefDeallocate.
     */
-    // We probably have to create an outer structure to fit
-    // isRemoved flag. 
     const BVServiceData hd = this->GetHostData();
     LogTrace("Discovery: Browsing for {}.{}", hd.regtype, hd.domain);
+    /* 
+     *  We probably have to create an outer structure to fit
+     *  isRemoved flag.
+     *  That would be the most non-invasive and coherent solution
+     *  to return information telling us that the browse callback
+     *  have been invoked because of service being either registered
+     *  or deregistered. However, I might actually take a shortcut here
+     *  and put a flag inside LinkedList_str struct.
+     *  This is nonsense, as it should not contain application
+     *  specific information. However, it will do for now.  
+    */ 
     DNSServiceErrorType error = DNSServiceBrowse(&this->dnsRef,
                                                 0,
                                                 0,
@@ -185,11 +194,24 @@ BVStatus BVDiscovery_Bonjour::ProcessDNSServiceBrowseResult(void)
      * valid."
      */
     // So service deregistration can be handled from the mDNS side...
-    LogTrace("Discovery, ProcessDNSServiceBrowseResult: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...");
-    SendMessage(BVMessage(
-                    BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
-                        std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+
+    if (GetDidServiceRegister())
+    {
+        LogTrace("Discovery: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...");
+        SendMessage(BVMessage(
+                        BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE, 
+                            std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+    } else
+    {
+        LogTrace("Discovery: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_DEREGISTERED_SERVICE to App...");
+        SendMessage(BVMessage(
+                BVEventType::BVEVENTTYPE_APP_DEREGISTERED_SERVICE, 
+                    std::make_unique<std::any>(std::make_any<BVServiceBrowseInstanceList>(browseInstanceList))));
+    }
     LinkedList_str_ClearList(this->GetLinkedList_p());
+    // What will happen if multiple 
+    // services register? Will they be added to this list, or
+    // this will be called multiple times?
     AwaitFDForProcessingBrowseResult();
     return BVStatus::BVSTATUS_OK;
 }
