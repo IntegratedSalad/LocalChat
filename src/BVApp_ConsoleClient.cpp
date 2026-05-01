@@ -332,6 +332,7 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
             {
                 if (lElem == serviceV[0])
                 {
+                    serviceV.clear();
                     nodesM.erase(lElem.serviceName);
                     LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
                     this->GetConnectionManager().RemoveSession(lElem.serviceName);
