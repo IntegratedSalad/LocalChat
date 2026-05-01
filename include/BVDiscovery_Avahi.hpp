@@ -81,7 +81,7 @@ public:
     
     const char* OnThisMachineHostNameRequest(void)
     {
-        return this->GetHostData().hostname.c_str();
+        return this->GetHostName().c_str();
     }
 
     AvahiSimplePoll* GetSimplePoll(void)

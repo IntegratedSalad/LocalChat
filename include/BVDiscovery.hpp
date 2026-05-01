@@ -144,6 +144,11 @@ public:
         return this->hostData;
     }
 
+    std::string& GetHostName(void) const
+    {
+        return this->hostData.hostname;
+    }
+
     // without '&' (reference),
     // the function would return an automatically allocated
     // copy of the pointer, of which the address would get deallocated when
