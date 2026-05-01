@@ -206,42 +206,47 @@ public:
         // this->appInMailBox_p
     }
 
-    // Would be better to assign an ID to a session
-    // And then remove session by ID
-    BVStatus RemoveSession(std::shared_ptr<BVTCPSession> sp)
-    {
+    // // Would be better to assign an ID to a session
+    // // And then remove session by ID
+    // BVStatus RemoveSession(std::shared_ptr<BVTCPSession> sp)
+    // {
 
-        return BVStatus::BVSTATUS_OK;
-    }
+    //     return BVStatus::BVSTATUS_OK;
+    // }
 
-    BVStatus RemoveSession(const SessionID& sid)
-    {
-        std::lock_guard<std::mutex> l(session_m_mutex);
-        std::size_t n_erased = sessions_m.erase(sid);
-        if (n_erased == 0) return BVStatus::BVSTATUS_NOK;
-        LogTrace("BVTCPConnectionManager: Removed session with SessionID: {}", sid);
-        return BVStatus::BVSTATUS_OK;
-    }
+    // BVStatus RemoveSession(const SessionID& sid)
+    // {
+    //     std::lock_guard<std::mutex> l(session_m_mutex);
+    //     std::size_t n_erased = sessions_m.erase(sid);
+    //     if (n_erased == 0) return BVStatus::BVSTATUS_NOK;
+    //     LogTrace("BVTCPConnectionManager: Removed session with SessionID: {}", sid);
+    //     return BVStatus::BVSTATUS_OK;
+    // }
 
     BVStatus RemoveSession(const std::string& _serviceName)
     {
-        try
+        std::lock_guard<std::mutex> l(session_m_mutex);
+        auto sidIt = service_sessionid_m.find(_serviceName);
+        if (sidIt == service_sessionid_m.end())
         {
-            const SessionID id = service_sessionid_m.at(_serviceName);
-            auto it = sessions_m.find(id);
-            if (it != sessions_m.end())
-            {
-                sessions_m.erase(it);
-            } else if (it == sessions_m.end())
-            {
-                it = sessions_m.begin();
-                sessions_m.erase(it);
-            }
-        } catch(const std::out_of_range& ex)
-        {
-            LogError("BVTCPConnectionManager: No session with: {}", _serviceName);
+            LogError("BVTCPConnectionManager: No session mapping for {}", _serviceName);
             return BVStatus::BVSTATUS_NOK;
         }
+
+        const SessionID id = sidIt->second;
+        auto sessIt = sessions_m.find(id);
+        if (sessIt == sessions_m.end())
+        {
+            LogError("BVTCPConnectionManager: Stale mapping for {} -> session {}",
+                    _serviceName, id);
+            service_sessionid_m.erase(sidIt);
+            return BVStatus::BVSTATUS_NOK;
+        }
+        sessions_m.erase(sessIt);
+        service_sessionid_m.erase(sidIt);
+        LogTrace("BVTCPConnectionManager: Removed session {} for {}",
+                id, _serviceName);
+
         return BVStatus::BVSTATUS_OK;
     }
 
@@ -276,6 +281,43 @@ public:
         }
         LogTrace("ConnectHandler: Successfuly connected to {}: {}:{}", 
             sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), sessionData_p->nodeData.ep.port());
+    }
+
+    void Accept(void)
+    {
+        std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
+        std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID, thisMachineHostData.serviceName);
+        sessionData_p->appCommChannel_p = this->appInMailBox_p;
+
+        // we pass the socket of this session
+        this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
+            [sessionData_p, this](const boost::system::error_code& error){
+                if (!error)
+                {
+                    // Wait - is there already a connection session with this peer/node?
+                    // Create a connection but not add it yet to the map.
+                    std::shared_ptr<BVTCPSession> session_p = 
+                        std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
+                    session_p->SetLogger(GetLogger());
+                    session_p->SetManager_p(this);
+
+                    // session_p now identifies socket with that socket.
+                    this->LogTrace("Accept successful. Requesting identification from the peer.");
+                    // session_p->
+                    // Construct message
+                    BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO);
+                    BVTCPMessage<std::array<char, 128>> helloMsg = ConstructMessage(header, std::array<char,128>()); // empty payload
+                    session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
+                    session_p->WriteMessageFrame(helloMsg);
+                    session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_INGOING);
+                    session_p->RequestReadingFrames();
+                    // TODO: Await async connections again!!!!
+                    Accept();
+                } else
+                {
+                    this->LogError("Accept failed.");
+                }
+        });
     }
 
     void HandleSessionIdentification(const std::string& serviceName, std::shared_ptr<BVTCPSession> caller)

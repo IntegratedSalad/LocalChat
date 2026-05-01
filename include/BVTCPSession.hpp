@@ -220,7 +220,7 @@ public:
     void OnReceiveHelloBackFrame(void);
     // Returns true if we have to return early.
     bool OnReceiveStandardFrame(void);
-    void OnReceiveNodeGoodbyeFrame(void);
+    // void OnReceiveNodeGoodbyeFrame(void);
     // Upon receiving chat message,
     // call BVTCPConnectionManager function
     // or, construct BVMessage and directly put it in appCommChannel_p.

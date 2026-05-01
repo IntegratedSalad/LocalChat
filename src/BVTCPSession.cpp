@@ -114,27 +114,27 @@ void BVTCPSession::OnReceiveHelloBackFrame()
 
 // TODO: This is probably not needed,
 // as deregistration can be handled from the mDNS side.
-void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
-{
-    BVTCPMessageHeader header = GetMsgHeader();
-    const char* payloadPtr = GetPayloadPtr();
-    // std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
-    std::string payloadStr("GUUUUUUUUWNO");
+// void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
+// {
+//     BVTCPMessageHeader header = GetMsgHeader();
+//     const char* payloadPtr = GetPayloadPtr();
+//     // std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
+//     std::string payloadStr("GUUUUUUUUWNO");
 
-    LogTrace("Session [{}]: Received _NODESESSION_GOODBYE from {}", 
-        this->GetSessionData()->sessionID, this->GetSessionData()->nodeData.serviceName);
+//     LogTrace("Session [{}]: Received _NODESESSION_GOODBYE from {}", 
+//         this->GetSessionData()->sessionID, this->GetSessionData()->nodeData.serviceName);
 
-    // Maybe we have the serviceName here in nodeData here?
-    // assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ??? Yes!
-    // this will be the endpoint's serviceName? Yes! TODO: We don't need to send serviceName!
+//     // Maybe we have the serviceName here in nodeData here?
+//     // assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ??? Yes!
+//     // this will be the endpoint's serviceName? Yes! TODO: We don't need to send serviceName!
 
-    // manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
-    //     std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
-    manager_p->RemoveSession(this->sessionData_p->sessionID);
-    // Put message in app mailbox so it can react
-    // BVTCPSession remove it from the map
-    // Close this session
-}
+//     // manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
+//     //     std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
+//     manager_p->RemoveSession(this->sessionData_p->sessionID);
+//     // Put message in app mailbox so it can react
+//     // BVTCPSession remove it from the map
+//     // Close this session
+// }
 
 bool BVTCPSession::OnReceiveStandardFrame(void)
 {
