@@ -137,7 +137,7 @@ void browse_callback(
             fprintf(stderr, "\n");
             fprintf(stderr, name);
             fprintf(stderr, "\n");
-            if (strncmp(on_this_machine_host_name_request(userdata), name, N_BYTES_SERVNAME_MAX) == 0)
+            if (strncmp(on_this_machine_host_name_request(userdata), name, strlen(name)) == 0)
             {
                 break;
             }

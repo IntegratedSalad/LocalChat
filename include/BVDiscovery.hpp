@@ -144,7 +144,7 @@ public:
         return this->hostData;
     }
 
-    std::string& GetHostName(void) const
+    const std::string& GetHostName(void) const
     {
         return this->hostData.hostname;
     }

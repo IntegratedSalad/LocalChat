@@ -190,15 +190,16 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
             if ((std::find(this->serviceV.begin(), this->serviceV.end(), lElem) == this->serviceV.end()))
             {
                 const BVServiceData& thisMachineServiceData = GetThisMachineServiceData();
-                // LogDebug(thisMachineServiceData.domain.c_str());
-                // LogDebug(thisMachineServiceData.regtype.c_str());
-                // LogDebug(thisMachineServiceData.hostname.c_str());
-                // LogDebug(lElem.replyDomain.c_str());
-                // LogDebug(lElem.regType.c_str());
-                // LogDebug(lElem.serviceName.c_str());
-                if (lElem.regType == thisMachineServiceData.regtype &&
-                    lElem.serviceName == thisMachineServiceData.hostname &&
-                    lElem.replyDomain == thisMachineServiceData.domain)
+                LogDebug("This machine: domain: {}", thisMachineServiceData.domain.c_str());
+                LogDebug("This machine: regtype: {}", thisMachineServiceData.regtype.c_str());
+                LogDebug("This machine: hostname: {}", thisMachineServiceData.hostname.c_str());
+                LogDebug("Found domain: {}", lElem.replyDomain.c_str());
+                LogDebug("Found regtype: {}", lElem.regType.c_str());
+                LogDebug("Found hostname/servicename: {}", lElem.serviceName.c_str());
+                // if (lElem.regType == thisMachineServiceData.regtype &&
+                //     lElem.serviceName == thisMachineServiceData.hostname &&
+                //     lElem.replyDomain == thisMachineServiceData.domain)
+                if (lElem.serviceName == thisMachineServiceData.hostname)
                 {
                     continue; // do not resolve service on the same machine
                 }
