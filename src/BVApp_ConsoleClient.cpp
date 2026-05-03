@@ -328,13 +328,13 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
             } else
             {
                 LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
-                LogInfo("App, HandleServiceDeregistration: Currently: {} Services in serviceV:", serviceV.size());
-                int idx = 1;
-                for (const auto& s : serviceV)
-                {
-                    LogInfo("{}: {}", idx, s.serviceName);
-                    idx++;
-                }
+            }
+            LogInfo("App, HandleServiceDeregistration: Currently: {} Services in serviceV:", serviceV.size());
+            int idx = 1;
+            for (const auto& s : serviceV)
+            {
+                LogInfo("{}: {}", idx, s.serviceName);
+                idx++;
             }
         }
     }
