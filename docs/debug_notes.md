@@ -71,3 +71,7 @@ where
 
 On macOS, the same, also:
 thread backtrace all
+
+## Reading trace logs
+For acceptions:
+To check that sessions have been established, search for "_HELLOBACK". It will contain service name as a payload. Next, will be trace from BVTCPConnectionManager "Established connection with node: ..." and current sessions enumerated.
