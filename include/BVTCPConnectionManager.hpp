@@ -286,10 +286,12 @@ public:
 
     void Accept(void)
     {
-        std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-        std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID, thisMachineHostData.serviceName);
-        sessionData_p->appCommChannel_p = this->appInMailBox_p;
-
+        std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p;
+        {
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            sessionData_p = std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID, thisMachineHostData.serviceName);
+            sessionData_p->appCommChannel_p = this->appInMailBox_p;
+        }
         // we pass the socket of this session
         this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
             [sessionData_p, this](const boost::system::error_code& error){

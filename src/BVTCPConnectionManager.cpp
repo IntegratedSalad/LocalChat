@@ -50,8 +50,12 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         LogTrace("Session for {} already present (probably we accepted it).", nodeData.serviceName);
         return BVStatus::BVSTATUS_OK;
     }
-    std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p =
-         std::make_shared<BVTCPNodeConnectionSessionData>(nodeData, ioContext, currentSessionID, thisMachineHostData.serviceName);
+    std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p;
+    {
+        std::lock_guard<std::mutex> l(session_m_mutex);
+        sessionData_p = std::make_shared<BVTCPNodeConnectionSessionData>(
+            nodeData, ioContext, currentSessionID, thisMachineHostData.serviceName);
+    }
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     BVStatus registerStatus = 
         StartCommunicationSessionWithNode(sessionData_p->nodeData.id, sessionData_p->inMailbox_p);
