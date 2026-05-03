@@ -278,7 +278,6 @@ public:
             session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
             sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
             service_sessionid_m[sessionData_p->nodeData.serviceName] = session_p->GetSessionID();
-            currentSessionID+=1;
         }
         LogTrace("ConnectHandler: Successfuly connected to {}: {}:{}", 
             sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), sessionData_p->nodeData.ep.port());
@@ -290,6 +289,7 @@ public:
         {
             std::lock_guard<std::mutex> l(session_m_mutex);
             sessionData_p = std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID, thisMachineHostData.serviceName);
+            currentSessionID+=1;
             sessionData_p->appCommChannel_p = this->appInMailBox_p;
         }
         // we pass the socket of this session
@@ -341,7 +341,6 @@ public:
                 caller->GetSessionData()->nodeData.address = caller->GetSessionData()->sock->remote_endpoint().address();
                 caller->GetSessionData()->nodeData.ep = caller->GetSessionData()->sock->remote_endpoint();
                 service_sessionid_m[serviceName] = caller->GetSessionID();
-                this->currentSessionID+=1;
             }
             LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}", 
                 caller->GetSessionData()->nodeData.serviceName, caller->GetSessionData()->nodeData.address.to_string());

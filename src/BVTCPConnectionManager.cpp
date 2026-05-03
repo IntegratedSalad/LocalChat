@@ -55,6 +55,7 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         std::lock_guard<std::mutex> l(session_m_mutex);
         sessionData_p = std::make_shared<BVTCPNodeConnectionSessionData>(
             nodeData, ioContext, currentSessionID, thisMachineHostData.serviceName);
+        currentSessionID+=1;
     }
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
     BVStatus registerStatus = 

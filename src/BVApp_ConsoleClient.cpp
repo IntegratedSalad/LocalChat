@@ -307,33 +307,33 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     {
-        // TODO: debug this...
         std::lock_guard<std::mutex> l(serviceVectorMutex);
         for (auto& lElem : newServicesList)
         {
-            if (serviceV.size() != 1)
+            const auto oldSize = serviceV.size();
+            serviceV.erase(
+                std::remove_if(serviceV.begin(),
+                               serviceV.end(),
+                               [&](const BVServiceBrowseInstance& s)
+                               {
+                                    return s.serviceName == lElem.serviceName;
+                               }),
+                               serviceV.end()
+            );
+            if (serviceV.size() < oldSize)
             {
-                if ( serviceV.erase(std::remove(serviceV.begin(), serviceV.end(), lElem), serviceV.end()) !=
-                    serviceV.end())
-                {
-                    nodesM.erase(lElem.serviceName);
-                    LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
-                    this->GetConnectionManager().RemoveSession(lElem.serviceName);
-                } else
-                {
-                    LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
-                }
+                nodesM.erase(lElem.serviceName);
+                LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
+                this->GetConnectionManager().RemoveSession(lElem.serviceName);
             } else
             {
-                if (lElem == serviceV[0])
+                LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
+                LogInfo("App, HandleServiceDeregistration: Currently: {} Services in serviceV:", serviceV.size());
+                int idx = 1;
+                for (const auto& s : serviceV)
                 {
-                    serviceV.clear();
-                    nodesM.erase(lElem.serviceName);
-                    LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
-                    this->GetConnectionManager().RemoveSession(lElem.serviceName);
-                } else
-                {
-                    LogWarn("App, HandleServiceDeregistration: {} not found in serviceV!", lElem.serviceName);
+                    LogInfo("{}: {}", idx, s.serviceName);
+                    idx++;
                 }
             }
         }
