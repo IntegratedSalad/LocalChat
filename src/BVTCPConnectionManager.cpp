@@ -68,7 +68,8 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
 
     boost::asio::async_connect(*sessionData_p->sock, sessionData_p->nodeData.results, 
         std::bind(&BVTCPConnectionManager::ConnectHandler, this, std::placeholders::_1, std::placeholders::_2, sessionData_p));
-    LogTrace("App: Trying to connect asynchronously...");
+    LogTrace("App: Trying to connect asynchronously with service: {}. Trying to create Session ID: {}", 
+        sessionData_p->nodeData.serviceName, sessionData_p->sessionID);
     /*
         In P2P connection, we do not create two sessions - one for incoming traffic and one for outgoing.
         Instead, we try to initiate/try to connect: if the peer (service) has already connected to US (we accepted),

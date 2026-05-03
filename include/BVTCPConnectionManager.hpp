@@ -278,9 +278,16 @@ public:
             session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
             sessions_m[session_p->GetSessionData()->nodeData.id] = session_p;
             service_sessionid_m[sessionData_p->nodeData.serviceName] = session_p->GetSessionID();
+            LogTrace("ConnectHandler: Successfuly connected to {}: {}:{} SessionID: {}", 
+                sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), 
+                    sessionData_p->nodeData.ep.port(), sessionData_p->sessionID);
+            LogTrace("ConnectHandler: CurrentSessions:");
+            for (const auto& [k,v] : sessions_m)
+            {
+                LogTrace("ConnectHandler: ServiceName: {} Session ID: {}",
+                   v->GetSessionData()->nodeData.serviceName, v->GetSessionID());
+            }
         }
-        LogTrace("ConnectHandler: Successfuly connected to {}: {}:{}", 
-            sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), sessionData_p->nodeData.ep.port());
     }
 
     void Accept(void)
