@@ -100,6 +100,8 @@ void browse_callback(
             setbuf(stdout, NULL);
             printf("Found %s.%s in %s!\n", name, type, domain);
 
+            printf("IF: %d PROTO: %d\n", interface, protocol);
+
             // TODO: put this in a separate function
             char buff[N_BYTES_SERVICE_STR_TOTAL];
             const size_t servLen = strlen(name);

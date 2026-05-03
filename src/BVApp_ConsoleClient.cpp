@@ -205,6 +205,7 @@ BVStatus BVApp_ConsoleClient::HandlePublishedServices(std::unique_ptr<std::any> 
                 }
                 this->serviceV.push_back(lElem);
                 toResolve.push_back(lElem);
+                LogTrace("App, HandlePublishedServices: Added {} to serviceV", lElem.serviceName);
                 // Send request to resolve
                 // Should we exchange messages here or just resolve 
                 // in Discovery after browsing there?
