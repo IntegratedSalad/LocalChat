@@ -132,6 +132,21 @@ public:
         return status;
     }
 
+    void PrintSessions(void)
+    {
+        {
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            if (this->sessions_m.size() == 0) std::cout << "None." << std::endl;
+            for (const auto& [k,v] : this->sessions_m)
+            {
+                std::cout << "Session[" <<  v->GetSessionID() 
+                        << "]" << " between " << v->GetSessionData()->nodeData.serviceName 
+                        << " Node ID: " << v->GetSessionData()->nodeData.id
+                        << std::endl;
+            }
+        }
+    }
+
     bool IsSessionAlreadyPresent(const BVNode& nodeData)
     {
         bool found = false;

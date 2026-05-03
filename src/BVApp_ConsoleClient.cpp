@@ -134,7 +134,10 @@ void BVApp_ConsoleClient::PrintAll(void)
     std::cout << "-----------------------------" << std::endl;
     std::cout << "Available services:" << std::endl;
     this->PrintServices();
-    // statuses like is discovery paused...
+    // TODO: statuses like is discovery paused...
+    std::cout << "-----------------------------" << std::endl;
+    std::cout << "Sessions established:" << std::endl;
+    this->GetConnectionManager().PrintSessions();
     std::cout << "=============================" << std::endl;
     std::cout << std::flush;
 }
