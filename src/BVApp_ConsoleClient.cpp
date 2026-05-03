@@ -125,7 +125,7 @@ inline void BVApp_ConsoleClient::ClearScreen(void)
 void BVApp_ConsoleClient::PrintAll(void)
 {
     ClearScreen();
-    std::cout << "LocalChat console client v0.2.2" << std::endl;
+    std::cout << "LocalChat console client v0.4.0" << std::endl;
     std::cout << "Re(D)raw" << std::endl;
     std::cout << "Send (M)essage" << std::endl;
     std::cout << "(P)ause discovery" << std::endl;
@@ -281,8 +281,6 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
         LogError("Couldn't Initiate Session with a node! {}:{} [{}]", node.hostname, node.port, node.address.to_string());
     }
 
-    // When I'm launching the program
-
     // Very important, as we manually allocate DNSResolutionResult in C_ResolveReply!!!
     ::free(res);
     return status;
@@ -291,10 +289,6 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
 BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::any> dp)
 {
     LogTrace("BVApp_ConsoleClient: HandleServiceDeregistration called");
-
-    // Remove from vector.
-    // Remove from nodes.
-    // Notify BVTCPConnectionManager
 
     using BVServiceBrowseInstanceList = std::list<BVServiceBrowseInstance>;
     if (dp == nullptr)
