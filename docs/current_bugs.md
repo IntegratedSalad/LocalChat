@@ -206,4 +206,232 @@ When connecting, sometimes the same ID is assigned to a session:
 Here fedora and proboopens have SessionID: 3
 
 I'm reassigning a value, which could be incremented in the next connect/accept attempt..
+Not assigning the value again in ConnectHandler seemed to fixed the issue.
+[SOLVED]
+
+[BUG3]
+Couldn't connect to peer after 5 retrials.
+[LOGS]
+[02:03:57 +02:00] [logger main_logger] [trace] [thread 5191] Logger set up.
+[02:03:57 +02:00] [logger main_logger] [trace] [thread 5191] BVTCPConnectionManager: Accepting connections on :::50001... for service: fedora
+[02:03:58 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:03:58 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:03:58 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] Accept successful. Requesting identification from the peer.
+[02:04:01 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: data size: 128
+[02:04:01 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: dataLen: 128
+[02:04:01 +02:00] [logger main_logger] [debug] [thread 5196] Session [0]: Writebuffer: Lð\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] Session [0]: Written 138 bytes
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] Session [0]: Written all bytes
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] Session [0]: Read 138 bytes
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] Session [0]: Received _HELLOBACK with payload='ProBoopens.local'. Calling Manager handler.
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Established connection with node: ProBoopens.local Address: fe80::8ca:3732:f751:18e8%enp0s1
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Current sessions:
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] Session 0 : ID: 0, service: ProBoopens.local
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5196] Session [0]: Read all bytes 138
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App, HandlePublishedServices: Added ProBoopens.local to serviceV
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: Sending request to Discovery to resolve ProBoopens.local
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved ProBoopens.local to hosttarget: ProBoopens.local
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host ProBoopens.local on port: 50001
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved ProBoopens.local to 192.168.0.16
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] Session for ProBoopens.local already present (probably we accepted it).
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved ProBoopens.local to hosttarget: ProBoopens.local
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host ProBoopens.local on port: 50001
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved ProBoopens.local to 192.168.0.16
+[02:04:01 +02:00] [logger main_logger] [trace] [thread 5195] Session for ProBoopens.local already present (probably we accepted it).
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Accept successful. Requesting identification from the peer.
+[02:04:05 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: data size: 128
+[02:04:05 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: dataLen: 128
+[02:04:05 +02:00] [logger main_logger] [debug] [thread 5196] Session [1]: Writebuffer: Lð\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Session [1]: Written 138 bytes
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Session [1]: Written all bytes
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Session [1]: Read 138 bytes
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Session [1]: Received _HELLOBACK with payload='BupsioBup.local'. Calling Manager handler.
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Established connection with node: BupsioBup.local Address: fe80::1425:6133:ce74:1ea7%enp0s1
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Current sessions:
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Session 0 : ID: 0, service: ProBoopens.local
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Session 1 : ID: 1, service: BupsioBup.local
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5196] Session [1]: Read all bytes 138
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App, HandlePublishedServices: Added BupsioBup.local to serviceV
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: Sending request to Discovery to resolve BupsioBup.local
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:05 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:25 +02:00] [logger main_logger] [error] [thread 5196] Session [1]: Error in ReadMessageFrame callback: 2, End of file
+[02:04:25 +02:00] [logger main_logger] [debug] [thread 5196] Read buffer:  Read buffer is a nullpointer: false Bytes read: 0 Bytes transferred: 0 Address in nodeData: fe80::1425:6133:ce74:1ea7%enp0s1 Endpoint address: fe80::1425:6133:ce74:1ea7%enp0s1 State: 1
+[02:04:26 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:26 +02:00] [logger main_logger] [trace] [thread 5195] App, HandleServiceDeregistration: removed BupsioBup.local.
+[02:04:26 +02:00] [logger main_logger] [trace] [thread 5195] BVTCPConnectionManager: Removed session 1 for BupsioBup.local
+[02:04:26 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:26 +02:00] [logger main_logger] [info] [thread 5195] 1: ProBoopens.local
+[02:04:28 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:28 +02:00] [logger main_logger] [warning] [thread 5195] App, HandleServiceDeregistration: BupsioBup.local not found in serviceV!
+[02:04:28 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:28 +02:00] [logger main_logger] [info] [thread 5195] 1: ProBoopens.local
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Accept successful. Requesting identification from the peer.
+[02:04:33 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: data size: 128
+[02:04:33 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: dataLen: 128
+[02:04:33 +02:00] [logger main_logger] [debug] [thread 5196] Session [2]: Writebuffer: Mð\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Session [2]: Written 138 bytes
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Session [2]: Written all bytes
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Session [2]: Read 138 bytes
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Session [2]: Received _HELLOBACK with payload='BupsioBup.local'. Calling Manager handler.
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Established connection with node: BupsioBup.local Address: fe80::1425:6133:ce74:1ea7%enp0s1
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Current sessions:
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Session 0 : ID: 0, service: ProBoopens.local
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Session 1 : ID: 2, service: BupsioBup.local
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5196] Session [2]: Read all bytes 138
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App, HandlePublishedServices: Added BupsioBup.local to serviceV
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: Sending request to Discovery to resolve BupsioBup.local
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:33 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:35 +02:00] [logger main_logger] [error] [thread 5196] Session [2]: Error in ReadMessageFrame callback: 2, End of file
+[02:04:35 +02:00] [logger main_logger] [debug] [thread 5196] Read buffer:  Read buffer is a nullpointer: false Bytes read: 0 Bytes transferred: 0 Address in nodeData: fe80::1425:6133:ce74:1ea7%enp0s1 Endpoint address: fe80::1425:6133:ce74:1ea7%enp0s1 State: 1
+[02:04:36 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:36 +02:00] [logger main_logger] [trace] [thread 5195] App, HandleServiceDeregistration: removed BupsioBup.local.
+[02:04:36 +02:00] [logger main_logger] [trace] [thread 5195] BVTCPConnectionManager: Removed session 2 for BupsioBup.local
+[02:04:36 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:36 +02:00] [logger main_logger] [info] [thread 5195] 1: ProBoopens.local
+[02:04:36 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:36 +02:00] [logger main_logger] [warning] [thread 5195] App, HandleServiceDeregistration: BupsioBup.local not found in serviceV!
+[02:04:36 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:36 +02:00] [logger main_logger] [info] [thread 5195] 1: ProBoopens.local
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Accept successful. Requesting identification from the peer.
+[02:04:37 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: data size: 128
+[02:04:37 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: dataLen: 128
+[02:04:37 +02:00] [logger main_logger] [debug] [thread 5196] Session [3]: Writebuffer: 4Mð\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Session [3]: Written 138 bytes
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Session [3]: Written all bytes
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Session [3]: Read 138 bytes
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Session [3]: Received _HELLOBACK with payload='BupsioBup.local'. Calling Manager handler.
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Established connection with node: BupsioBup.local Address: fe80::1425:6133:ce74:1ea7%enp0s1
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Current sessions:
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Session 0 : ID: 0, service: ProBoopens.local
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Session 1 : ID: 3, service: BupsioBup.local
+[02:04:37 +02:00] [logger main_logger] [trace] [thread 5196] Session [3]: Read all bytes 138
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App, HandlePublishedServices: Added BupsioBup.local to serviceV
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: Sending request to Discovery to resolve BupsioBup.local
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:38 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:41 +02:00] [logger main_logger] [error] [thread 5196] Session [3]: Error in ReadMessageFrame callback: 2, End of file
+[02:04:41 +02:00] [logger main_logger] [debug] [thread 5196] Read buffer:  Read buffer is a nullpointer: false Bytes read: 0 Bytes transferred: 0 Address in nodeData: fe80::1425:6133:ce74:1ea7%enp0s1 Endpoint address: fe80::1425:6133:ce74:1ea7%enp0s1 State: 1
+[02:04:42 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:42 +02:00] [logger main_logger] [trace] [thread 5195] App, HandleServiceDeregistration: removed BupsioBup.local.
+[02:04:42 +02:00] [logger main_logger] [trace] [thread 5195] BVTCPConnectionManager: Removed session 3 for BupsioBup.local
+[02:04:42 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:42 +02:00] [logger main_logger] [info] [thread 5195] 1: ProBoopens.local
+[02:04:42 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:42 +02:00] [logger main_logger] [warning] [thread 5195] App, HandleServiceDeregistration: BupsioBup.local not found in serviceV!
+[02:04:42 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:42 +02:00] [logger main_logger] [info] [thread 5195] 1: ProBoopens.local
+[02:04:43 +02:00] [logger main_logger] [trace] [thread 5196] Accept successful. Requesting identification from the peer.
+[02:04:43 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: data size: 128
+[02:04:43 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: dataLen: 128
+[02:04:43 +02:00] [logger main_logger] [debug] [thread 5196] Session [4]: Writebuffer: ÷0Mð\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00
+[02:04:43 +02:00] [logger main_logger] [trace] [thread 5196] Session [4]: Written 138 bytes
+[02:04:43 +02:00] [logger main_logger] [trace] [thread 5196] Session [4]: Written all bytes
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5196] Session [4]: Read 138 bytes
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5196] Session [4]: Received _HELLOBACK with payload='BupsioBup.local'. Calling Manager handler.
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Established connection with node: BupsioBup.local Address: fe80::1425:6133:ce74:1ea7%enp0s1
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Current sessions:
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5196] Session 0 : ID: 0, service: ProBoopens.local
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5196] Session 1 : ID: 4, service: BupsioBup.local
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5196] Session [4]: Read all bytes 138
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App, HandlePublishedServices: Added BupsioBup.local to serviceV
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: Sending request to Discovery to resolve BupsioBup.local
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved BupsioBup.local to hosttarget: BupsioBup.local
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host BupsioBup.local on port: 50001
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] Successfuly resolved BupsioBup.local to 192.168.0.14
+[02:04:44 +02:00] [logger main_logger] [trace] [thread 5195] Session for BupsioBup.local already present (probably we accepted it).
+[02:04:45 +02:00] [logger main_logger] [error] [thread 5196] Session [0]: Error in ReadMessageFrame callback: 2, End of file
+[02:04:45 +02:00] [logger main_logger] [debug] [thread 5196] Read buffer:  Read buffer is a nullpointer: false Bytes read: 0 Bytes transferred: 0 Address in nodeData: fe80::8ca:3732:f751:18e8%enp0s1 Endpoint address: fe80::8ca:3732:f751:18e8%enp0s1 State: 1
+[02:04:47 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:47 +02:00] [logger main_logger] [trace] [thread 5195] App, HandleServiceDeregistration: removed ProBoopens.local.
+[02:04:47 +02:00] [logger main_logger] [trace] [thread 5195] BVTCPConnectionManager: Removed session 0 for ProBoopens.local
+[02:04:47 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:47 +02:00] [logger main_logger] [info] [thread 5195] 1: BupsioBup.local
+[02:04:47 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient: HandleServiceDeregistration called
+[02:04:47 +02:00] [logger main_logger] [warning] [thread 5195] App, HandleServiceDeregistration: ProBoopens.local not found in serviceV!
+[02:04:47 +02:00] [logger main_logger] [info] [thread 5195] App, HandleServiceDeregistration: Currently: 1 Services in serviceV:
+[02:04:47 +02:00] [logger main_logger] [info] [thread 5195] 1: BupsioBup.local
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Accept successful. Requesting identification from the peer.
+[02:04:49 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: data size: 128
+[02:04:49 +02:00] [logger main_logger] [debug] [thread 5196] WriteMessageFrame: dataLen: 128
+[02:04:49 +02:00] [logger main_logger] [debug] [thread 5196] Session [5]: Writebuffer: ðDMð\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00\00
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Session [5]: Written 138 bytes
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Session [5]: Written all bytes
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Session [5]: Read 138 bytes
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Session [5]: Received _HELLOBACK with payload='ProBoopens.local'. Calling Manager handler.
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Established connection with node: ProBoopens.local Address: fe80::8ca:3732:f751:18e8%enp0s1
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] BVTCPConnectionManager: Current sessions:
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Session 0 : ID: 4, service: BupsioBup.local
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Session 1 : ID: 5, service: ProBoopens.local
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5196] Session [5]: Read all bytes 138
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] App, HandlePublishedServices: Added ProBoopens.local to serviceV
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] App: Sending request to Discovery to resolve ProBoopens.local
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] App: HandlePublishedServices is called.
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] App: HandleResolvedServices ENTER
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] App: Resolved ProBoopens.local to hosttarget: ProBoopens.localalchathost._tcp
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] App: on port 50001
+[02:04:49 +02:00] [logger main_logger] [trace] [thread 5195] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host ProBoopens.localalchathost._tcp on port: 50001
+__[02:04:49 +02:00] [logger main_logger] [warning] [thread 5195] App: Resolve attempt failed... Retrying...__
+[02:04:49 +02:00] [logger main_logger] [warning] [thread 5195] App: Resolve attempt failed... Retrying...
+[02:04:49 +02:00] [logger main_logger] [warning] [thread 5195] App: Resolve attempt failed... Retrying...
+[02:04:49 +02:00] [logger main_logger] [warning] [thread 5195] App: Resolve attempt failed... Retrying...
+__[02:04:50 +02:00] [logger main_logger] [warning] [thread 5195] App: Resolve attempt failed... Retrying...__
+__[02:04:50 +02:00] [logger main_logger] [error] [thread 5195] App: Error while resolving to... asio.netdb:1__
+__[02:04:50 +02:00] [logger main_logger] [error] [thread 5195] App: Error while resolving info Host not found (authoritative) asio.netdb__
+Maybe increase retrial attempts?
 [UNSOLVED]
