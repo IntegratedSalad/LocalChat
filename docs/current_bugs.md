@@ -130,7 +130,7 @@ It seems that linux discovery and tcp have some issues between themselves.
 [23:35:04 +02:00] [logger main_logger] [info] [thread 8422] 1: ProBoopens.local
 [23:35:06 +02:00] [logger main_logger] [trace] [thread 8418] App: quitting. Sent TERMINATE_ALL message and BVEVENTTYPE_APP_SERVICE_DEREGISTERED to everyone
 [23:35:06 +02:00] [logger main_logger] [trace] [thread 8422] App: Shutting down...
-[UNSOLVED]
+[SOLVED]
 
 [BUG2]
 VM + one mac + second mac = sessions are not established correctly.
@@ -434,4 +434,30 @@ __[02:04:50 +02:00] [logger main_logger] [warning] [thread 5195] App: Resolve at
 __[02:04:50 +02:00] [logger main_logger] [error] [thread 5195] App: Error while resolving to... asio.netdb:1__
 __[02:04:50 +02:00] [logger main_logger] [error] [thread 5195] App: Error while resolving info Host not found (authoritative) asio.netdb__
 Maybe increase retrial attempts?
+[UNSOLVED]
+
+[BUG4]
+Between fedoras (one VM and one physical) there seems to not be a way to connect between each other.
+One idea: try to connect 2 VMs
+Remember that resolution happens on multiple interfaces and protocols. It might be the issue with it
+[LOGS]
+[...]
+[03:02:17 +02:00] [logger main_logger] [trace] [thread 6120] App: HandlePublishedServices is called.
+[03:02:17 +02:00] [logger main_logger] [trace] [thread 6120] App, HandlePublishedServices: Added fedora-thinkpad to serviceV
+[03:02:17 +02:00] [logger main_logger] [trace] [thread 6120] App: Sending request to Discovery to resolve fedora-thinkpad
+[03:02:17 +02:00] [logger main_logger] [trace] [thread 6120] App: HandlePublishedServices is called.
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: HandleResolvedServices ENTER
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: Resolved fedora-thinkpad to hosttarget: fedora-thinkpad.local
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: on port 50001
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host fedora-thinkpad.local on port: 50001
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] Successfuly resolved fedora-thinkpad to 192.168.0.74
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: Trying to connect asynchronously with service: fedora-thinkpad. Trying to create Session ID: 3
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: HandleResolvedServices ENTER
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: Resolved fedora-thinkpad to hosttarget: fedora-thinkpad.local
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: on port 50001
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host fedora-thinkpad.local on port: 50001
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] Successfuly resolved fedora-thinkpad to 192.168.0.74
+[03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: Trying to connect asynchronously with service: fedora-thinkpad. Trying to create Session ID: 4
+[03:02:18 +02:00] [logger main_logger] [error] [thread 6121] ConnectHandler Error: 113 No route to host system
+[03:02:18 +02:00] [logger main_logger] [error] [thread 6121] ConnectHandler Error: 113 No route to host system
 [UNSOLVED]

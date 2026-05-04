@@ -290,7 +290,6 @@ public:
             session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
             session_p->RequestReadingFrames();
             session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
-            // Here we map to nodeID
             sessions_m[session_p->GetSessionData()->sessionID] = session_p;
             service_sessionid_m[sessionData_p->nodeData.serviceName] = session_p->GetSessionID();
             LogTrace("ConnectHandler: Successfuly connected to {}: {}:{} SessionID: {}", 
@@ -328,7 +327,6 @@ public:
 
                     // session_p now identifies socket with that socket.
                     this->LogTrace("Accept successful. Requesting identification from the peer.");
-                    // session_p->
                     // Construct message
                     BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO);
                     BVTCPMessage<std::array<char, 128>> helloMsg = ConstructMessage(header, std::array<char,128>()); // empty payload
@@ -336,7 +334,6 @@ public:
                     session_p->WriteMessageFrame(helloMsg);
                     session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_INGOING);
                     session_p->RequestReadingFrames();
-                    // TODO: Await async connections again!!!!
                     Accept();
                 } else
                 {
@@ -354,7 +351,6 @@ public:
             caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
             {
                 std::lock_guard<std::mutex> l(session_m_mutex);
-
                 // Set nodeData - this is not set when accepting!
                 StartCommunicationSessionWithNode(caller->GetSessionData()->nodeData.id, caller->GetSessionData()->inMailbox_p);
                 caller->GetSessionData()->nodeData.serviceName = serviceName;
