@@ -278,7 +278,7 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
         LogTrace("App: Added node representing service {} to nodesM", serviceName);
     } else
     {
-        LogTrace("App: Node representing service {} already present in nodesM", serviceName);
+        LogWarn("App: Node representing service {} already present in nodesM", serviceName);
         ::free(res);
         return BVStatus::BVSTATUS_OK;
     }

@@ -460,4 +460,7 @@ Remember that resolution happens on multiple interfaces and protocols. It might 
 [03:02:18 +02:00] [logger main_logger] [trace] [thread 6120] App: Trying to connect asynchronously with service: fedora-thinkpad. Trying to create Session ID: 4
 [03:02:18 +02:00] [logger main_logger] [error] [thread 6121] ConnectHandler Error: 113 No route to host system
 [03:02:18 +02:00] [logger main_logger] [error] [thread 6121] ConnectHandler Error: 113 No route to host system
-[UNSOLVED]
+
+I was trying to initiate session with an already-resolved and connecting (in progress) node.
+The firewall settings on physical Linux machine were not allowing to accept connections on 50001/tcp
+[SOLVED]

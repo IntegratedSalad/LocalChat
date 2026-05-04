@@ -19,6 +19,12 @@ nm -D /path/to/.so -> list symbols in file.
 lsof -iTCP:50001 -sTCP:LISTEN -n -P -> check if this machine is listening at 50001
 lsof -i tcp:50001 -> check processes listening on 500001
 
+sudo firewall-cmd --list-ports -> list ports that services listening on it are NOT blocked by firewall
+sudo firewall-cmd --list-services -> list services that are NOT blocked by firewall
+
+sudo firewall-cmd --add-port=50001/tcp -> add port 50001 over tcp to firewall if not listed
+sudo firewall-cmd --runtime-to-permanent -> permanent rule addition
+
 ## Useful dirs
 /usr/bin -> binaries
 /var/run -> daemons
