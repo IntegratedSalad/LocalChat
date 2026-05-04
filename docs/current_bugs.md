@@ -33,7 +33,7 @@ Services not found in vector:
 4peers.staplelog shows correct log after fixing removing services from serviceV logic and incrementing sessionID after creating the sessionData object.
 
 [BUG1]
-It seems that linux discovery and tcp have some issues.
+It seems that linux discovery and tcp have some issues between themselves.
 [LOGS]
 [23:34:47 +02:00] [logger main_logger] [trace] [thread 8418] Logger set up.
 [23:34:47 +02:00] [logger main_logger] [trace] [thread 8418] BVTCPConnectionManager: Accepting connections on :::50001... for service: fedora
@@ -130,3 +130,80 @@ It seems that linux discovery and tcp have some issues.
 [23:35:04 +02:00] [logger main_logger] [info] [thread 8422] 1: ProBoopens.local
 [23:35:06 +02:00] [logger main_logger] [trace] [thread 8418] App: quitting. Sent TERMINATE_ALL message and BVEVENTTYPE_APP_SERVICE_DEREGISTERED to everyone
 [23:35:06 +02:00] [logger main_logger] [trace] [thread 8422] App: Shutting down...
+[UNSOLVED]
+
+[BUG2]
+VM + one mac + second mac = sessions are not established correctly.
+E.g.
+First: VM + MacBook Pro. They show sessions established between them.
+Next MacBook Air connects. on Pro: two sessions. On VM: two sessions. On Air - only between fedora.
+Okay: on Air faulty behavior noticed - connected to ProBoopens.local as session ID: 3 and then connected to fedora for session ID: 3 - the same.
+[LOGS]
+Okay, I've found one bug:
+When connecting, sometimes the same ID is assigned to a session:
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785705] Logger set up.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785705] BVTCPConnectionManager: Accepting connections on :::50001... for service: BupsioBup.local
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785729] Discovery: Awaiting read readiness on the socket...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785729] Discovery: Browsing active...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: Awaiting read readiness on the socket...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: HandlePublishedServices is called.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App, HandlePublishedServices: Added fedora to serviceV
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App, HandlePublishedServices: Added ProBoopens.local to serviceV
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: Sending request to Discovery to resolve fedora
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: Sending request to Discovery to resolve ProBoopens.local
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785728] Discovery: Received request to resolve a service...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785728] Discovery: Resolve context created.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785728] Discovery: Resolve job scheduled...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785728] Discovery: Received request to resolve a service...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: Resolve result has been processed.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: Resolve ref has been deallocated.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785728] Discovery: Resolve context created.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785728] Discovery: Resolve job scheduled...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: HandleResolvedServices ENTER
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: Resolved fedora to hosttarget: fedora.local.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: on port 50001
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host fedora.local. on port: 50001
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: Resolve result has been processed.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: Resolve ref has been deallocated.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] Successfuly resolved fedora to fe80::abad:9f3e:6666:ae1c%en0
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: Trying to connect asynchronously with service: fedora. Trying to create Session ID: 1
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: HandleResolvedServices ENTER
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: Resolved ProBoopens.local to hosttarget: ProBoopens.local.
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: on port 50001
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] BVApp_ConsoleClient::ResolveServiceToEndpoint: Resolving host ProBoopens.local. on port: 50001
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] Successfuly resolved ProBoopens.local to fe80::8ca:3732:f751:18e8%en0
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: Trying to connect asynchronously with service: ProBoopens.local. Trying to create Session ID: 2
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] ConnectHandler: Successfuly connected to ProBoopens.local: fe80::8ca:3732:f751:18e8%en0:50001 SessionID: 3
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] ConnectHandler: Current Sessions:
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] ConnectHandler: ServiceName: ProBoopens.local Session ID: 3
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] ConnectHandler: Successfuly connected to fedora: fe80::abad:9f3e:6666:ae1c%en0:50001 SessionID: 3
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] ConnectHandler: Current Sessions:
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] ConnectHandler: ServiceName: fedora Session ID: 3
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Read 138 bytes
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Received BVSESSIONCONTROLMESSAGETYPE_HELLO. Sending _HELLOBACK
+[01:49:56 +02:00] [logger main_logger] [debug] [thread 2785731] WriteMessageFrame: data size: 128
+[01:49:56 +02:00] [logger main_logger] [debug] [thread 2785731] WriteMessageFrame: dataLen: 15
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Read all bytes 138
+[01:49:56 +02:00] [logger main_logger] [debug] [thread 2785731] Session [3]: Writebuffer: 
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Written 138 bytes
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Written all bytes
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Read 138 bytes
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Received BVSESSIONCONTROLMESSAGETYPE_HELLO. Sending _HELLOBACK
+[01:49:56 +02:00] [logger main_logger] [debug] [thread 2785731] WriteMessageFrame: data size: 128
+[01:49:56 +02:00] [logger main_logger] [debug] [thread 2785731] WriteMessageFrame: dataLen: 15
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Read all bytes 138
+[01:49:56 +02:00] [logger main_logger] [debug] [thread 2785731] Session [3]: Writebuffer: 
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Written 138 bytes
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Session [3]: Written all bytes
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: DNSServiceProcessResult returned. Sending BVEVENTTYPE_APP_PUBLISHED_SERVICE to App...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785731] Discovery: Awaiting read readiness on the socket...
+[01:49:56 +02:00] [logger main_logger] [trace] [thread 2785730] App: HandlePublishedServices is called.
+[01:50:07 +02:00] [logger main_logger] [trace] [thread 2785705] App: quitting. Sent TERMINATE_ALL message and BVEVENTTYPE_APP_SERVICE_DEREGISTERED to everyone
+[01:50:07 +02:00] [logger main_logger] [trace] [thread 2785730] App: Shutting down...
+[01:50:07 +02:00] [logger main_logger] [trace] [thread 2785728] Discovery: Shutting down...
+[01:50:07 +02:00] [logger main_logger] [trace] [thread 2785705] Discovery dies.
+Here fedora and proboopens have SessionID: 3
+
+I'm reassigning a value, which could be incremented in the next connect/accept attempt..
+[UNSOLVED]

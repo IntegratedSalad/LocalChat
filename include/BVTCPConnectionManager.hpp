@@ -284,7 +284,6 @@ public:
             // On the other machine it will be their name
             std::lock_guard<std::mutex> l(session_m_mutex);
             sessionData_p->nodeData.ep = ep;
-            sessionData_p->sessionID = currentSessionID; // it is assigned before, but probably it is stale - reassign.
             std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
             session_p->SetLogger(GetLogger());
             StartCommunicationSessionWithNode(session_p->GetSessionData()->nodeData.id, session_p->GetSessionData()->inMailbox_p);
