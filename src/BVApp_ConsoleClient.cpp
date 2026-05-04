@@ -270,7 +270,18 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     {
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
-    nodesM[serviceName] = node;
+
+    auto it = nodesM.find(serviceName);
+    if (it == nodesM.end())
+    {
+        nodesM.emplace(serviceName, node);
+        LogTrace("App: Added node representing service {} to nodesM", serviceName);
+    } else
+    {
+        LogTrace("App: Node representing service {} already present in nodesM", serviceName);
+        ::free(res);
+        return BVStatus::BVSTATUS_OK;
+    }
 
     // Initiate connection (session)
     // Open socket.
