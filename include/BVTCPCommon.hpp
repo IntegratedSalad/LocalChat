@@ -14,6 +14,7 @@ static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_
 
 using NodeID = uint8_t;
 using SessionID = uint16_t;
+using CharBufferArray128B = std::array<char, MAX_TEXT_DATA_MSG_BYTES>;
 
 /*
     BVTCPMessage structure
@@ -49,9 +50,13 @@ enum class BVSessionOrigin
 
 namespace BVTCPMessageType
 {
+    /* CONTROL MESSAGES */
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_HELLO               = 0; // handshake
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_HELLOBACK           = 1; // handshake reply
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE = 3; // service is deregistering
+
+    /* REGULAR MESSAGES */
+    const uint8_t BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE         = 4;
 }
 
 // BVNode is data regarding another host in the network.
@@ -115,9 +120,9 @@ struct BVTCPMessage
     PayloadType        payload;  
 };
 
-struct BVChatMessage // payload of a certain type
+struct BVChatMessagePayload // payload of a certain type
 {
-    std::string textData;
+    CharBufferArray128B textData;
 };
 
 struct BVUser

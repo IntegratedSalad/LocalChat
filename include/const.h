@@ -7,6 +7,6 @@
 #define N_SERVICES_MAX            (UINT8_MAX)
 #define SERVICETYPE_STR           "_localchathost._tcp."
 #define PORT                      50001
-#define MAX_TEXT_DATA_MSG_BYTES   (UINT8_MAX+1)
+#define MAX_TEXT_DATA_MSG_BYTES   (INT8_MAX+1)
 
 #define AVAHI_POLL_ITERATE_TIMEOUT_MS (500)

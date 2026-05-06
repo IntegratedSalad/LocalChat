@@ -149,17 +149,23 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
     BVTCPMessageHeader header = GetMsgHeader();
     switch (header.msgType)
     {
-        case BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE:
+        // case BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE:
+        // {
+        //     break
+        // }
+        case BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE:
         {
-            // OnReceiveNodeGoodbyeFrame();
-            // LogTrace("Returning early after closing the session - received _GOODBYE.");
-            // return true;
+            LogTrace(
+                "Session [{}]: Received BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE", 
+            this->GetSessionData()->sessionID);
+            break;
         }
         default: 
         {
             LogWarn(
                 "Session [{}]: Received a standard, unrecognized frame..",
                     this->GetSessionData()->sessionID);
+            break;
         }
     }
     return false;

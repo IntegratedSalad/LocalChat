@@ -273,6 +273,49 @@ public:
             });
     }
 
+    template<typename PayloadType>
+    void WriteMessageFrame(std::unique_ptr<BVTCPMessage<PayloadType>> message)
+    {
+        static_assert(std::is_trivially_copyable_v<BVTCPMessage<PayloadType>>,
+                    "BVTCPMessage must be trivially copyable to send as raw bytes.");
+
+        this->sessionData_p->totalBytesWritten = 0;
+        
+        constexpr std::size_t headerSize = 10;
+        constexpr std::size_t payloadSize = MESSAGE_FRAME_SIZE_BYTES - headerSize;
+
+        if (sizeof(PayloadType) > payloadSize)
+        {
+            LogError("Session [{}]: WriteMessageFrame: payload too large. payloadSize={}, max={}",
+                this->sessionData_p->sessionID, sizeof(PayloadType), payloadSize);
+            return;
+        }
+
+        LogDebug("WriteMessageFrame: data size: {}", sizeof(message->payload));
+        LogDebug("WriteMessageFrame: dataLen: {}", message->header.dataLen);
+        char* buf = this->sessionData_p->writeBuf.data();
+        buf[0] = static_cast<char>(message->header.dataLen);
+        std::memcpy(buf + 1,
+            &message->header.timestamp,
+            sizeof(message->header.timestamp));
+        buf[9] = static_cast<char>(message->header.msgType);
+        std::memcpy(buf + headerSize,
+            &message->payload,
+            sizeof(PayloadType));
+
+        assert(this->sessionData_p->writeBuf.size() != 0);
+
+        auto self = shared_from_this();
+        boost::asio::async_write(
+            *this->sessionData_p->sock,
+            boost::asio::buffer(self->sessionData_p->writeBuf.data(),
+                                self->sessionData_p->writeBuf.size()),
+            [self](const boost::system::error_code& ec, std::size_t bytesTransferred)
+            {
+                self->WriteMessageFrameCallback(ec, bytesTransferred);
+            });
+    }
+
     void SetManager_p(BVTCPConnectionManager* p)
     {
         this->manager_p = p;

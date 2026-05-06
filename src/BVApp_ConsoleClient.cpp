@@ -29,7 +29,6 @@ BVComponent(_outMbx, _inMbx)
 
 void BVApp_ConsoleClient::Run(void)
 {
-    // std::cerr << "stdin isatty = " << ::isatty(STDIN_FILENO) << '\n';
     this->terminal.SetNonCanonicalMode();
     PrintAll();
     while (this->GetIsRunning())
@@ -45,14 +44,13 @@ void BVApp_ConsoleClient::Run(void)
         switch (type)
         {
             case BVConsoleActionType::BVCONSOLEACTION_REPRINT:
-                // send reprint event/message
                 PrintAll();
                 break;
             case BVConsoleActionType::BVCONSOLEACTION_SENDMSG:
             {
                 // send sendmsg event/message
                 // Choose host
-                LogDebug("App: Choosing sending message...");
+                LogTrace("App: Choosing sending message...");
                 const auto hostChosen = (*action).num;
                 if (hostChosen.has_value())
                 {
@@ -60,7 +58,53 @@ void BVApp_ConsoleClient::Run(void)
                     LogDebug("App: chosen idx: {}", idx);
                     bool found = false;
                     try {
+                        int nodeIdx = 0;
+                        std::string serviceName;
+                        for (const auto& [k,v] : this->GetConnectionManager().GetNodesM())
+                        {
+                            if (idx == nodeIdx)
+                            {
+                                found = true;
+                                serviceName = v.serviceName;
+                                LogDebug("App: At {} there's {}. Entering messaging menu.", nodeIdx, serviceName);
+                                ClearScreen();
+                                const std::string prompt("Msg to " + serviceName + " : ");
+                                const std::string msgStr = terminal.PromptLine(prompt);
+                                LogDebug("App: Gotten msg string: {}", msgStr);
 
+                                // How does v.id correspond to the id of an accepted node?
+                                SessionID sid;
+                                BVStatus sidStatus = GetConnectionManager().GetSessionIDFromServiceName(serviceName, sid);
+                                if (sidStatus != BVStatus::BVSTATUS_OK)
+                                {
+                                    LogError("Couldn't get sid from {}", serviceName);
+                                    break;
+                                }
+
+                                std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> chatMsg = ConstructChatMessageFromInput(msgStr);
+                                BVStatus sentStatus = GetConnectionManager().SendDataToNode(std::move(chatMsg), sid);
+                                ClearScreen();
+                                if (sentStatus == BVStatus::BVSTATUS_FATAL_ERROR)
+                                {
+                                    std::cout << "Error: No session! Check logs or contact support or something." << std::endl;
+                                } else 
+                                {
+                                    std::cout << "Successfuly sent message to: " << serviceName << "!" << std::endl;
+                                }
+                                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                                ClearScreen();
+                                PrintAll();
+                                break;
+                            }
+                            nodeIdx++;
+                        }
+                        if (!found)
+                        {
+                            LogWarn("Not found any service at idx {}", nodeIdx);
+                            break;
+                        }
+                        // Enumerate nodesM
+                        // choose node at nodesM
                         // BVNode node = nodesV.at(idx);
                         // ClearScreen();
                         // const std::string msgStr = this->terminal.GetStringFromSTDIN("Enter message: ");
@@ -127,7 +171,7 @@ void BVApp_ConsoleClient::PrintAll(void)
     ClearScreen();
     std::cout << "LocalChat console client v0.4.0" << std::endl;
     std::cout << "Re(D)raw" << std::endl;
-    std::cout << "Send (M)essage" << std::endl;
+    std::cout << "(0-9) Choose host to send message to" << std::endl;
     std::cout << "(P)ause discovery" << std::endl;
     std::cout << "(R)esume discovery" << std::endl;
     std::cout << "(Q)uit" << std::endl;
@@ -271,10 +315,11 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    auto it = nodesM.find(serviceName);
-    if (it == nodesM.end())
+    auto _nodesM = this->GetConnectionManager().GetNodesM();
+    auto it = _nodesM.find(serviceName);
+    if (it == _nodesM.end())
     {
-        nodesM.emplace(serviceName, node);
+        _nodesM.emplace(serviceName, node);
         LogTrace("App: Added node representing service {} to nodesM", serviceName);
     } else
     {
@@ -337,7 +382,7 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
             );
             if (serviceV.size() < oldSize)
             {
-                nodesM.erase(lElem.serviceName);
+                GetConnectionManager().GetNodesM().erase(lElem.serviceName);
                 LogTrace("App, HandleServiceDeregistration: removed {}.", lElem.serviceName);
                 this->GetConnectionManager().RemoveSession(lElem.serviceName);
             } else
@@ -398,8 +443,8 @@ std::optional<ParsingResult> BVApp_ConsoleClient::ParseConsoleActionFromKey
     {
         case 'd':
             return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_REPRINT, std::nullopt};
-        case 'm':
-            return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_SENDMSG, std::nullopt};
+        // case 'm':
+        //     return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_SENDMSG, std::nullopt};
         case 'p':
             return ParsingResult{BVConsoleActionType::BVCONSOLEACTION_PAUSE_DISCOVERY, std::nullopt};
         case 'r':
@@ -477,18 +522,23 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
     return nodeData;
 }
 
-std::unique_ptr<BVTCPMessage<BVChatMessage>> BVApp_ConsoleClient::ConstructChatMessageFromInput(
-    const std::string& inputString, const NodeID nodeID)
+std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> BVApp_ConsoleClient::ConstructChatMessageFromInput(
+    const std::string& inputString)//, const NodeID nodeID)
 {
-    BVTCPMessage<BVChatMessage> msg;
+    std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> msg;
     std::chrono::milliseconds ts = 
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch());
-    msg.header.timestamp = ts.count();
+    msg->header.timestamp = ts.count();
+    msg->header.msgType = 
+        static_cast<uint8_t>(BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE);
+    msg->payload.textData.fill('\0');
 
-    // msgType
-    // dataLen
-    msg.payload.textData = inputString;
+    const std::size_t maxLen = msg->payload.textData.size();
+    const std::size_t copyLen = std::min(inputString.size(), maxLen);
+    std::memcpy(msg->payload.textData.data(), inputString.data(), copyLen);
 
-    return std::make_unique<BVTCPMessage<BVChatMessage>>(msg);
+    msg->header.dataLen = static_cast<uint8_t>(copyLen);
+
+    return msg;
 }

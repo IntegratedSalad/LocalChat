@@ -37,7 +37,6 @@
 class BVTCPConnectionManager : public BVLoggable // BVComponent?
 {
 private:
-
     SessionID currentSessionID = 0;
 
     // This machine is this Node in the network.
@@ -63,6 +62,8 @@ private:
     std::map<NodeID, std::shared_ptr<threadsafe_queue<BVMessage>>> outMailboxes_p;
 
     std::map<std::string, SessionID> service_sessionid_m;
+    std::map<std::string, BVNode> nodesM;
+
     // std::map<std::string, NodeID> service_nodeid_m;
     // maybe share all BVNodes with app, and app updates them?
 
@@ -141,7 +142,8 @@ public:
             {
                 std::cout << "Session[" <<  v->GetSessionID() 
                         << "]" << " between " << v->GetSessionData()->nodeData.serviceName 
-                        << " Node ID: " << v->GetSessionData()->nodeData.id
+                        << " Node ID: " << static_cast<uint16_t>(v->GetSessionData()->nodeData.id)
+                        // << " Node ID: " << v->GetSessionData()->nodeData.id
                         << std::endl;
             }
         }
@@ -184,21 +186,22 @@ public:
 
     // Send data to chosen node. This is an interface for App
     template<typename PayloadType>
-    BVStatus SendDataToService(const BVTCPMessage<PayloadType> msg) // pass only service or NodeID.
+    BVStatus SendDataToNode(std::unique_ptr<BVTCPMessage<PayloadType>> msg,
+                            const SessionID& sid) // pass only service or NodeID.
     {
-        BVStatus idStatus;
-        const NodeID nodeId = msg.metadata.recipient; //this->GetNodeIDByServiceName(serviceName, idStatus);
-        if (idStatus == BVStatus::BVSTATUS_OK)
+        BVStatus status = BVStatus::BVSTATUS_NOK;
+        try
         {
-            {
-                std::lock_guard<std::mutex> l(this->session_m_mutex);
-                // this->sessions_m.at(nodeId)->RequestSomeWrite(msg.textData);
-                // this->sessions_m.at(nodeId)->sock.async_write_some(); // to implement
-            }
-        } else
-        {
-            return BVStatus::BVSTATUS_NOK;
+            std::lock_guard<std::mutex> l(session_m_mutex);
+            sessions_m.at(sid)->WriteMessageFrame(std::move(msg));
+            status = BVStatus::BVSTATUS_OK;
         }
+        catch(const std::out_of_range& ex)
+        {
+            LogError("No session for SessionID {}", sid);
+            status = BVStatus::BVSTATUS_FATAL_ERROR;
+        }
+        return status;
     }
 
     template<typename PayloadType>
@@ -386,6 +389,41 @@ public:
             LogTrace("BVTCPConnectionManager: Found duplicate session for {}. Closing.", caller->GetSessionData()->nodeData.serviceName);
             caller->Close(); // close the duplicate session
         }
+    }
+
+    BVStatus GetSessionIDFromServiceName(const std::string& _s, SessionID& sid_out)
+    {
+        try
+        {
+            service_sessionid_m.at(_s);
+        }
+        catch(const std::out_of_range& ex)
+        {
+            sid_out = service_sessionid_m.at(_s);
+            return BVStatus::BVSTATUS_OK;
+        }
+        return BVStatus::BVSTATUS_NOK;
+    }
+
+    // std::map<std::string, BVNode> nodesM;
+    BVStatus AddNodeToNodesM(const std::string& _s, const BVNode _n)
+    {
+        try
+        {
+            nodesM.at(_s);
+        }
+        catch(const std::out_of_range& ex)
+        {
+            // node not present
+            nodesM.emplace(_s, _n);
+            return BVStatus::BVSTATUS_OK;
+        }
+        return BVStatus::BVSTATUS_NOK;
+    }
+
+    std::map<std::string, BVNode>& GetNodesM(void)
+    {
+        return this->nodesM;
     }
 
     ~BVTCPConnectionManager();

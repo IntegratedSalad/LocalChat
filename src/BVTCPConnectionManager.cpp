@@ -58,6 +58,7 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         currentSessionID+=1;
     }
     sessionData_p->appCommChannel_p = this->appInMailBox_p;
+    // is NodeID really assigned here?
     BVStatus registerStatus = 
         StartCommunicationSessionWithNode(sessionData_p->nodeData.id, sessionData_p->inMailbox_p);
     if (registerStatus == BVStatus::BVSTATUS_NOK)

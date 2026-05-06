@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <optional>
 #include <limits>
+#include <algorithm>
 #include "BVApp.hpp"
 #include "BVComponent.hpp"
 #include "BVLoggable.hpp"
@@ -241,6 +242,24 @@ public:
         std::getline(std::cin, s);
         return s;
     }
+
+    std::string PromptLine(const std::string& prompt)
+    {
+        EnsureInitialized();
+        TerminalModeGuard guard{};
+        std::cout << prompt;
+        std::cout.flush();
+        if (std::cin.peek() == '\n')
+        {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+        std::string s;
+        if (!std::getline(std::cin, s))
+        {
+            throw std::runtime_error("BVTerminal: getline failed");
+        }
+        return s;
+    }
 };
 
 class BVApp_ConsoleClient : public BVApp,
@@ -275,8 +294,8 @@ public:
     inline void ClearScreen(void);
     std::optional<ParsingResult> ParseConsoleActionFromKey(char key);
 
-    std::unique_ptr<BVTCPMessage<BVChatMessage>> ConstructChatMessageFromInput(
-        const std::string& inputString, const NodeID nodeID);
+    std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> ConstructChatMessageFromInput(
+        const std::string& inputString);//, const NodeID nodeID);
 
     // -------------------------------------------------------
     BVStatus OnStart(std::unique_ptr<std::any>) override;
