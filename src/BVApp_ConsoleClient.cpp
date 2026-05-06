@@ -319,7 +319,7 @@ BVStatus BVApp_ConsoleClient::HandleResolvedServices(std::unique_ptr<std::any> d
     auto it = _nodesM.find(serviceName);
     if (it == _nodesM.end())
     {
-        _nodesM.emplace(serviceName, node);
+        GetConnectionManager().AddNodeToNodesM(serviceName, node);
         LogTrace("App: Added node representing service {} to nodesM", serviceName);
     } else
     {
