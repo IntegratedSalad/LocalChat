@@ -525,7 +525,8 @@ BVNode BVApp_ConsoleClient::ResolveServiceToEndpoint(const std::string& hosttarg
 std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> BVApp_ConsoleClient::ConstructChatMessageFromInput(
     const std::string& inputString)//, const NodeID nodeID)
 {
-    std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> msg;
+    std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> msg = 
+        std::make_unique<BVTCPMessage<BVChatMessagePayload>>();
     std::chrono::milliseconds ts = 
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch());

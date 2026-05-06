@@ -140,6 +140,7 @@ public:
             if (this->sessions_m.size() == 0) std::cout << "None." << std::endl;
             for (const auto& [k,v] : this->sessions_m)
             {
+                // TODO: Add session index to choose
                 std::cout << "Session[" <<  v->GetSessionID() 
                         << "]" << " between " << v->GetSessionData()->nodeData.serviceName 
                         << " Node ID: " << static_cast<uint16_t>(v->GetSessionData()->nodeData.id)
@@ -400,9 +401,9 @@ public:
         catch(const std::out_of_range& ex)
         {
             sid_out = service_sessionid_m.at(_s);
-            return BVStatus::BVSTATUS_OK;
+            return BVStatus::BVSTATUS_NOK;
         }
-        return BVStatus::BVSTATUS_NOK;
+        return BVStatus::BVSTATUS_OK;
     }
 
     // std::map<std::string, BVNode> nodesM;
