@@ -294,6 +294,7 @@ public:
             sessionData_p->nodeData.ep = ep;
             std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
             session_p->SetLogger(GetLogger());
+            session_p->SetManager_p(this);
             StartCommunicationSessionWithNode(session_p->GetSessionData()->nodeData.id, session_p->GetSessionData()->inMailbox_p);
             // session_p->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
             // The accepting node will decide if this is a non-duplicate connection.
