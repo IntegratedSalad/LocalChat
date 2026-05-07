@@ -19,11 +19,11 @@ acceptorSocket(_ioContext)
     boost::asio::ip::tcp::resolver resolver{ioContext};
     boost::system::error_code ec;
     auto results = resolver.resolve(thisMachineServiceData.hostname, std::to_string(thisMachineServiceData.port), ec);
-    thisMachineHostData = BVNode{ thisMachineServiceData.hostname, 
+    thisMachineHostData = BVNode{ thisMachineServiceData.hostname,
                                   thisMachineServiceData.hostname,
                                   ntohs(thisMachineServiceData.port),
                                   results };
-    
+
     if (ec)
     {
         LogError("BVTCPConnectionManager: Couldn't resolve {} {}", thisMachineServiceData.hostname.c_str(), ec.value());
@@ -57,9 +57,9 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
             nodeData, ioContext, currentSessionID, thisMachineHostData.serviceName);
         currentSessionID+=1;
     }
-    sessionData_p->appCommChannel_p = this->appInMailBox_p;
+    // sessionData_p->appCommChannel_p = this->appInMailBox_p;
     // is NodeID really assigned here?
-    BVStatus registerStatus = 
+    BVStatus registerStatus =
         StartCommunicationSessionWithNode(sessionData_p->nodeData.id, sessionData_p->inMailbox_p);
     if (registerStatus == BVStatus::BVSTATUS_NOK)
     {
@@ -67,9 +67,9 @@ BVStatus BVTCPConnectionManager::InitiateSessionWithNode(const BVNode nodeData)
         return registerStatus;
     }
 
-    boost::asio::async_connect(*sessionData_p->sock, sessionData_p->nodeData.results, 
+    boost::asio::async_connect(*sessionData_p->sock, sessionData_p->nodeData.results,
         std::bind(&BVTCPConnectionManager::ConnectHandler, this, std::placeholders::_1, std::placeholders::_2, sessionData_p));
-    LogTrace("App: Trying to connect asynchronously with service: {}. Trying to create Session ID: {}", 
+    LogTrace("App: Trying to connect asynchronously with service: {}. Trying to create Session ID: {}",
         sessionData_p->nodeData.serviceName, sessionData_p->sessionID);
     /*
         In P2P connection, we do not create two sessions - one for incoming traffic and one for outgoing.
@@ -146,13 +146,13 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     // sessionData_p->appCommChannel_p = this->appInMailBox_p;
 
     // // we pass the socket of this session
-    // this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
+    // this->acceptorSocket.async_accept(*sessionData_p->sock.get(),
     //     [sessionData_p, this](const boost::system::error_code& error){
     //         if (!error)
     //         {
     //             // Wait - is there already a connection session with this peer/node?
     //             // Create a connection but not add it yet to the map.
-    //             std::shared_ptr<BVTCPSession> session_p = 
+    //             std::shared_ptr<BVTCPSession> session_p =
     //                 std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
     //             session_p->SetLogger(GetLogger());
     //             session_p->SetManager_p(this);

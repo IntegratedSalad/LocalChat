@@ -15,8 +15,18 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::HandleResolvedServices, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_DEREGISTERED_SERVICE,
                      std::bind(&BVApp_ConsoleClient::HandleServiceDeregistration, this, std::placeholders::_1));
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING,
+                     std::bind(&BVApp_ConsoleClient::HandleMessageIncoming, this, std::placeholders::_1));
 
-    this->GetConnectionManager().SetAppInMailBoxP(_inMbx);
+    // Set getter that returns a correct pointer to Apps inMailBox
+    this->GetConnectionManager().SetMailboxGetterF(
+        [this]() -> std::shared_ptr<threadsafe_queue<BVMessage>>
+        {
+            return this->GetInMailBox();
+        }
+    );
+    // this->GetConnectionManager().SetAppInMailBoxP(_inMbx);
+    // maybe set a callback for connection manager to be GetInMailBox
 
     // TODO: Create an auxhilary object which listens to messages
     //       coming from App to sessions and that should be routed from sessions
@@ -399,6 +409,13 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
         }
     }
     PrintAll();
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVApp_ConsoleClient::HandleMessageIncoming(std::unique_ptr<std::any> dp)
+{
+    LogTrace("[BVApp_ConsoleClient]: Received HandleMessageIncoming");
+
     return BVStatus::BVSTATUS_OK;
 }
 

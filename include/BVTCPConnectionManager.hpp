@@ -12,13 +12,13 @@
 #include <arpa/inet.h>
 #include <map>
 #include <mutex>
-
+#include <functional>
 
 // // These are messages sent between hosts
 // typedef enum class BVTCPMessageType
 // {
 //     BVTCPMESSAGETYPE_HANDSHAKE,
-//     BVTCPMESSAGETYPE_DEREGISTRATION, // ? 
+//     BVTCPMESSAGETYPE_DEREGISTRATION, // ?
 //     BVTCPMESSAGETYPE_TEXT_MESSAGE,
 //     BVTCPMESSAGETYPE_FILE,
 
@@ -29,11 +29,12 @@
  * As part of the BVTCP Suite.
  * This class manages all connections - these coming in (we accept them)
  * and those that we initiate (we connect to other).
- * 
- * 
+ *
+ *
 */
 
 // Remember to open a different file to log the connections logs. <- needed?
+using MailboxGetter = std::function<std::shared_ptr<threadsafe_queue<BVMessage>>()>;
 class BVTCPConnectionManager : public BVLoggable // BVComponent?
 {
 private:
@@ -53,12 +54,14 @@ private:
     std::mutex session_m_mutex;
 
     // Incoming messages from sessions are put right into App's inMailbox_p
-    std::shared_ptr<threadsafe_queue<BVMessage>> appInMailBox_p;
+    // std::shared_ptr<threadsafe_queue<BVMessage>> appInMailBox_p;
+    MailboxGetter mailbox_F;
 
     // Outwards communication queue with App.
     // App just pushes to one of these, doesn't listen to them.
     // BVMessage is also used here as a payload.
     // SessionID, not nodeID as a key
+    // TODO: Not needed, remove
     std::map<NodeID, std::shared_ptr<threadsafe_queue<BVMessage>>> outMailboxes_p;
 
     std::map<std::string, SessionID> service_sessionid_m;
@@ -89,7 +92,7 @@ private:
         status_out = status;
         return id;
     }
-    
+
 public:
     BVTCPConnectionManager(boost::asio::io_context& _ioContext,
                            const BVServiceData _thisMachineServiceData);
@@ -102,10 +105,13 @@ public:
     */
     BVStatus InitiateSessionWithNode(const BVNode nodeData);
 
-    void SetAppInMailBoxP(std::shared_ptr<threadsafe_queue<BVMessage>> p)
-    {
-        this->appInMailBox_p = p;
-    }
+    // TODO: Ok. It is then changed
+    // in BVBroker.
+    // This is no longer valid after Broker attaching!
+    // void SetAppInMailBoxP(std::shared_ptr<threadsafe_queue<BVMessage>> p)
+    // {
+    //     this->appInMailBox_p = p;
+    // }
 
     // Set communication channel towards the Node. (their inMailbox_p)
     // TODO: Rename it to set mailbox p or something - this does not start a communication session!
@@ -141,8 +147,8 @@ public:
             for (const auto& [k,v] : this->sessions_m)
             {
                 // TODO: Add session index to choose
-                std::cout << "Session[" <<  v->GetSessionID() 
-                        << "]" << " between " << v->GetSessionData()->nodeData.serviceName 
+                std::cout << "Session[" <<  v->GetSessionID()
+                        << "]" << " between " << v->GetSessionData()->nodeData.serviceName
                         << " Node ID: " << static_cast<uint16_t>(v->GetSessionData()->nodeData.id)
                         // << " Node ID: " << v->GetSessionData()->nodeData.id
                         << std::endl;
@@ -221,12 +227,13 @@ public:
 
     void PutMessageIntoAppMailbox(const BVEventType& type, std::unique_ptr<std::any> dp)
     {
-        this->appInMailBox_p->push(BVMessage(type, std::move(dp)));
+        // this->appInMailBox_p->push(BVMessage(type, std::move(dp)));
     }
 
     void PutMessageIntoAppMailbox(BVMessage&& msg)
     {
-        this->appInMailBox_p->push(std::move(msg));
+        // this->appInMailBox_p->push(std::move(msg));
+        this->mailbox_F()->push(std::move(msg));
     }
 
     // // Would be better to assign an ID to a session
@@ -273,7 +280,7 @@ public:
         return BVStatus::BVSTATUS_OK;
     }
 
-    void ConnectHandler(const boost::system::error_code& error, 
+    void ConnectHandler(const boost::system::error_code& error,
                         const boost::asio::ip::tcp::endpoint ep,
                         std::shared_ptr<BVTCPNodeConnectionSessionData> sessionData_p)
     {
@@ -288,7 +295,7 @@ public:
             return;
         }
         {
-            // We probably provide not the host machine, but the service name of the session that we are connecting to. 
+            // We probably provide not the host machine, but the service name of the session that we are connecting to.
             // On the other machine it will be their name
             std::lock_guard<std::mutex> l(session_m_mutex);
             sessionData_p->nodeData.ep = ep;
@@ -303,8 +310,8 @@ public:
             session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
             sessions_m[session_p->GetSessionData()->sessionID] = session_p;
             service_sessionid_m[sessionData_p->nodeData.serviceName] = session_p->GetSessionID();
-            LogTrace("ConnectHandler: Successfuly connected to {}: {}:{} SessionID: {}", 
-                sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), 
+            LogTrace("ConnectHandler: Successfuly connected to {}: {}:{} SessionID: {}",
+                sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(),
                     sessionData_p->nodeData.ep.port(), sessionData_p->sessionID);
             session_p->RequestReadingFrames();
             LogTrace("ConnectHandler: Current Sessions:");
@@ -323,16 +330,16 @@ public:
             std::lock_guard<std::mutex> l(session_m_mutex);
             sessionData_p = std::make_shared<BVTCPNodeConnectionSessionData>(BVNode{}, ioContext, currentSessionID, thisMachineHostData.serviceName);
             currentSessionID+=1;
-            sessionData_p->appCommChannel_p = this->appInMailBox_p;
+            // sessionData_p->appCommChannel_p = this->appInMailBox_p;
         }
         // we pass the socket of this session
-        this->acceptorSocket.async_accept(*sessionData_p->sock.get(), 
+        this->acceptorSocket.async_accept(*sessionData_p->sock.get(),
             [sessionData_p, this](const boost::system::error_code& error){
                 if (!error)
                 {
                     // Wait - is there already a connection session with this peer/node?
                     // Create a connection but not add it yet to the map.
-                    std::shared_ptr<BVTCPSession> session_p = 
+                    std::shared_ptr<BVTCPSession> session_p =
                         std::make_shared<BVTCPSession>(sessionData_p, this->ioContext);
                     session_p->SetLogger(GetLogger());
                     session_p->SetManager_p(this);
@@ -379,7 +386,7 @@ public:
                 BVTCPMessage<std::array<char, 128>> confirmEstablishedMessage = ConstructMessage(header, std::array<char,128>()); // empty payload
                 caller->WriteMessageFrame(confirmEstablishedMessage);
             }
-            LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}", 
+            LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}",
                 caller->GetSessionData()->nodeData.serviceName, caller->GetSessionData()->nodeData.address.to_string());
 
             // When we now have serviceName, we have to get the ip address with that service name
@@ -439,6 +446,11 @@ public:
     std::map<std::string, BVNode>& GetNodesM(void)
     {
         return this->nodesM;
+    }
+
+    void SetMailboxGetterF(MailboxGetter f)
+    {
+        this->mailbox_F = std::move(f);
     }
 
     ~BVTCPConnectionManager();

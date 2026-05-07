@@ -282,9 +282,12 @@ public:
 
     void Run(void) override;
 
+    // -------------------------------------------------------
     BVStatus HandlePublishedServices(std::unique_ptr<std::any> dp) override;
     BVStatus HandleResolvedServices(std::unique_ptr<std::any> dp) override;
     BVStatus HandleServiceDeregistration(std::unique_ptr<std::any>) override;
+    BVStatus HandleMessageIncoming(std::unique_ptr<std::any>) override;
+    // -------------------------------------------------------
 
     BVStatus ReadMessages(void);
     BVStatus PrintMessages(void);

@@ -149,4 +149,13 @@ public:
     {
         this->inMailBox_p = _inMailBox_p;
     }
+
+    // This is a getter for special direct routing of messages,
+    // such in case of putting the chat message directly into App's
+    // inMailBox.
+    // This should not be used anywhere, where there's no real need for it!
+    std::shared_ptr<threadsafe_queue<BVMessage>> GetInMailBox(void)
+    {
+        return this->inMailBox_p;
+    }
 };

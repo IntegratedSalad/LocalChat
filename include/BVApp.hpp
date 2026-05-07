@@ -132,6 +132,7 @@ public:
     virtual BVStatus HandlePublishedServices(std::unique_ptr<std::any>) = 0;
     virtual BVStatus HandleResolvedServices(std::unique_ptr<std::any>) = 0;
     virtual BVStatus HandleServiceDeregistration(std::unique_ptr<std::any>) = 0;
+    virtual BVStatus HandleMessageIncoming(std::unique_ptr<std::any>) = 0;
 
     // Message from Nodes (Peers/Hosts) handlers
 

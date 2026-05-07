@@ -179,6 +179,8 @@ int main(int argc, char** argv)
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
     BVStatus subStatusAppServiceDeregistered = 
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_DEREGISTERED_SERVICE);
+    BVStatus subStatusAppMessageIncoming =
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING);
     if (subStatusDiscoveryRequestStart    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestPause    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestResume   != BVStatus::BVSTATUS_OK ||
@@ -189,7 +191,8 @@ int main(int argc, char** argv)
         subStatusAppRequestRestart        != BVStatus::BVSTATUS_OK ||
         subStatusAppServiceResolved       != BVStatus::BVSTATUS_OK ||
         subStatusAppRequestTerminate      != BVStatus::BVSTATUS_OK ||
-        subStatusAppServiceDeregistered   != BVStatus::BVSTATUS_OK)
+        subStatusAppServiceDeregistered   != BVStatus::BVSTATUS_OK ||
+        subStatusAppMessageIncoming       != BVStatus::BVSTATUS_OK)
     {
         std::cerr << "Fatal error: Broker couldn't subscribe to a crucial event" << std::endl;
         exit(-1);
