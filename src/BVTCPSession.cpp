@@ -58,7 +58,7 @@ void BVTCPSession::OnReceiveHelloFrame(void)
         return;
     }
 
-    LogTrace("Session [{}]: Received BVSESSIONCONTROLMESSAGETYPE_HELLO. Sending _HELLOBACK", 
+    LogTrace("Session [{}]: Received BVSESSIONCONTROLMESSAGETYPE_HELLO. Sending _HELLOBACK",
         this->GetSessionData()->sessionID);
 
     // This is sending text data (from string) -> maybe put into function
@@ -73,7 +73,7 @@ void BVTCPSession::OnReceiveHelloFrame(void)
     StartReadingFrames();
 }
 
-void BVTCPSession::OnReceiveHelloBackFrame()
+void BVTCPSession::OnReceiveHelloBackFrame(void)
 {
     BVTCPMessageHeader header = GetMsgHeader();
 
@@ -112,6 +112,13 @@ void BVTCPSession::OnReceiveHelloBackFrame()
     manager_p->HandleSessionIdentification(payloadStr, shared_from_this());
 }
 
+void BVTCPSession::OnReceiveConfirmEstablished(void)
+{
+    LogTrace("Session [{}]: Received _CONFIRM_ESTABLISHED. Changing the state to BVSESSIONSTATE_ESTABLISHED",
+            this->GetSessionData()->sessionID);
+    SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
+}
+
 // TODO: This is probably not needed,
 // as deregistration can be handled from the mDNS side.
 // void BVTCPSession::OnReceiveNodeGoodbyeFrame(void)
@@ -121,20 +128,53 @@ void BVTCPSession::OnReceiveHelloBackFrame()
 //     // std::string payloadStr(payloadPtr, static_cast<std::size_t>(header.dataLen));
 //     std::string payloadStr("GUUUUUUUUWNO");
 
-//     LogTrace("Session [{}]: Received _NODESESSION_GOODBYE from {}", 
+//     LogTrace("Session [{}]: Received _NODESESSION_GOODBYE from {}",
 //         this->GetSessionData()->sessionID, this->GetSessionData()->nodeData.serviceName);
 
 //     // Maybe we have the serviceName here in nodeData here?
 //     // assert(payloadStr == this->GetSessionData()->nodeData.serviceName); // ??? Yes!
 //     // this will be the endpoint's serviceName? Yes! TODO: We don't need to send serviceName!
 
-//     // manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED, 
+//     // manager_p->PutMessageIntoAppMailbox(BVEventType::BVEVENTTYPE_APP_SERVICE_DEREGISTERED,
 //     //     std::make_unique<std::any>(std::make_any<std::string>(payloadStr)));
 //     manager_p->RemoveSession(this->sessionData_p->sessionID);
 //     // Put message in app mailbox so it can react
 //     // BVTCPSession remove it from the map
 //     // Close this session
 // }
+
+void BVTCPSession::OnReceiveChatMessageFrame(void)
+{
+    BVTCPMessageHeader header = GetMsgHeader();
+
+    if (header.msgType != static_cast<uint8_t>(
+            BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE))
+    {
+        LogError("Session [{}]: OnReceiveChatMessageFrame called for wrong msgType={}",
+                 this->GetSessionData()->sessionID,
+                 static_cast<int>(header.msgType));
+        return;
+    }
+
+    const char* payloadPtr = GetPayloadPtr();
+    if (!payloadPtr)
+    {
+        LogError("Session [{}]: Payload pointer is null.",
+                 this->GetSessionData()->sessionID);
+        return;
+    }
+
+    BVChatMessagePayload payload;
+    std::memcpy(&payload, payloadPtr, sizeof(BVChatMessagePayload));
+    std::string payloadStr(payload.textData.data(), static_cast<std::size_t>(header.dataLen));
+
+    LogTrace("Session [{}]: Received chat message: '{}'", this->GetSessionData()->sessionID, payloadStr);
+    manager_p->PutMessageIntoAppMailbox(
+        BVMessage(
+            BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING,
+            std::make_unique<std::any>(std::make_any<BVChatMessage>(BVChatMessage(payloadStr, header.timestamp)))
+        ));
+}
 
 bool BVTCPSession::OnReceiveStandardFrame(void)
 {
@@ -145,7 +185,7 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
     LogTrace(
         "Session [{}]: Received a standard frame, parsing...",
             this->GetSessionData()->sessionID);
-    
+
     BVTCPMessageHeader header = GetMsgHeader();
     switch (header.msgType)
     {
@@ -156,11 +196,12 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
         case BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE:
         {
             LogTrace(
-                "Session [{}]: Received BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE", 
+                "Session [{}]: Received BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE",
             this->GetSessionData()->sessionID);
+            OnReceiveChatMessageFrame();
             break;
         }
-        default: 
+        default:
         {
             LogWarn(
                 "Session [{}]: Received a standard, unrecognized frame..",

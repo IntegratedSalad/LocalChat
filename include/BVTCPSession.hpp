@@ -106,6 +106,8 @@ private:
                     OnReceiveHelloFrame();
                 if (header.msgType == BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLOBACK)
                     OnReceiveHelloBackFrame();
+                if (header.msgType == BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED)
+                    OnReceiveConfirmEstablished();
             } else
             {
                 if (OnReceiveStandardFrame() == true)
@@ -218,6 +220,8 @@ public:
     void RequestSomeWrite(const std::string& data);
     void OnReceiveHelloFrame(void);
     void OnReceiveHelloBackFrame(void);
+    void OnReceiveConfirmEstablished(void);
+    void OnReceiveChatMessageFrame(void);
     // Returns true if we have to return early.
     bool OnReceiveStandardFrame(void);
     // void OnReceiveNodeGoodbyeFrame(void);

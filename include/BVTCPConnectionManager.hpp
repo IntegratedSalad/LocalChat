@@ -222,7 +222,11 @@ public:
     void PutMessageIntoAppMailbox(const BVEventType& type, std::unique_ptr<std::any> dp)
     {
         this->appInMailBox_p->push(BVMessage(type, std::move(dp)));
-        // this->appInMailBox_p
+    }
+
+    void PutMessageIntoAppMailbox(BVMessage&& msg)
+    {
+        this->appInMailBox_p->push(std::move(msg));
     }
 
     // // Would be better to assign an ID to a session
@@ -291,6 +295,9 @@ public:
             std::shared_ptr<BVTCPSession> session_p = std::make_shared<BVTCPSession>(sessionData_p, ioContext);
             session_p->SetLogger(GetLogger());
             StartCommunicationSessionWithNode(session_p->GetSessionData()->nodeData.id, session_p->GetSessionData()->inMailbox_p);
+            // session_p->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
+            // The accepting node will decide if this is a non-duplicate connection.
+            // TODO: Send message os that this connection if it's ok, changes its state
             session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
             session_p->RequestReadingFrames();
             session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
@@ -352,6 +359,8 @@ public:
         {
             // This session is not a duplicate - we accepted it, it wasn't added (we didn't know who it was)
             // Now we know - we can add it, didn't connect to it before.
+            // We need to also send a message so that the other side knows
+            // that they're ok and can change their state to BVSESSIONSTATE_ESTABLISHED
             caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
             {
                 std::lock_guard<std::mutex> l(session_m_mutex);
@@ -364,6 +373,10 @@ public:
                 caller->GetSessionData()->nodeData.ep = caller->GetSessionData()->sock->remote_endpoint();
                 service_sessionid_m[serviceName] = caller->GetSessionID();
                 AddNodeToNodesM(serviceName, caller->GetSessionData()->nodeData);
+                LogTrace("BVTCPConnectionManager: Sending BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED...");
+                BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED);
+                BVTCPMessage<std::array<char, 128>> confirmEstablishedMessage = ConstructMessage(header, std::array<char,128>()); // empty payload
+                caller->WriteMessageFrame(confirmEstablishedMessage);
             }
             LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}", 
                 caller->GetSessionData()->nodeData.serviceName, caller->GetSessionData()->nodeData.address.to_string());

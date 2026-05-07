@@ -53,7 +53,8 @@ namespace BVTCPMessageType
     /* CONTROL MESSAGES */
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_HELLO               = 0; // handshake
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_HELLOBACK           = 1; // handshake reply
-    const uint8_t BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE = 3; // service is deregistering
+    // const uint8_t BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE = 3; // service is deregistering <- T
+    const uint8_t BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED = 3;
 
     /* REGULAR MESSAGES */
     const uint8_t BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE         = 4;
@@ -120,15 +121,25 @@ struct BVTCPMessage
     PayloadType        payload;  
 };
 
-struct BVChatMessagePayload // payload of a certain type
+struct BVChatMessagePayload // payload of a certain type sent over the network.
 {
     CharBufferArray128B textData;
 };
 
-struct BVUser
+// struct BVUser
+// {
+//     std::string name;
+//     BVNode hostData;
+// };
+
+// Maybe templated, in case of exchanging files.
+struct BVChatMessage
 {
-    std::string name;
-    BVNode hostData;
+    std::string textData;
+    uint64_t timestamp;
+    BVChatMessage(const std::string& _textData, uint64_t _timestamp):
+    textData(_textData), timestamp(_timestamp)
+    {}
 };
 
 struct BVTCPNodeConnectionSessionData

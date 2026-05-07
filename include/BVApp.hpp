@@ -12,6 +12,7 @@
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
 #include "BVTCPConnectionManager.hpp"
+#include "BVTCPCommon.hpp"
 
 /*
  * class BVApp
