@@ -117,6 +117,7 @@ void BVTCPSession::OnReceiveConfirmEstablished(void)
     LogTrace("Session [{}]: Received _CONFIRM_ESTABLISHED. Changing the state to BVSESSIONSTATE_ESTABLISHED",
             this->GetSessionData()->sessionID);
     SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
+    StartReadingFrames();
 }
 
 // TODO: This is probably not needed,

@@ -93,6 +93,21 @@ private:
         }
         this->sessionData_p->totalBytesRead += bytes_transferred;
         LogTrace("Session [{}]: Read {} bytes", this->sessionData_p->sessionID, bytes_transferred);
+
+        switch (state)
+        {
+            case BVSessionState::BVSESSIONSTATE_UNPREPARED:
+            {
+                LogDebug("I'M UNPREPARED");
+                break;
+            }
+            case BVSessionState::BVSESSIONSTATE_ESTABLISHED:
+            {
+                LogDebug("I'M ESTABLISHED");
+                break;
+            }
+        }
+
         if (this->sessionData_p->totalBytesRead == MESSAGE_FRAME_SIZE_BYTES)
         {   
             // assert maybe?

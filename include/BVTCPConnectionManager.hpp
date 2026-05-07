@@ -299,13 +299,13 @@ public:
             // The accepting node will decide if this is a non-duplicate connection.
             // TODO: Send message os that this connection if it's ok, changes its state
             session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
-            session_p->RequestReadingFrames();
             session_p->SetOrigin(BVSessionOrigin::BVSESSIONORIGIN_OUTGOING);
             sessions_m[session_p->GetSessionData()->sessionID] = session_p;
             service_sessionid_m[sessionData_p->nodeData.serviceName] = session_p->GetSessionID();
             LogTrace("ConnectHandler: Successfuly connected to {}: {}:{} SessionID: {}", 
                 sessionData_p->nodeData.serviceName, sessionData_p->nodeData.ep.address().to_string(), 
                     sessionData_p->nodeData.ep.port(), sessionData_p->sessionID);
+            session_p->RequestReadingFrames();
             LogTrace("ConnectHandler: Current Sessions:");
             for (const auto& [k,v] : sessions_m)
             {
