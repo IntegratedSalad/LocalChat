@@ -363,6 +363,7 @@ public:
                 caller->GetSessionData()->nodeData.address = caller->GetSessionData()->sock->remote_endpoint().address();
                 caller->GetSessionData()->nodeData.ep = caller->GetSessionData()->sock->remote_endpoint();
                 service_sessionid_m[serviceName] = caller->GetSessionID();
+                AddNodeToNodesM(serviceName, caller->GetSessionData()->nodeData);
             }
             LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}", 
                 caller->GetSessionData()->nodeData.serviceName, caller->GetSessionData()->nodeData.address.to_string());
@@ -396,11 +397,10 @@ public:
     {
         try
         {
-            service_sessionid_m.at(_s);
+            sid_out = service_sessionid_m.at(_s);
         }
         catch(const std::out_of_range& ex)
         {
-            sid_out = service_sessionid_m.at(_s);
             return BVStatus::BVSTATUS_NOK;
         }
         return BVStatus::BVSTATUS_OK;
