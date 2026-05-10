@@ -52,6 +52,10 @@ protected:
     // Can the host that wants to communicate just open a socket themselves?
     // Or the endpoints need to be opened after browsing and resolution to hostname then IP?
 
+    // Chat data (this should be in a different class maybe, but doesn't have to)
+    std::map<std::string, BVChatMessageLog> chatLogsM;
+    std::mutex chatLogsMapMutex;
+
     // Find IP
     virtual BVNode ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) = 0;
 

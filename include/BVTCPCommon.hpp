@@ -126,20 +126,45 @@ struct BVChatMessagePayload // payload of a certain type sent over the network.
     CharBufferArray128B textData;
 };
 
-// struct BVUser
-// {
-//     std::string name;
-//     BVNode hostData;
-// };
-
 // Maybe templated, in case of exchanging files.
+// This is a structure that is used to represent message sent/received
 struct BVChatMessage
 {
     std::string textData;
+    std::string sender;
     uint64_t timestamp;
-    BVChatMessage(const std::string& _textData, uint64_t _timestamp):
-    textData(_textData), timestamp(_timestamp)
+    BVChatMessage() = default;
+    BVChatMessage(const std::string& _textData, uint64_t _timestamp, const std::string& _sender):
+    textData(_textData), timestamp(_timestamp), sender(_sender)
     {}
+};
+
+struct BVChatMessageLog
+{
+    std::string serviceName;
+    std::vector<BVChatMessage> logV;
+    BVChatMessageLog() = default;
+    BVChatMessageLog(const std::string& _serviceName, const BVChatMessage msg) :
+    serviceName(_serviceName)
+    {
+        AddMessage(msg);
+    }
+    
+    void AddMessage(const BVChatMessage msg)
+    {
+        logV.push_back(msg);
+    }
+
+    std::vector<BVChatMessage> ReturnNLastMessages(const std::size_t n)
+    {
+       const std::size_t count = std::min(n, logV.size());
+       return std::vector<BVChatMessage>(logV.end() - count, logV.end());
+    }
+
+    void Clear(void)
+    {
+        logV.clear();
+    }
 };
 
 struct BVTCPNodeConnectionSessionData

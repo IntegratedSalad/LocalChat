@@ -173,7 +173,8 @@ void BVTCPSession::OnReceiveChatMessageFrame(void)
     manager_p->PutMessageIntoAppMailbox(
         BVMessage(
             BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING,
-            std::make_unique<std::any>(std::make_any<BVChatMessage>(BVChatMessage(payloadStr, header.timestamp)))
+            std::make_unique<std::any>(std::make_any<BVChatMessage>(BVChatMessage(payloadStr, 
+                header.timestamp, sessionData_p->nodeData.serviceName)))
         ));
 }
 

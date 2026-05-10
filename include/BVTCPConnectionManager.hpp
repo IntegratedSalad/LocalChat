@@ -54,7 +54,6 @@ private:
     std::mutex session_m_mutex;
 
     // Incoming messages from sessions are put right into App's inMailbox_p
-    // std::shared_ptr<threadsafe_queue<BVMessage>> appInMailBox_p;
     MailboxGetter mailbox_F;
 
     // Outwards communication queue with App.

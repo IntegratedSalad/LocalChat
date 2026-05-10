@@ -78,6 +78,9 @@ void BVApp_ConsoleClient::Run(void)
                                 serviceName = v.serviceName;
                                 LogDebug("App: At {} there's {}. Entering messaging menu.", nodeIdx, serviceName);
                                 ClearScreen();
+
+                                // TODO: Print N last messages
+
                                 const std::string prompt("Msg to " + serviceName + " : ");
                                 const std::string msgStr = terminal.PromptLine(prompt);
                                 LogDebug("App: Gotten msg string: {}", msgStr);
@@ -93,6 +96,10 @@ void BVApp_ConsoleClient::Run(void)
 
                                 std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> chatMsg = ConstructChatMessageFromInput(msgStr);
                                 BVStatus sentStatus = GetConnectionManager().SendDataToNode(std::move(chatMsg), sid);
+
+                                // Do not clear screen unless 'q' is pressed.
+                                // Update log and redraw new message just sent
+                                // TODO: AppState
                                 ClearScreen();
                                 if (sentStatus == BVStatus::BVSTATUS_FATAL_ERROR)
                                 {
@@ -103,6 +110,8 @@ void BVApp_ConsoleClient::Run(void)
                                 }
                                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
                                 ClearScreen();
+
+
                                 PrintAll();
                                 break;
                             }
@@ -415,7 +424,42 @@ BVStatus BVApp_ConsoleClient::HandleServiceDeregistration(std::unique_ptr<std::a
 BVStatus BVApp_ConsoleClient::HandleMessageIncoming(std::unique_ptr<std::any> dp)
 {
     LogTrace("[BVApp_ConsoleClient]: Received HandleMessageIncoming");
+    if (dp == nullptr)
+    {
+        LogError("App: Error - HandleResolvedServices, data pointer is null!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    BVChatMessage res;
+    try
+    {
+        res = std::any_cast<BVChatMessage>(*dp);
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING callback. "
+                    << e.what() << std::endl;
+        LogError("App: Bad cast in HandleMessageIncoming! Error details: {}", e.what());
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
 
+    const std::string textData  = res.textData;  
+    const std::string sender    = res.sender;
+    const uint64_t    timestamp = res.timestamp;
+
+    LogTrace("[BVApp_ConsoleClient]: Received message: {} from: {} at: {}",
+        textData, sender, timestamp);
+    {
+        std::lock_guard<std::mutex> l(chatLogsMapMutex);
+        try
+        {
+            chatLogsM.at(sender).AddMessage(res);
+        }
+        catch(const std::out_of_range& e)
+        {
+            BVChatMessageLog log{sender, res};
+            chatLogsM.emplace(sender, log);
+        }
+    }
     return BVStatus::BVSTATUS_OK;
 }
 
