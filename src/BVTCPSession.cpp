@@ -176,6 +176,7 @@ void BVTCPSession::OnReceiveChatMessageFrame(void)
             std::make_unique<std::any>(std::make_any<BVChatMessage>(BVChatMessage(payloadStr, 
                 header.timestamp, sessionData_p->nodeData.serviceName)))
         ));
+    StartReadingFrames();
 }
 
 bool BVTCPSession::OnReceiveStandardFrame(void)
