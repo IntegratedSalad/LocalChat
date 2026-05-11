@@ -12,6 +12,8 @@
 #define PAYLOAD_SIZE_BYTES       128
 static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_BYTES));
 
+#define TEN_LAST_MESSAGES        10
+
 using NodeID = uint8_t;
 using SessionID = uint16_t;
 using CharBufferArray128B = std::array<char, MAX_TEXT_DATA_MSG_BYTES>;
@@ -161,9 +163,29 @@ struct BVChatMessageLog
        return std::vector<BVChatMessage>(logV.end() - count, logV.end());
     }
 
+    void PrintNLastMessages(const std::size_t n)
+    {
+        std::vector<BVChatMessage> messages = ReturnNLastMessages(n);
+        std::cout << "+------+" << std::endl;
+        for (const auto& msg : messages)
+        {
+            time_t timestamp = static_cast<time_t>(msg.timestamp); // downcast!
+            time(&timestamp);
+            const std::string datetime(ctime(&timestamp));
+            std::cout << FormatDate(datetime);
+            std::cout << " [" << msg.sender << "]: " << msg.textData << std::endl;
+        }
+        std::cout << "+------+" << std::endl;
+    }
+
     void Clear(void)
     {
         logV.clear();
+    }
+
+    std::string FormatDate(const std::string& dateStr)
+    {
+        return dateStr.substr(4, dateStr.length() - 8 - 5);
     }
 };
 

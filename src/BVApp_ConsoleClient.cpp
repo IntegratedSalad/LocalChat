@@ -56,7 +56,7 @@ void BVApp_ConsoleClient::Run(void)
             case BVConsoleActionType::BVCONSOLEACTION_REPRINT:
                 PrintAll();
                 break;
-            case BVConsoleActionType::BVCONSOLEACTION_SENDMSG:
+            case BVConsoleActionType::BVCONSOLEACTION_SENDMSG: // also views messages
             {
                 // send sendmsg event/message
                 // Choose host
@@ -77,41 +77,66 @@ void BVApp_ConsoleClient::Run(void)
                                 found = true;
                                 serviceName = v.serviceName;
                                 LogDebug("App: At {} there's {}. Entering messaging menu.", nodeIdx, serviceName);
-                                ClearScreen();
-
-                                // TODO: Print N last messages
-
-                                const std::string prompt("Msg to " + serviceName + " : ");
-                                const std::string msgStr = terminal.PromptLine(prompt);
-                                LogDebug("App: Gotten msg string: {}", msgStr);
-
-                                // How does v.id correspond to the id of an accepted node?
-                                SessionID sid;
-                                BVStatus sidStatus = GetConnectionManager().GetSessionIDFromServiceName(serviceName, sid);
-                                if (sidStatus != BVStatus::BVSTATUS_OK)
+                                while (true)
                                 {
-                                    LogError("Couldn't get sid from {}", serviceName);
-                                    break;
+                                    ClearScreen();
+                                    {
+                                        std::lock_guard<std::mutex> l(chatLogsMapMutex);
+                                        BVChatMessageLog log;
+                                        try
+                                        {
+                                            log = chatLogsM.at(serviceName);
+                                            std::cout << "Message log with " << serviceName << std::endl;
+                                            log.PrintNLastMessages(TEN_LAST_MESSAGES);
+                                        }
+                                        catch(const std::out_of_range& e)
+                                        {
+                                            std::cout << "No messages with " << serviceName << " :)" << std::endl;
+                                        }
+                                    }
+                                    const std::string prompt("|q OR |r OR >> ");
+                                    const std::string msgStr = terminal.PromptLine(prompt);
+                                    LogDebug("App: Gotten msg string: {}", msgStr);
+                                    if (msgStr.length() == 2)
+                                    {
+                                        if (msgStr == "|q")
+                                        {
+                                            break;
+                                        }
+                                        if (msgStr == "|r")
+                                        {
+                                            continue;
+                                        }
+                                    }
+                                    SessionID sid;
+                                    BVStatus sidStatus = GetConnectionManager().GetSessionIDFromServiceName(serviceName, sid);
+                                    if (sidStatus != BVStatus::BVSTATUS_OK)
+                                    {
+                                        LogError("Couldn't get sid from {}", serviceName);
+                                        break;
+                                    }
+                                    std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> chatMsg = ConstructChatMessageFromInput(msgStr);
+                                    uint64_t timestamp = chatMsg->header.timestamp;
+                                    BVStatus sentStatus = GetConnectionManager().SendDataToNode(std::move(chatMsg), sid);
+                                    if (sentStatus == BVStatus::BVSTATUS_FATAL_ERROR)
+                                    {
+                                        std::cout << "Error: No session! Check logs or contact support or something." << std::endl;
+                                        break;
+                                    }
+                                    {
+                                        std::lock_guard<std::mutex> l(chatLogsMapMutex);
+                                        try
+                                        {
+                                            chatLogsM.at(serviceName).AddMessage(BVChatMessage(msgStr, timestamp, GetThisMachineServiceData().hostname));
+                                        }
+                                        catch(const std::out_of_range& e)
+                                        {
+                                            BVChatMessageLog log{serviceName, BVChatMessage(msgStr, timestamp, GetThisMachineServiceData().hostname)};
+                                            chatLogsM.emplace(serviceName, log);
+                                        }
+                                    }
                                 }
-
-                                std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> chatMsg = ConstructChatMessageFromInput(msgStr);
-                                BVStatus sentStatus = GetConnectionManager().SendDataToNode(std::move(chatMsg), sid);
-
-                                // Do not clear screen unless 'q' is pressed.
-                                // Update log and redraw new message just sent
-                                // TODO: AppState
                                 ClearScreen();
-                                if (sentStatus == BVStatus::BVSTATUS_FATAL_ERROR)
-                                {
-                                    std::cout << "Error: No session! Check logs or contact support or something." << std::endl;
-                                } else 
-                                {
-                                    std::cout << "Successfuly sent message to: " << serviceName << "!" << std::endl;
-                                }
-                                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-                                ClearScreen();
-
-
                                 PrintAll();
                                 break;
                             }
