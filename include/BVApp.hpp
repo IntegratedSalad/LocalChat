@@ -8,6 +8,7 @@
 #include <queue>
 #include <algorithm>
 #include <thread>
+#include <filesystem>
 #include <boost/asio.hpp>
 #include "BV.hpp"
 #include "BVService_Bonjour.hpp"
@@ -58,6 +59,8 @@ protected:
 
     // Find IP
     virtual BVNode ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) = 0;
+
+    // File utilities
 
 public:
     BVApp(boost::asio::io_context& _ioContext,

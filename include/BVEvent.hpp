@@ -24,6 +24,9 @@ typedef enum class BVEventType
     // Events caused by TCP traffic
     _REDUNDANT_BVEVENTTYPE_APP_SERVICE_DEREGISTERED, // this is handled by mDNS. Probably redundant.
     BVEVENTTYPE_APP_MESSAGE_INCOMING,
+    BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN,
+    BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT,
+    BVEVENTTYPE_APP_FILE_TRANSFER_END,
 
     // Messages exchanged between Nodes
     // ...

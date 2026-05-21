@@ -6,6 +6,7 @@
 #include <memory>
 #include "const.h"
 
+// Pure text (ASCII) messages
 #define MAX_MESSAGE_SIZE_BYTES   256
 #define MESSAGE_FRAME_SIZE_BYTES 138
 #define HEADER_SIZE_BYTES        10
@@ -14,9 +15,51 @@ static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_
 
 #define TEN_LAST_MESSAGES        10
 
+// Files
+#define MAX_FILE_CHUNK_SIZE_BYTES_1MB 1048676
+#define FILE_CHUNK_SIZE_BYTES_512KB   524288
+#define FILE_CHUNK_SIZE_BYTES_256KB   262144
+#define FILE_CHUNK_SIZE_BYTES_64KB    65536
+#define FILE_CHUNK_SIZE_BYTES_32KB    32768
+#define FILE_CHUNK_SIZE_BYTES_16KB    16384
+#define FILE_CHUNK_SIZE_BYTES_8KB      8192
+#define FILE_CHUNK_SIZE_BYTES_4KB      4096
+#define FILE_CHUNK_SIZE_BYTES_2KB      2048
+#define FILE_CHUNK_SIZE_BYTES_1KB      1024
+#define FILE_CHUNK_SIZE_BYTES_512B      512
+#define MIN_FILE_CHUNK_SIZE_BYTES_256B  256
+
+#define FILE_SIZE_BYTES_1KB              1000
+#define FILE_SIZE_BYTES_2KB              2000
+#define FILE_SIZE_BYTES_4KB              4000
+#define FILE_SIZE_BYTES_8KB              8000
+#define FILE_SIZE_BYTES_64KB             64000
+#define FILE_SIZE_BYTES_256KB            256000
+#define FILE_SIZE_BYTES_1MB              1000000           
+#define FILE_SIZE_BYTES_5MB              5000000
+#define FILE_SIZE_BYTES_25MB             25000000
+#define FILE_SIZE_BYTES_75MB             75000000
+#define FILE_SIZE_BYTES_150MB            150000000
+#define FILE_SIZE_BYTES_500MB            500000000
+#define FILE_SIZE_BYTES_1GB              1000000000
+#define FILE_SIZE_BYTES_2GB              2000000000 
+
 using NodeID = uint8_t;
 using SessionID = uint16_t;
 using CharBufferArray128B = std::array<char, MAX_TEXT_DATA_MSG_BYTES>;
+// For files
+using CharBufferArray256B = std::array<char, MIN_FILE_CHUNK_SIZE_BYTES_256B>;
+using CharBufferArray1024B = std::array<char, FILE_CHUNK_SIZE_BYTES_512B>;
+using CharBufferArray2048B = std::array<char, FILE_CHUNK_SIZE_BYTES_2KB>;
+using CharBufferArray4096B = std::array<char, FILE_CHUNK_SIZE_BYTES_4KB>;
+using CharBufferArray8192B = std::array<char, FILE_CHUNK_SIZE_BYTES_8KB>;
+using CharBufferArray16384B = std::array<char, FILE_CHUNK_SIZE_BYTES_16KB>;
+using CharBufferArray32768B = std::array<char, FILE_CHUNK_SIZE_BYTES_32KB>;
+using CharBufferArray65536B = std::array<char, FILE_CHUNK_SIZE_BYTES_64KB>;
+
+using CharBufferArray524288B = std::array<char, FILE_CHUNK_SIZE_BYTES_512KB>;
+
+using MailboxGetter = std::function<std::shared_ptr<threadsafe_queue<BVMessage>>()>;
 
 /*
     BVTCPMessage structure
@@ -57,9 +100,13 @@ namespace BVTCPMessageType
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_HELLOBACK           = 1; // handshake reply
     // const uint8_t BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE = 3; // service is deregistering <- T
     const uint8_t BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED = 3;
+    const uint8_t BVSESSIONCONTROLMESSAGETYPE_CONFIRM_CAN_RECEIVE_FILE = 4;
 
     /* REGULAR MESSAGES */
-    const uint8_t BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE         = 4;
+    const uint8_t BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE              = 5;
+    const uint8_t BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN      = 6;
+    const uint8_t BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT = 7;
+    const uint8_t BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END        = 8; // last chunk
 }
 
 // BVNode is data regarding another host in the network.
@@ -126,6 +173,10 @@ struct BVTCPMessage
 struct BVChatMessagePayload // payload of a certain type sent over the network.
 {
     CharBufferArray128B textData;
+};
+
+struct BVFileMessagePayload
+{
 };
 
 // Maybe templated, in case of exchanging files.

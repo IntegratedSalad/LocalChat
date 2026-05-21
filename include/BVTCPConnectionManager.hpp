@@ -9,6 +9,7 @@
 #include "BVMessage.hpp"
 #include "BVTCPCommon.hpp"
 #include "BVTCPSession.hpp"
+#include "FileTransferContext.hpp"
 #include <arpa/inet.h>
 #include <map>
 #include <mutex>
@@ -34,7 +35,6 @@
 */
 
 // Remember to open a different file to log the connections logs. <- needed?
-using MailboxGetter = std::function<std::shared_ptr<threadsafe_queue<BVMessage>>()>;
 class BVTCPConnectionManager : public BVLoggable // BVComponent?
 {
 private:
@@ -73,7 +73,9 @@ private:
     // or at least - provide an interface to App, so that it can just push message to
     // a certain service/node and be done with it.
 
-    // Should BVTCPConnectionManager have another thread to monitor/manage sessions?
+    // File transfer context map.
+    // It means that only one file per session can be sent at the same time
+    std::map<SessionID, std::unique_ptr<FileTransferContext>> fileTransferContext_m;
 
     NodeID GetNodeIDByServiceName(const std::string& _serviceName, BVStatus& status_out)
     {
@@ -450,6 +452,34 @@ public:
     void SetMailboxGetterF(MailboxGetter f)
     {
         this->mailbox_F = std::move(f);
+    }
+    
+    // File utilities
+
+    // FileTransferContext    
+    BVStatus InitiateFileTransferWithSession(const SessionID& sid, 
+                                             std::filesystem::path& _fpath)
+    {
+        static uint16_t ftcid = 0;
+        BVStatus status = BVStatus::BVSTATUS_OK;
+        auto it = fileTransferContext_m.find(sid);
+        if (it == fileTransferContext_m.end())
+        {
+            // TODO: Add to map.
+            std::unique_ptr<FileTransferContext> ftcp = 
+                std::make_unique<FileTransferContext>(sessions_m.at(sid), _fpath, ftcid, mailbox_F);
+            ftcp->SetLogger(GetLogger());
+            fileTransferContext_m.emplace(sid, std::move(ftcp));
+            ftcid += 1;
+            LogTrace("[BVTCPConnectionManager::InitiateFileTransferWithSession] Initiated file transfer with session: id: {}", 
+                      sid);
+        } else
+        {
+            status = BVStatus::BVSTATUS_NOK;
+            LogTrace("[BVTCPConnectionManager::InitiateFileTransferWithSession] File transfer with session id: {} already ongoing", 
+                      sid);
+        }
+        return status;
     }
 
     ~BVTCPConnectionManager();

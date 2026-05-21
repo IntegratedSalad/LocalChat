@@ -78,6 +78,9 @@ private:
         );
     }
 
+    // TODO: ReadFileChunkCallback - function largely the same, but with set file buffer
+    //                               for that I think we need a file buffer that can be resizable
+
     void ReadMessageFrameCallback(const boost::system::error_code& ec,
                                   std::size_t bytes_transferred)
     {

@@ -97,6 +97,14 @@ void BVApp_ConsoleClient::Run(void)
                                     const std::string prompt("|q OR |r OR >> ");
                                     const std::string msgStr = terminal.PromptLine(prompt);
                                     LogDebug("App: Gotten msg string: {}", msgStr);
+                                    // split string after space
+                                    std::string argStr{};
+                                    std::string::size_type argPos = msgStr.find(' ');
+                                    bool sendingFile = false;
+                                    if (argPos == 2)
+                                    {
+                                        argStr = msgStr.substr(argPos);
+                                    }
                                     if (msgStr.length() == 2)
                                     {
                                         if (msgStr == "|q")
@@ -107,6 +115,15 @@ void BVApp_ConsoleClient::Run(void)
                                         {
                                             continue;
                                         }
+                                    } else if (msgStr.length() > 2)
+                                    {
+                                        if (argStr.length() > 0)
+                                        {
+                                            if (msgStr.find("|f") != std::string::npos)
+                                            {
+                                                sendingFile = true;
+                                            }
+                                        }
                                     }
                                     SessionID sid;
                                     BVStatus sidStatus = GetConnectionManager().GetSessionIDFromServiceName(serviceName, sid);
@@ -115,6 +132,45 @@ void BVApp_ConsoleClient::Run(void)
                                         LogError("Couldn't get sid from {}", serviceName);
                                         break;
                                     }
+                                    if (sendingFile)
+                                    {
+                                        // 1. Get file but don't load it all to the memory - get descriptor/load only chunk.
+                                        // 2. Get file size and determine file chunk size.
+                                        // 3. Write some sort of utility for BVTCPConnectionManager
+                                        //    that allows for continuous file sending
+                                        //    probably a thread must be spawned (which can also listen for stop)
+                                        //    maybe a file sender component? or a very simple
+                                        //    object that spawns a mutex and conditional variable
+                                        //    it can have an inMailBox of App, and it can
+                                        //    send messages telling how much bytes it has sent 
+                                        //    Maybe FileTransferContext?
+                                        //    class that holds information about sent file.
+                                        //    it is put on a separate thread and receives
+                                        //    inMailBox
+                                        /*
+                                            File sending:
+                                            Send _FILE_TRANSFER_BEGIN
+                                            Payload:
+                                            Size
+                                            Wait for _CONFIRM_CAN_RECEIVE_FILE (if there's space on the other machine)
+                                            We can also just omit this, as there's no much time left...
+                                            If that takes too long, then just scrap the confirmation and send anyway (ecksdee).
+                                        */
+                                        LogDebug("[BVApp_ConsoleClient]: Sending file, path: {}", argStr);
+                                        std::filesystem::path filePath = argStr;
+                                        if (std::filesystem::exists(filePath))
+                                        {
+                                            LogDebug("[BVApp_ConsoleClient]: File {} exists!", argStr);
+                                            GetConnectionManager().InitiateFileTransferWithSession(sid, filePath);
+                                            LogDebug("[BVApp_ConsoleClient]: Initiated file transfer with session: {}", sid);
+                                        } else
+                                        {
+                                            LogDebug("[BVApp_ConsoleClient]: File {} does not exist!", argStr);
+                                        }
+                                        sendingFile = false;
+                                        continue;
+                                    }
+
                                     std::unique_ptr<BVTCPMessage<BVChatMessagePayload>> chatMsg = ConstructChatMessageFromInput(msgStr);
                                     uint64_t timestamp = chatMsg->header.timestamp;
                                     BVStatus sentStatus = GetConnectionManager().SendDataToNode(std::move(chatMsg), sid);
