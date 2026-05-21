@@ -46,6 +46,7 @@ void BVApp_ConsoleClient::Run(void)
         // continue; // uncomment when debugging - this hangs the main thread.
         const char key = this->terminal.ReadChar();
         auto action = ParseConsoleActionFromKey(key);
+        bool sendingFile = false;
         if (!action.has_value())
         {
             continue; // actions not handled
@@ -100,7 +101,6 @@ void BVApp_ConsoleClient::Run(void)
                                     // split string after space
                                     std::string argStr{};
                                     std::string::size_type argPos = msgStr.find(' ');
-                                    bool sendingFile = false;
                                     if (argPos == 2)
                                     {
                                         argStr = msgStr.substr(argPos);
@@ -236,7 +236,7 @@ void BVApp_ConsoleClient::Run(void)
                 // using GoodbyeMsg = BVTCPMessage<CharPayload128B>;
                 // // Send message that we are deregistering
                 // // TODO ...
-                // BVTCPMessageHeader header = ConstructHeader(
+                // BVTCPMessageHeader header = ConstructMessageHeader(
                 //     BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_NODESESSION_GOODBYE);
                 // CharPayload128B payloadRaw;
                 // const std::string& serviceNameToCopy = 

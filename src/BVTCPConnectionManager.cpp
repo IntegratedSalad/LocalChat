@@ -161,7 +161,7 @@ BVStatus BVTCPConnectionManager::StartAcceptingConnections(void)
     //             this->LogTrace("Accept successful. Requesting identification from the peer.");
     //             // session_p->
     //             // Construct message
-    //             BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO);
+    //             BVTCPMessageHeader header = ConstructMessageHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO);
     //             BVTCPMessage<std::array<char, 128>> helloMsg = ConstructMessage(header, std::array<char,128>()); // empty payload
     //             session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
     //             session_p->WriteMessageFrame(helloMsg);

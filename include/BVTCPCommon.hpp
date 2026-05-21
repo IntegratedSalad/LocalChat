@@ -163,6 +163,20 @@ struct BVTCPMessageHeader
     uint8_t  msgType;
 };
 
+struct BVTCPFileHeader
+{
+    uint32_t chunkSize;
+    uint64_t timestamp;
+    uint8_t  msgType;
+};
+
+template<typename BufferArray>
+struct BVTCPFileChunk
+{
+    BVTCPFileHeader header;
+    BufferArray     payload;
+};
+
 template<typename PayloadType>
 struct BVTCPMessage
 {
@@ -173,10 +187,6 @@ struct BVTCPMessage
 struct BVChatMessagePayload // payload of a certain type sent over the network.
 {
     CharBufferArray128B textData;
-};
-
-struct BVFileMessagePayload
-{
 };
 
 // Maybe templated, in case of exchanging files.
@@ -253,6 +263,9 @@ struct BVTCPNodeConnectionSessionData
     std::shared_ptr<boost::asio::ip::tcp::socket> sock; // shared pointer?
     bool alive = false;
 
+    // It is enough that it's one write buffer and read buffer per session.
+    // We will not send instantenously a file and message or two or more messages at once
+    // or two or more files at once
     std::string writeBuf;
     std::unique_ptr<char[]> readBuf;
     
@@ -273,7 +286,19 @@ struct BVTCPNodeConnectionSessionData
     }
 };
 
-inline BVTCPMessageHeader ConstructHeader(const uint8_t msgType)
+inline BVTCPFileHeader ConstructFileHeader(const uint8_t msgType, const uint32_t csize)
+{
+    BVTCPFileHeader header;
+    std::chrono::milliseconds ts = 
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch());
+    header.timestamp = ts.count();
+    header.msgType = msgType;
+    header.chunkSize = csize;
+    return header;
+}
+
+inline BVTCPMessageHeader ConstructMessageHeader(const uint8_t msgType)
 {
     BVTCPMessageHeader header;
     std::chrono::milliseconds ts = 
@@ -292,4 +317,14 @@ inline BVTCPMessage<PayloadType> ConstructMessage(BVTCPMessageHeader header, Pay
     msg.header = header;
     msg.payload = payload;
     return msg;
+}
+
+template<typename BufferArray>
+inline BVTCPFileChunk<BufferArray> ConstructFileChunk(BVTCPFileHeader header, 
+                                                      BufferArray payload)
+{
+    BVTCPFileChunk<BufferArray> chunk;
+    chunk.header = header;
+    chunk.payload = payload;
+    return chunk;
 }

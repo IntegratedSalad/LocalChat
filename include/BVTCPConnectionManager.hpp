@@ -348,7 +348,7 @@ public:
                     // session_p now identifies socket with that socket.
                     this->LogTrace("Accept successful. Requesting identification from the peer.");
                     // Construct message
-                    BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO);
+                    BVTCPMessageHeader header = ConstructMessageHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLO);
                     BVTCPMessage<std::array<char, 128>> helloMsg = ConstructMessage(header, std::array<char,128>()); // empty payload
                     session_p->SetState(BVSessionState::BVSESSIONSTATE_UNPREPARED);
                     session_p->WriteMessageFrame(helloMsg);
@@ -383,7 +383,7 @@ public:
                 service_sessionid_m[serviceName] = caller->GetSessionID();
                 AddNodeToNodesM(serviceName, caller->GetSessionData()->nodeData);
                 LogTrace("BVTCPConnectionManager: Sending BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED...");
-                BVTCPMessageHeader header = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED);
+                BVTCPMessageHeader header = ConstructMessageHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED);
                 BVTCPMessage<std::array<char, 128>> confirmEstablishedMessage = ConstructMessage(header, std::array<char,128>()); // empty payload
                 caller->WriteMessageFrame(confirmEstablishedMessage);
             }

@@ -28,25 +28,37 @@ private:
 
     FileTransferState state = FileTransferState::FILETRANSFERSTATE_FIRST_CHUNK;
     std::size_t  csize; // chunk size
-    std::size_t  bytesSend = 0;
+    std::size_t  bytesSent = 0;
     std::atomic_bool isRunning{true};
 
     std::thread worker_thread;
 
+    // When we are sending a file, we cannot send messages
     void TransferNextChunk(void)
     {
-        if (state == FileTransferState::FILETRANSFERSTATE_FIRST_CHUNK)
+        std::vector<char> dataToTransferBuffer(csize);
+        fhandle.read(dataToTransferBuffer.data(), 
+            static_cast<std::streamsize>(dataToTransferBuffer.size()));
+        const std::streamsize bytesRead = fhandle.gcount();
+        if (bytesRead > 0)
         {
-            // Construct BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN
+            if (state == FileTransferState::FILETRANSFERSTATE_FIRST_CHUNK)
+            {
+                
 
-            state = FileTransferState::FILETRANSFERSTATE_ONGOING;
-            return;
-        } else if (state == FileTransferState::FILETRANSFERSTATE_ONGOING)
+
+                state = FileTransferState::FILETRANSFERSTATE_ONGOING;
+
+            } else if (state == FileTransferState::FILETRANSFERSTATE_ONGOING)
+            {
+
+            } else if (state == FileTransferState::FILETRANSFERSTATE_LAST_CHUNK)
+            {
+
+            }
+        } else
         {
-            return;
-        } else if (state == FileTransferState::FILETRANSFERSTATE_LAST_CHUNK)
-        {
-            return;
+            isRunning = false;
         }
     }
 
@@ -55,7 +67,7 @@ private:
         constexpr std::size_t chunkSizeAbsoluteMinimum = 64;
         if (fsize < MIN_FILE_CHUNK_SIZE_BYTES_256B)
         {
-            csize = chunkSizeAbsoluteMinimum; // if the file is really small then send 64*4 chunks
+            csize = chunkSizeAbsoluteMinimum; // if the file is really small then send max 64*4 chunks
         } else if (fsize < FILE_SIZE_BYTES_1KB)
         {
             csize = MIN_FILE_CHUNK_SIZE_BYTES_256B;
@@ -79,6 +91,7 @@ private:
             csize = FILE_CHUNK_SIZE_BYTES_512KB;
         }
         // } else if (fsize > ) TODO: OTHER CASES
+        LogTrace("[FileTransferContext]: Chosen chunk size: {}", csize);
     }
     
 public:
@@ -96,7 +109,14 @@ public:
         // 3. Create file handle
         DetermineChunkSize();
         fhandle = std::fstream{_fpath, fhandle.binary | fhandle.in};
-        LaunchFileTransfer();
+        if (!fhandle.is_open())
+        {
+            LogError("[FileTransferContext]: Failed to open file for: {}", _fpath.string());
+            // TODO: send BVEVENTTYPE_APP_FILE_TRANSFER_CANCELLED
+        } else
+        {
+            LaunchFileTransfer();
+        }
     }
 
     void LaunchFileTransfer(void)
@@ -104,7 +124,10 @@ public:
         worker_thread = std::thread([&] {
             while (isRunning)
             {
-                this->TransferNextChunk();
+                if (fhandle)
+                {
+                    this->TransferNextChunk();
+                }
             }
         });
         if (worker_thread.joinable())
@@ -116,8 +139,9 @@ public:
     void CancelFileTransfer(void)
     {
         this->isRunning = false;
+        fhandle.close();
 
         // send message that file transfer has been cancelled.
     }
-    ~FileTransferContext(){fhandle.close();}
+    ~FileTransferContext(){}
 };

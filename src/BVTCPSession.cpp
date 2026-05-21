@@ -65,7 +65,7 @@ void BVTCPSession::OnReceiveHelloFrame(void)
     const std::string& serviceNameToCopy = this->sessionData_p->thisMachineServiceName;
     CharPayload128B payloadRaw;
     std::copy(serviceNameToCopy.begin(), serviceNameToCopy.end(), payloadRaw.data());
-    BVTCPMessageHeader replyHeader = ConstructHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLOBACK);
+    BVTCPMessageHeader replyHeader = ConstructMessageHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_HELLOBACK);
     BVTCPMessage<CharPayload128B> replyMsg = ConstructMessage(replyHeader, payloadRaw);
     replyMsg.header.dataLen = serviceNameToCopy.length();
     WriteMessageFrame(replyMsg);

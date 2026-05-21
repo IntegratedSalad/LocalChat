@@ -16,6 +16,7 @@
  * This class communicates with App to update its data regarding communication with other nodes
 */
 
+using ReadWriteCallback = std::function<void(const boost::system::error_code&, std::size_t bytes_transferred)>;
 // Sessions can call manager's callbacks
 class BVTCPConnectionManager;
 class BVTCPSession : public BVLoggable, public std::enable_shared_from_this<BVTCPSession>
@@ -78,8 +79,10 @@ private:
         );
     }
 
-    // TODO: ReadFileChunkCallback - function largely the same, but with set file buffer
+    // TODO: WriteFileChunkCallback - function largely the same, but with set file buffer
     //                               for that I think we need a file buffer that can be resizable
+
+    // void WriteFileChunkCallback()
 
     void ReadMessageFrameCallback(const boost::system::error_code& ec,
                                   std::size_t bytes_transferred)
@@ -154,6 +157,33 @@ private:
                   std::bind(&BVTCPSession::ReadMessageFrameCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
+    // void StartReadingChunks(void) ...
+
+    // TODO: WriteFileChunkCallback - function largely the same, but with set file buffer
+    //                               for that I think we need a file buffer that can be resizable
+
+    void WriteFileChunkCallback(const boost::system::error_code& ec,
+                                std::size_t bytes_transferred)
+    {
+        if (ec)
+        {
+            LogError("Session [{}]: Error while writing frame to a socket! {}, {}. Message: {}",  
+                this->GetSessionData()->sessionID, ec.value(), ec.message(), sessionData_p->writeBuf);
+            return;
+        }
+        LogTrace("Session [{}]: Written {} bytes", this->sessionData_p->sessionID, bytes_transferred);
+        this->sessionData_p->totalBytesWritten = bytes_transferred; // this should be chunk size
+        ClearWriteBuffer();
+        // Can we send all chunk bytes at once?
+        // Or we have to scramble the chunk bytes
+        // and then the chunk bytes into files?
+        // No - we can send up to 2MB at once, but we will need to load this into memory
+    }
+
+    // TODO: This callback actually
+    //       writes all the bytes at once - it uses async_write not async_write_some
+    //       Part when we checkif totalBytesWritten is equal to the writeBuf.length() (entire frame)
+    //       might be redundant.
     void WriteMessageFrameCallback(const boost::system::error_code& ec,
                                    std::size_t bytes_transferred)
     {
@@ -250,6 +280,51 @@ public:
     void RequestReadingFrames(void)
     {
         StartReadingFrames();
+    }
+
+    // This function calls async_write to just send all the data
+    template<typename PayloadType>
+    void WriteFileChunk(const BVTCPMessage<PayloadType>& message,
+                        const std::size_t                csize)
+    {
+        static_assert(std::is_trivially_copyable_v<BVTCPMessage<PayloadType>>,
+                    "BVTCPMessage must be trivially copyable to send as raw bytes.");
+
+        this->sessionData_p->totalBytesWritten = 0;
+        
+        constexpr std::size_t headerSize = 10;
+        const std::size_t payloadSize = csize - headerSize;
+
+        if (sizeof(PayloadType) > payloadSize)
+        {
+            LogError("Session [{}]: WriteMessageFrame: payload too large. payloadSize={}, max={}",
+                this->sessionData_p->sessionID, sizeof(PayloadType), payloadSize);
+            return;
+        }
+
+        LogDebug("WriteMessageFrame: data size: {}", sizeof(message.payload));
+        LogDebug("WriteMessageFrame: dataLen: {}", message.header.dataLen);
+        char* buf = this->sessionData_p->writeBuf.data();
+        buf[0] = static_cast<char>(message.header.dataLen);
+        std::memcpy(buf + 1,
+            &message.header.timestamp,
+            sizeof(message.header.timestamp));
+        buf[9] = static_cast<char>(message.header.msgType);
+        std::memcpy(buf + headerSize,
+            &message.payload,
+            sizeof(PayloadType));
+
+        assert(this->sessionData_p->writeBuf.size() != 0);
+
+        auto self = shared_from_this();
+        boost::asio::async_write(
+            *this->sessionData_p->sock,
+            boost::asio::buffer(self->sessionData_p->writeBuf.data(),
+                                self->sessionData_p->writeBuf.size()),
+            [self](const boost::system::error_code& ec, std::size_t bytesTransferred)
+            {
+                self->WriteFileChunkCallback(ec, bytesTransferred);
+            });
     }
 
     template<typename PayloadType>
