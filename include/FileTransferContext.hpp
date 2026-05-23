@@ -10,6 +10,9 @@
 #include "BVLoggable.hpp"
 
 // File transfer is always outgoing?
+// What will the context be for receiving a message?
+// Just handling it in app
+// and concatenating it to a one file?
 enum class FileTransferState
 {
     FILETRANSFERSTATE_FIRST_CHUNK,
@@ -24,7 +27,7 @@ private:
     const uint16_t     ftcid; // id of the FileTransferContext
     
     std::shared_ptr<BVTCPSession> session_p;
-    MailboxGetter mailbox_F; // this will directly send messages to app.    
+    MailboxGetter mailbox_F; // this will directly send messages to app. But for what?
 
     FileTransferState state = FileTransferState::FILETRANSFERSTATE_FIRST_CHUNK;
     std::size_t  csize; // chunk size
@@ -33,29 +36,49 @@ private:
 
     std::thread worker_thread;
 
-    // When we are sending a file, we cannot send messages
+    // Important: when we are sending a file, we cannot send messages!!!
     void TransferNextChunk(void)
     {
         std::vector<char> dataToTransferBuffer(csize);
         fhandle.read(dataToTransferBuffer.data(), 
             static_cast<std::streamsize>(dataToTransferBuffer.size()));
-        const std::streamsize bytesRead = fhandle.gcount();
+        const std::streamsize bytesRead = fhandle.gcount();       
         if (bytesRead > 0)
         {
+            LogTrace("[FileTransferContext]: Read {} bytes from file.", bytesRead);
+            uint8_t msgType;
+            uint32_t metadata;
             if (state == FileTransferState::FILETRANSFERSTATE_FIRST_CHUNK)
             {
-                
-
-
+                msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN;
+                metadata = fsize;
                 state = FileTransferState::FILETRANSFERSTATE_ONGOING;
-
+                LogTrace("[FileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
             } else if (state == FileTransferState::FILETRANSFERSTATE_ONGOING)
             {
-
-            } else if (state == FileTransferState::FILETRANSFERSTATE_LAST_CHUNK)
-            {
-
+                if (bytesSent + csize == fsize)
+                {
+                    state = FileTransferState::FILETRANSFERSTATE_LAST_CHUNK;
+                } else
+                {
+                    msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT;
+                    metadata = 0;
+                    state = FileTransferState::FILETRANSFERSTATE_ONGOING;
+                    LogTrace("[FileTransferContext]: Sent FILE_TRANSFER_CHUNK_SENT of size: {}", csize);
+                }
             }
+            if (state == FileTransferState::FILETRANSFERSTATE_LAST_CHUNK)
+            {
+                msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END;
+                metadata = 0;
+                state = FileTransferState::FILETRANSFERSTATE_ONGOING;
+                LogTrace("[FileTransferContext]: Sent FILETRANSFERSTATE_FILE_TRANSFER_END of size: {}", csize);
+                isRunning = false;
+            }
+            BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
+            BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, dataToTransferBuffer);
+            session_p->WriteFileChunk(fChunk, csize);
+            bytesSent += bytesRead;  
         } else
         {
             isRunning = false;

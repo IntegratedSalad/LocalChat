@@ -29,6 +29,7 @@ static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_
 #define FILE_CHUNK_SIZE_BYTES_512B      512
 #define MIN_FILE_CHUNK_SIZE_BYTES_256B  256
 
+// redundant?
 #define FILE_SIZE_BYTES_1KB              1000
 #define FILE_SIZE_BYTES_2KB              2000
 #define FILE_SIZE_BYTES_4KB              4000
@@ -43,22 +44,12 @@ static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_
 #define FILE_SIZE_BYTES_500MB            500000000
 #define FILE_SIZE_BYTES_1GB              1000000000
 #define FILE_SIZE_BYTES_2GB              2000000000 
+// redundant?
 
 using NodeID = uint8_t;
 using SessionID = uint16_t;
 using CharBufferArray128B = std::array<char, MAX_TEXT_DATA_MSG_BYTES>;
-// For files
-using CharBufferArray256B = std::array<char, MIN_FILE_CHUNK_SIZE_BYTES_256B>;
-using CharBufferArray1024B = std::array<char, FILE_CHUNK_SIZE_BYTES_512B>;
-using CharBufferArray2048B = std::array<char, FILE_CHUNK_SIZE_BYTES_2KB>;
-using CharBufferArray4096B = std::array<char, FILE_CHUNK_SIZE_BYTES_4KB>;
-using CharBufferArray8192B = std::array<char, FILE_CHUNK_SIZE_BYTES_8KB>;
-using CharBufferArray16384B = std::array<char, FILE_CHUNK_SIZE_BYTES_16KB>;
-using CharBufferArray32768B = std::array<char, FILE_CHUNK_SIZE_BYTES_32KB>;
-using CharBufferArray65536B = std::array<char, FILE_CHUNK_SIZE_BYTES_64KB>;
-
-using CharBufferArray524288B = std::array<char, FILE_CHUNK_SIZE_BYTES_512KB>;
-
+using FileChunkBuffer     = std::vector<char>;
 using MailboxGetter = std::function<std::shared_ptr<threadsafe_queue<BVMessage>>()>;
 
 /*
@@ -168,13 +159,23 @@ struct BVTCPFileHeader
     uint32_t chunkSize;
     uint64_t timestamp;
     uint8_t  msgType;
+    uint32_t metadata;
 };
+constexpr std::size_t FILE_HEADER_SIZE_BYTES =
+    sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint32_t); // 17
+static_assert(FILE_HEADER_SIZE_BYTES == 17);
 
-template<typename BufferArray>
+// template<typename BufferArray>
+// struct BVTCPFileChunk
+// {
+//     BVTCPFileHeader header;
+//     BufferArray     payload;
+// };
+
 struct BVTCPFileChunk
 {
-    BVTCPFileHeader header;
-    BufferArray     payload;
+    BVTCPFileHeader  header;
+    FileChunkBuffer  payload;
 };
 
 template<typename PayloadType>
@@ -286,7 +287,9 @@ struct BVTCPNodeConnectionSessionData
     }
 };
 
-inline BVTCPFileHeader ConstructFileHeader(const uint8_t msgType, const uint32_t csize)
+inline BVTCPFileHeader ConstructFileHeader(const uint8_t msgType, 
+                                           const uint32_t csize,
+                                           const uint32_t metadata)
 {
     BVTCPFileHeader header;
     std::chrono::milliseconds ts = 
@@ -295,6 +298,7 @@ inline BVTCPFileHeader ConstructFileHeader(const uint8_t msgType, const uint32_t
     header.timestamp = ts.count();
     header.msgType = msgType;
     header.chunkSize = csize;
+    header.metadata = metadata;
     return header;
 }
 
@@ -319,11 +323,10 @@ inline BVTCPMessage<PayloadType> ConstructMessage(BVTCPMessageHeader header, Pay
     return msg;
 }
 
-template<typename BufferArray>
-inline BVTCPFileChunk<BufferArray> ConstructFileChunk(BVTCPFileHeader header, 
-                                                      BufferArray payload)
+inline BVTCPFileChunk ConstructFileChunk(BVTCPFileHeader header, 
+                                         FileChunkBuffer payload)
 {
-    BVTCPFileChunk<BufferArray> chunk;
+    BVTCPFileChunk chunk;
     chunk.header = header;
     chunk.payload = payload;
     return chunk;

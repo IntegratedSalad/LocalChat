@@ -84,6 +84,7 @@ private:
 
     // void WriteFileChunkCallback()
 
+    // Can also receive files?
     void ReadMessageFrameCallback(const boost::system::error_code& ec,
                                   std::size_t bytes_transferred)
     {
@@ -142,6 +143,22 @@ private:
                 ClearReadBuffer();
             }
             return;
+        } else
+        {
+            this->sessionData_p->totalBytesRead = 0;
+            BVTCPMessageHeader header = GetMsgHeader();
+            if (header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN ||
+                header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT ||
+                header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END)
+            {
+                // OnReceiveFileChunk(header);
+                LogTrace("[BVTCPSession (id:{})]: Received a file chunk.", 
+                    this->sessionData_p->sessionID);
+            } else
+            {
+                LogError("[BVTCPSession (id:{})]: Received more bytes than standard frame but it isn't a file chunk.",  
+                    this->sessionData_p->sessionID);
+            }
         }
         boost::asio::async_read(*this->sessionData_p->sock, 
             boost::asio::buffer(this->sessionData_p->readBuf.get() + this->sessionData_p->totalBytesRead,
@@ -283,48 +300,63 @@ public:
     }
 
     // This function calls async_write to just send all the data
-    template<typename PayloadType>
-    void WriteFileChunk(const BVTCPMessage<PayloadType>& message,
-                        const std::size_t                csize)
+    void WriteFileChunk(const BVTCPFileChunk& chunk,
+                        const std::size_t payloadBytes)
     {
-        static_assert(std::is_trivially_copyable_v<BVTCPMessage<PayloadType>>,
-                    "BVTCPMessage must be trivially copyable to send as raw bytes.");
-
         this->sessionData_p->totalBytesWritten = 0;
-        
-        constexpr std::size_t headerSize = 10;
-        const std::size_t payloadSize = csize - headerSize;
+        constexpr std::size_t headerSize = FILE_HEADER_SIZE_BYTES;
 
-        if (sizeof(PayloadType) > payloadSize)
+        if (payloadBytes > chunk.payload.size())
         {
-            LogError("Session [{}]: WriteMessageFrame: payload too large. payloadSize={}, max={}",
-                this->sessionData_p->sessionID, sizeof(PayloadType), payloadSize);
+            LogError("Session [{}]: WriteFileChunk: payloadBytes={} but vector size={}",
+                this->sessionData_p->sessionID,
+                payloadBytes,
+                chunk.payload.size());
             return;
         }
 
-        LogDebug("WriteMessageFrame: data size: {}", sizeof(message.payload));
-        LogDebug("WriteMessageFrame: dataLen: {}", message.header.dataLen);
+        if (payloadBytes > std::numeric_limits<uint32_t>::max())
+        {
+            LogError("Session [{}]: WriteFileChunk: payload too large: {}",
+                this->sessionData_p->sessionID,
+                payloadBytes);
+            return;
+        }
+        const std::size_t frameSize = headerSize + payloadBytes;
+        this->sessionData_p->writeBuf.resize(frameSize);
         char* buf = this->sessionData_p->writeBuf.data();
-        buf[0] = static_cast<char>(message.header.dataLen);
-        std::memcpy(buf + 1,
-            &message.header.timestamp,
-            sizeof(message.header.timestamp));
-        buf[9] = static_cast<char>(message.header.msgType);
-        std::memcpy(buf + headerSize,
-            &message.payload,
-            sizeof(PayloadType));
+        std::size_t offset = 0;
+        const uint32_t chunkSize = static_cast<uint32_t>(payloadBytes);
 
-        assert(this->sessionData_p->writeBuf.size() != 0);
+        std::memcpy(buf + offset, &chunkSize, sizeof(chunkSize));
+        offset += sizeof(chunkSize);
+        std::memcpy(buf + offset, &chunk.header.timestamp, sizeof(chunk.header.timestamp));
+        offset += sizeof(chunk.header.timestamp);
+        std::memcpy(buf + offset, &chunk.header.msgType, sizeof(chunk.header.msgType));
+        offset += sizeof(chunk.header.msgType);
+        assert(offset == headerSize);
 
+        if (payloadBytes > 0)
+        {
+            std::memcpy(
+                buf + offset,
+                chunk.payload.data(),
+                payloadBytes
+            );
+        }
         auto self = shared_from_this();
         boost::asio::async_write(
             *this->sessionData_p->sock,
-            boost::asio::buffer(self->sessionData_p->writeBuf.data(),
-                                self->sessionData_p->writeBuf.size()),
-            [self](const boost::system::error_code& ec, std::size_t bytesTransferred)
+            boost::asio::buffer(
+                self->sessionData_p->writeBuf.data(),
+                self->sessionData_p->writeBuf.size()
+            ),
+            [self](const boost::system::error_code& ec,
+                std::size_t bytesTransferred)
             {
                 self->WriteFileChunkCallback(ec, bytesTransferred);
-            });
+            }
+        );
     }
 
     template<typename PayloadType>
