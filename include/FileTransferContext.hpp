@@ -56,7 +56,7 @@ private:
                 LogTrace("[FileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
             } else if (state == FileTransferState::FILETRANSFERSTATE_ONGOING)
             {
-                if (bytesSent + csize == fsize)
+                if (bytesSent + csize >= fsize)
                 {
                     state = FileTransferState::FILETRANSFERSTATE_LAST_CHUNK;
                 } else
@@ -153,10 +153,10 @@ public:
                 }
             }
         });
-        if (worker_thread.joinable())
-        {
-            worker_thread.join();
-        }
+        // if (worker_thread.joinable())
+        // {
+        //     worker_thread.join();
+        // }
     }
 
     void CancelFileTransfer(void)
@@ -166,5 +166,12 @@ public:
 
         // send message that file transfer has been cancelled.
     }
-    ~FileTransferContext(){}
+    ~FileTransferContext()
+    {
+        LogTrace("[FileTransferContext]: FTContext id: {} dies.", ftcid);
+        if (worker_thread.joinable())
+        {
+            worker_thread.join();
+        }
+    }
 };

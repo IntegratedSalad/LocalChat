@@ -44,6 +44,8 @@ void BVApp_ConsoleClient::Run(void)
     while (this->GetIsRunning())
     {
         // continue; // uncomment when debugging - this hangs the main thread.
+        ClearScreen();
+        PrintAll();
         const char key = this->terminal.ReadChar();
         auto action = ParseConsoleActionFromKey(key);
         bool sendingFile = false;
@@ -61,6 +63,7 @@ void BVApp_ConsoleClient::Run(void)
             {
                 // send sendmsg event/message
                 // Choose host
+                bool runMessagingMenu = true;
                 LogTrace("App: Choosing sending message...");
                 const auto hostChosen = (*action).num;
                 if (hostChosen.has_value())
@@ -78,9 +81,10 @@ void BVApp_ConsoleClient::Run(void)
                                 found = true;
                                 serviceName = v.serviceName;
                                 LogDebug("App: At {} there's {}. Entering messaging menu.", nodeIdx, serviceName);
-                                while (true)
+                                while (runMessagingMenu)
                                 {
                                     ClearScreen();
+                                    PrintAll();
                                     {
                                         std::lock_guard<std::mutex> l(chatLogsMapMutex);
                                         BVChatMessageLog log;
@@ -109,7 +113,8 @@ void BVApp_ConsoleClient::Run(void)
                                     {
                                         if (msgStr == "|q")
                                         {
-                                            break;
+                                            runMessagingMenu = false;
+                                            continue;
                                         }
                                         if (msgStr == "|r")
                                         {
@@ -192,8 +197,8 @@ void BVApp_ConsoleClient::Run(void)
                                         }
                                     }
                                 }
-                                ClearScreen();
-                                PrintAll();
+                                // ClearScreen();
+                                // PrintAll();
                                 break;
                             }
                             nodeIdx++;

@@ -7,6 +7,8 @@ sessionData_p(_sessionData_p),
 ioContext(_ioContext)
 {
     this->sessionData_p->alive = true;
+
+    // maybe make new fileReadBuf??? and this should be ONLY for messages?
     this->sessionData_p->readBuf = std::make_unique<char[]>(MESSAGE_FRAME_SIZE_BYTES);
     this->ClearReadBuffer();
     this->ClearWriteBuffer();

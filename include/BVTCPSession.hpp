@@ -174,10 +174,20 @@ private:
                   std::bind(&BVTCPSession::ReadMessageFrameCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
+    /*
+        Problem:
+        We're always reading MESSAGE_FRAME_SIZE_BYTES, and deciding what to do with the frame.
+        Maybe reset new buffer UPON receiving FILETRANSFERSTATE_FIRST_CHUNK.
+        Do NOT send any file data with FILETRANSFERSTATE_FIRST_CHUNK.
+        1. Send fsize and csize with it as normal frame (socket has job async_read with MESSAGE_FRAME_SIZE_BYTES)
+           (open file etc...)
+        2. Socket receives MESSAGE_FRAME_SIZE_BYTES and allocates sessionData_p->fileReadBuf = [...](CSIZE)
+        3. Session calls StartReadingChunks, which go to fileReadBuf.
+        4. When Session receives FILETRANSFERSTATE_LAST_CHUNK, it deallocates (clears and nullifies) the fileReadBuf
+           (close file etc...)
+    */
+    // TODO?
     // void StartReadingChunks(void) ...
-
-    // TODO: WriteFileChunkCallback - function largely the same, but with set file buffer
-    //                               for that I think we need a file buffer that can be resizable
 
     void WriteFileChunkCallback(const boost::system::error_code& ec,
                                 std::size_t bytes_transferred)
