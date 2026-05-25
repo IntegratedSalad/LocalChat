@@ -103,7 +103,7 @@ void BVApp_ConsoleClient::Run(void)
                                     std::string::size_type argPos = msgStr.find(' ');
                                     if (argPos == 2)
                                     {
-                                        argStr = msgStr.substr(argPos);
+                                        argStr = msgStr.substr(argPos+1);
                                     }
                                     if (msgStr.length() == 2)
                                     {

@@ -30,20 +30,20 @@ static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_
 #define MIN_FILE_CHUNK_SIZE_BYTES_256B  256
 
 // redundant?
-#define FILE_SIZE_BYTES_1KB              1000
-#define FILE_SIZE_BYTES_2KB              2000
-#define FILE_SIZE_BYTES_4KB              4000
-#define FILE_SIZE_BYTES_8KB              8000
-#define FILE_SIZE_BYTES_64KB             64000
-#define FILE_SIZE_BYTES_256KB            256000
-#define FILE_SIZE_BYTES_1MB              1000000           
-#define FILE_SIZE_BYTES_5MB              5000000
-#define FILE_SIZE_BYTES_25MB             25000000
-#define FILE_SIZE_BYTES_75MB             75000000
-#define FILE_SIZE_BYTES_150MB            150000000
-#define FILE_SIZE_BYTES_500MB            500000000
-#define FILE_SIZE_BYTES_1GB              1000000000
-#define FILE_SIZE_BYTES_2GB              2000000000 
+#define FILE_SIZE_BYTES_1KB             1000
+#define FILE_SIZE_BYTES_2KB             2000
+#define FILE_SIZE_BYTES_4KB             4000
+#define FILE_SIZE_BYTES_8KB             8000
+#define FILE_SIZE_BYTES_64KB            64000
+#define FILE_SIZE_BYTES_256KB           256000
+#define FILE_SIZE_BYTES_1MB             1000000           
+#define FILE_SIZE_BYTES_5MB             5000000
+#define FILE_SIZE_BYTES_25MB            25000000
+#define FILE_SIZE_BYTES_75MB            75000000
+#define FILE_SIZE_BYTES_150MB           150000000
+#define FILE_SIZE_BYTES_500MB           500000000
+#define FILE_SIZE_BYTES_1GB             1000000000
+#define FILE_SIZE_BYTES_2GB             2000000000 
 // redundant?
 
 using NodeID = uint8_t;

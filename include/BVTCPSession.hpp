@@ -334,6 +334,8 @@ public:
         offset += sizeof(chunk.header.timestamp);
         std::memcpy(buf + offset, &chunk.header.msgType, sizeof(chunk.header.msgType));
         offset += sizeof(chunk.header.msgType);
+        std::memcpy(buf + offset, &chunk.header.metadata, sizeof(chunk.header.metadata));
+        offset += sizeof(chunk.header.metadata);
         assert(offset == headerSize);
 
         if (payloadBytes > 0)
