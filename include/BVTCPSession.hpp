@@ -282,7 +282,6 @@ private:
     BVTCPFileHeader GetFileHeader(const char* buf)
     {
         BVTCPFileHeader header{};
-        // const char* buf = this->sessionData_p->fileReadBuf.get();
         std::memcpy(&header.chunkSize, buf, sizeof(header.chunkSize)); // 0..3 4 bytes
         std::memcpy(&header.timestamp, buf + 4, sizeof(header.timestamp)); // 4..11 8 bytes
         header.msgType = static_cast<uint8_t>(buf[12]);

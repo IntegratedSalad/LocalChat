@@ -312,7 +312,7 @@ struct BVTCPNodeConnectionSessionData
 
 inline BVTCPFileHeader ConstructFileHeader(const uint8_t msgType, 
                                            const uint32_t csize,
-                                           const uint32_t metadata)
+                                           const uint64_t metadata)
 {
     BVTCPFileHeader header;
     std::chrono::milliseconds ts = 

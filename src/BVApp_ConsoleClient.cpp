@@ -574,13 +574,16 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
 
     const uint32_t    csize  = res.csize;  
     const uint32_t    fsize  = res.fsize;
-    std::vector<char> fdata  = res.fdata; // service name and filename!
+    const std::vector<char> fdata  = res.fdata; // service name and filename!
+    const std::string fdataStr{fdata.begin(), fdata.end()};
+    const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
+    const std::string fname       = fdataStr.substr(fdataStr.find("|"));
 
     // TODO: Parse fdata, create a context/something for the incoming file.
     //       Create directory under the service name and open file with the name provided.
 
-    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} raw payload: {}",
-        fsize, csize, fdata.data());
+    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {} From: {} Name: {}",
+        fsize, csize, fdataStr, serviceName, fname);
 
     return BVStatus::BVSTATUS_OK;
 }

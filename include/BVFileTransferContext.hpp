@@ -66,6 +66,7 @@ private:
             session_p->WriteFileChunk(fChunk, ftBeginPayload.size());
             LogTrace("[BVFileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
             LogTrace("[BVFileTransferContext]: File name: {}", fname);
+            LogDebug("[BVFileTransferContext]: Metadata raw: {}", metadata);
             return;
         }
         std::vector<char> dataToTransferBuffer(csize);
