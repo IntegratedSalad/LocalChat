@@ -574,7 +574,7 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
 
     const uint32_t    csize  = res.csize;  
     const uint32_t    fsize  = res.fsize;
-    std::vector<char> fdata = res.fdata; // service name and filename!
+    std::vector<char> fdata  = res.fdata; // service name and filename!
 
     // TODO: Parse fdata, create a context/something for the incoming file.
     //       Create directory under the service name and open file with the name provided.

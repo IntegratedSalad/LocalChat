@@ -180,6 +180,7 @@ void BVTCPSession::OnReceiveChatMessageFrame(void)
     StartReadingFrames();
 }
 
+// TODO: Change that to void - always returns false
 bool BVTCPSession::OnReceiveStandardFrame(void)
 {
     // Parse
@@ -205,6 +206,20 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
             OnReceiveChatMessageFrame();
             break;
         }
+        default:
+        {
+            LogWarn(
+                "Session [{}]: Received a standard, unrecognized frame. It maybe a file header.",
+                    this->GetSessionData()->sessionID);
+            break;
+        }
+    }
+
+    // When beginning file transfer, first message is received as a standard frame.
+    // So we're trying to get file header from the buffer destined for messages.
+    BVTCPFileHeader fileHeader = GetFileHeader(this->sessionData_p->readBuf.get());
+    switch (fileHeader.msgType)
+    {
         case BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN:
         {
             LogTrace(
@@ -215,8 +230,8 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
         }
         default:
         {
-            LogWarn(
-                "Session [{}]: Received a standard, unrecognized frame..",
+            LogError(
+                "Session [{}]: Received a standard, unrecognized frame. It isn't a file header.",
                     this->GetSessionData()->sessionID);
             break;
         }
@@ -226,7 +241,7 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
 
 void BVTCPSession::OnReceiveFileTransferBegin(void)
 {
-    BVTCPFileHeader   header = GetFileHeader();
+    BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->fileReadBuf.get());
     std::vector<char> payload = GetFileData();
     if (header.msgType != static_cast<uint8_t>(
             BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN))
