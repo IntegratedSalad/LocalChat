@@ -150,7 +150,7 @@ void BVApp_ConsoleClient::Run(void)
                                         //    object that spawns a mutex and conditional variable
                                         //    it can have an inMailBox of App, and it can
                                         //    send messages telling how much bytes it has sent 
-                                        //    Maybe FileTransferContext?
+                                        //    Maybe BVFileTransferContext?
                                         //    class that holds information about sent file.
                                         //    it is put on a separate thread and receives
                                         //    inMailBox
@@ -526,7 +526,7 @@ BVStatus BVApp_ConsoleClient::HandleMessageIncoming(std::unique_ptr<std::any> dp
     {
         std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING callback. "
                     << e.what() << std::endl;
-        LogError("App: Bad cast in HandleMessageIncoming! Error details: {}", e.what());
+        LogError("[BVApp_ConsoleClient]: Bad cast in HandleMessageIncoming! Error details: {}", e.what());
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
@@ -556,7 +556,7 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
     LogTrace("[BVApp_ConsoleClient]: Received HandleFileTransferBegin");
     if (dp == nullptr)
     {
-        LogError("App: Error - HandleFileTransferBegin, data pointer is null!");
+        LogError("[BVApp_ConsoleClient]: Error - HandleFileTransferBegin, data pointer is null!");
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
     BVTCPFileData res;
@@ -568,12 +568,19 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
     {
         std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN callback. "
                     << e.what() << std::endl;
-        LogError("App: Bad cast in HandleFileTransferBegin! Error details: {}", e.what());
+        LogError("[BVApp_ConsoleClient]: Bad cast in HandleFileTransferBegin! Error details: {}", e.what());
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    const uint32_t csize  = res.csize;  
-    const uint32_t fsize  = res.fsize;
+    const uint32_t    csize  = res.csize;  
+    const uint32_t    fsize  = res.fsize;
+    std::vector<char> fdata = res.fdata; // service name and filename!
+
+    // TODO: Parse fdata, create a context/something for the incoming file.
+    //       Create directory under the service name and open file with the name provided.
+
+    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} raw payload: {}",
+        fsize, csize, fdata.data());
 
     return BVStatus::BVSTATUS_OK;
 }

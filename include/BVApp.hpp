@@ -29,7 +29,6 @@ class BVApp
 private:
     std::atomic<bool> isRunning = true;
     std::thread worker_thread;
-    // std::thread tcp_session_broker_thread?
     std::thread io_thread;
 
     boost::asio::io_context& ioContext; // App owns ioContext

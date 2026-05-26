@@ -290,6 +290,16 @@ private:
         return header;
     }
 
+    std::vector<char> GetFileData(void)
+    {
+        std::vector<char> d_v;
+        for (char* c = this->sessionData_p->fileReadBuf.get() + FILE_HEADER_SIZE_BYTES; *c != '\0'; c++)
+        {
+            d_v.push_back(*c);
+        }
+        return d_v;
+    }
+
 public:
     BVTCPSession(std::shared_ptr<BVTCPNodeConnectionSessionData> _sessionData_p,
                  boost::asio::io_context& _ioContext);

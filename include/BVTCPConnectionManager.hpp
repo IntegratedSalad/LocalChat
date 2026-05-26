@@ -9,7 +9,7 @@
 #include "BVMessage.hpp"
 #include "BVTCPCommon.hpp"
 #include "BVTCPSession.hpp"
-#include "FileTransferContext.hpp"
+#include "BVFileTransferContext.hpp"
 #include <arpa/inet.h>
 #include <map>
 #include <mutex>
@@ -75,7 +75,7 @@ private:
 
     // File transfer context map.
     // It means that only one file per session can be sent at the same time
-    std::map<SessionID, std::unique_ptr<FileTransferContext>> fileTransferContext_m;
+    std::map<SessionID, std::unique_ptr<BVFileTransferContext>> fileTransferContext_m;
 
     NodeID GetNodeIDByServiceName(const std::string& _serviceName, BVStatus& status_out)
     {
@@ -456,7 +456,7 @@ public:
     
     // File utilities
 
-    // FileTransferContext    
+    // BVFileTransferContext    
     BVStatus InitiateFileTransferWithSession(const SessionID& sid, 
                                              std::filesystem::path& _fpath)
     {
@@ -466,8 +466,8 @@ public:
         if (it == fileTransferContext_m.end())
         {
             // TODO: Add to map.
-            std::unique_ptr<FileTransferContext> ftcp = 
-                std::make_unique<FileTransferContext>(sessions_m.at(sid), _fpath, ftcid, mailbox_F);
+            std::unique_ptr<BVFileTransferContext> ftcp = 
+                std::make_unique<BVFileTransferContext>(sessions_m.at(sid), _fpath, ftcid, mailbox_F);
             ftcp->SetLogger(GetLogger());
             fileTransferContext_m.emplace(sid, std::move(ftcp));
             ftcid += 1;

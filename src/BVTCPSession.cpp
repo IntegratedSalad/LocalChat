@@ -226,7 +226,8 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
 
 void BVTCPSession::OnReceiveFileTransferBegin(void)
 {
-    BVTCPFileHeader header = GetFileHeader();
+    BVTCPFileHeader   header = GetFileHeader();
+    std::vector<char> payload = GetFileData();
     if (header.msgType != static_cast<uint8_t>(
             BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN))
     {
@@ -243,13 +244,11 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
         this->sessionData_p->csize,
         this->sessionData_p->fsize);
 
-    // TODO: Open file via App!.
-
     manager_p->PutMessageIntoAppMailbox(
         BVMessage(
             BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN,
             std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
-                this->sessionData_p->fsize)))
+                this->sessionData_p->fsize, payload)))
         ));
 
     StartReadingChunks(this->sessionData_p->csize);

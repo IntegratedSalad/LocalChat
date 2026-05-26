@@ -181,14 +181,12 @@ struct BVTCPFileData
     fsize(_fsize),
     fdata(_fdata)
     {
-
     }
     BVTCPFileData(const uint32_t _csize,
                   const uint32_t _fsize) :
     csize(_csize),
     fsize(_fsize)
     {
-
     }
 };
 

@@ -13,18 +13,26 @@
 // What will the context be for receiving a message?
 // Just handling it in app
 // and concatenating it to a one file?
+
+// TODO:
+// Rename this file to BVFileTransferContext.hpp
+// classes: BVFileTransferContext (outgoing) and BVFileIncoming
+// 
+
 enum class FileTransferState
 {
     FILETRANSFERSTATE_FIRST_CHUNK,
     FILETRANSFERSTATE_ONGOING,
     FILETRANSFERSTATE_LAST_CHUNK
 };
-class FileTransferContext : public BVLoggable
+
+class BVFileTransferContext : public BVLoggable
 {
 private:
     std::fstream fhandle;
     const std::uint32_t  fsize;
-    const uint16_t       ftcid; // id of the FileTransferContext
+    const uint16_t       ftcid; // id of the BVFileTransferContext
+    const std::string    fname;
     
     std::shared_ptr<BVTCPSession> session_p;
     MailboxGetter mailbox_F; // this will directly send messages to app. But for what?
@@ -44,14 +52,20 @@ private:
         uint64_t metadata = 0;
         if (state == FileTransferState::FILETRANSFERSTATE_FIRST_CHUNK)
         {
+            std::string payloadStr = 
+                this->session_p->GetSessionData()->thisMachineServiceName + "|" + fname;
+            std::vector<char> ftBeginPayload{payloadStr.begin(), payloadStr.end()};
+            ftBeginPayload.push_back('\0'); // information for session where to stop processing
             msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN;
             // We put fsize on 32 high bits and csize on 32 low bits.
             metadata = ((uint64_t)csize << 32) | ((uint64_t)fsize);
             state = FileTransferState::FILETRANSFERSTATE_ONGOING;
             BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
-            BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, std::vector<char>{});
-            session_p->WriteFileChunk(fChunk, 0); // we don't send any data
-            LogTrace("[FileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
+            BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, ftBeginPayload);
+            // Payload: Servicename|Filename\0 (with extension)
+            session_p->WriteFileChunk(fChunk, ftBeginPayload.size());
+            LogTrace("[BVFileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
+            LogTrace("[BVFileTransferContext]: File name: {}", fname);
             return;
         }
         std::vector<char> dataToTransferBuffer(csize);
@@ -60,7 +74,7 @@ private:
         const std::streamsize bytesRead = fhandle.gcount();
         if (bytesRead > 0)
         {
-            LogTrace("[FileTransferContext]: Read {} bytes from file.", bytesRead);
+            LogTrace("[BVFileTransferContext]: Read {} bytes from file.", bytesRead);
             if (state == FileTransferState::FILETRANSFERSTATE_ONGOING)
             {
                 if (bytesSent + csize >= fsize)
@@ -70,14 +84,14 @@ private:
                 {
                     msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT;
                     state = FileTransferState::FILETRANSFERSTATE_ONGOING;
-                    LogTrace("[FileTransferContext]: Sent FILE_TRANSFER_CHUNK_SENT of size: {}", csize);
+                    LogTrace("[BVFileTransferContext]: Sent FILE_TRANSFER_CHUNK_SENT of size: {}", csize);
                 }
             } 
             if (state == FileTransferState::FILETRANSFERSTATE_LAST_CHUNK)
             {
                 msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END;
                 state = FileTransferState::FILETRANSFERSTATE_ONGOING;
-                LogTrace("[FileTransferContext]: Sent FILETRANSFERSTATE_FILE_TRANSFER_END of size: {}", csize);
+                LogTrace("[BVFileTransferContext]: Sent FILETRANSFERSTATE_FILE_TRANSFER_END of size: {}", csize);
                 isRunning = false;
             }
             BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
@@ -119,18 +133,19 @@ private:
             csize = FILE_CHUNK_SIZE_BYTES_512KB;
         }
         // } else if (fsize > ) TODO: OTHER CASES
-        LogTrace("[FileTransferContext]: Chosen chunk size: {}", csize);
+        LogTrace("[BVFileTransferContext]: Chosen chunk size: {}", csize);
     }
     
 public:
-    FileTransferContext(std::shared_ptr<BVTCPSession> _session_p,
+    BVFileTransferContext(std::shared_ptr<BVTCPSession> _session_p,
                         std::filesystem::path& _fpath,
                         const uint16_t _ftcid,
                         MailboxGetter _mailbox_F) :
+    session_p(_session_p),
     fsize(std::filesystem::file_size(_fpath)),
+    fname(std::filesystem::path(_fpath).filename()),
     ftcid(_ftcid),
-    mailbox_F(_mailbox_F),
-    session_p(_session_p)
+    mailbox_F(_mailbox_F)
     {
         // 1. Get file size
         // 2. Determine chunk size
@@ -139,7 +154,7 @@ public:
         fhandle = std::fstream{_fpath, fhandle.binary | fhandle.in};
         if (!fhandle.is_open())
         {
-            LogError("[FileTransferContext]: Failed to open file for: {}", _fpath.string());
+            LogError("[BVFileTransferContext]: Failed to open file for: {}", _fpath.string());
             // TODO: send BVEVENTTYPE_APP_FILE_TRANSFER_CANCELLED
         } else
         {
@@ -171,9 +186,9 @@ public:
 
         // send message that file transfer has been cancelled.
     }
-    ~FileTransferContext()
+    ~BVFileTransferContext()
     {
-        LogTrace("[FileTransferContext]: FTContext id: {} dies.", ftcid);
+        LogTrace("[BVFileTransferContext]: FTContext id: {} dies.", ftcid);
         if (worker_thread.joinable())
         {
             worker_thread.join();
