@@ -289,10 +289,10 @@ private:
         return header;
     }
 
-    std::vector<char> GetFileData(void)
+    std::vector<char> GetFileData(char* buf)
     {
         std::vector<char> d_v;
-        for (char* c = this->sessionData_p->fileReadBuf.get() + FILE_HEADER_SIZE_BYTES; *c != '\0'; c++)
+        for (char* c = buf + FILE_HEADER_SIZE_BYTES; *c != '\0'; c++)
         {
             d_v.push_back(*c);
         }

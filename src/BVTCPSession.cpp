@@ -242,7 +242,7 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
 void BVTCPSession::OnReceiveFileTransferBegin(void)
 {
     BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->readBuf.get());
-    std::vector<char> payload = GetFileData();
+    std::vector<char> payload = GetFileData(this->sessionData_p->readBuf.get());
     if (header.msgType != static_cast<uint8_t>(
             BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN))
     {
