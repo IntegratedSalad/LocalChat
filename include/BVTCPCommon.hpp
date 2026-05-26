@@ -149,13 +149,6 @@ struct BVNode // BVNodeData?
     BVNode() = default;
 };
 
-struct BVTCPMessageHeader
-{
-    uint8_t  dataLen;
-    uint64_t timestamp;
-    uint8_t  msgType;
-};
-
 struct BVTCPFileHeader
 {
     uint32_t chunkSize; // we do not need it now!!!
@@ -167,17 +160,43 @@ constexpr std::size_t FILE_HEADER_SIZE_BYTES =
     sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint64_t);
 static_assert(FILE_HEADER_SIZE_BYTES == 21);
 
-// template<typename BufferArray>
-// struct BVTCPFileChunk
-// {
-//     BVTCPFileHeader header;
-//     BufferArray     payload;
-// };
-
 struct BVTCPFileChunk
 {
     BVTCPFileHeader  header;
     FileChunkBuffer  payload;
+};
+
+// This is a structure that is used to represent file received - used when sending data to App.
+struct BVTCPFileData
+{
+    uint32_t                csize;
+    uint32_t                fsize;
+    std::vector<char>       fdata;
+
+    BVTCPFileData() = default;
+    BVTCPFileData(const uint32_t _csize,
+                  const uint32_t _fsize,
+                  std::vector<char> _fdata) :
+    csize(_csize),
+    fsize(_fsize),
+    fdata(_fdata)
+    {
+
+    }
+    BVTCPFileData(const uint32_t _csize,
+                  const uint32_t _fsize) :
+    csize(_csize),
+    fsize(_fsize)
+    {
+
+    }
+};
+
+struct BVTCPMessageHeader
+{
+    uint8_t  dataLen;
+    uint64_t timestamp;
+    uint8_t  msgType;
 };
 
 template<typename PayloadType>
@@ -192,8 +211,7 @@ struct BVChatMessagePayload // payload of a certain type sent over the network.
     CharBufferArray128B textData;
 };
 
-// Maybe templated, in case of exchanging files.
-// This is a structure that is used to represent message sent/received
+// This is a structure that is used to represent message sent/received - used when sending data to App.
 struct BVChatMessage
 {
     std::string textData;

@@ -17,6 +17,8 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::HandleServiceDeregistration, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING,
                      std::bind(&BVApp_ConsoleClient::HandleMessageIncoming, this, std::placeholders::_1));
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN,
+                     std::bind(&BVApp_ConsoleClient::HandleFileTransferBegin, this, std::placeholders::_1));
 
     // Set getter that returns a correct pointer to Apps inMailBox
     this->GetConnectionManager().SetMailboxGetterF(
@@ -546,6 +548,33 @@ BVStatus BVApp_ConsoleClient::HandleMessageIncoming(std::unique_ptr<std::any> dp
             chatLogsM.emplace(sender, log);
         }
     }
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> dp)
+{
+    LogTrace("[BVApp_ConsoleClient]: Received HandleFileTransferBegin");
+    if (dp == nullptr)
+    {
+        LogError("App: Error - HandleFileTransferBegin, data pointer is null!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    BVTCPFileData res;
+    try
+    {
+        res = std::any_cast<BVTCPFileData>(*dp);
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN callback. "
+                    << e.what() << std::endl;
+        LogError("App: Bad cast in HandleFileTransferBegin! Error details: {}", e.what());
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+
+    const uint32_t csize  = res.csize;  
+    const uint32_t fsize  = res.fsize;
+
     return BVStatus::BVSTATUS_OK;
 }
 

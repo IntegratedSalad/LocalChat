@@ -37,6 +37,7 @@ private:
     std::thread worker_thread;
 
     // Important: when we are sending a file, we cannot send messages!!!
+    // TODO: File name (with extension)!!!
     void TransferNextChunk(void)
     {
         uint8_t msgType;
@@ -47,6 +48,9 @@ private:
             // We put fsize on 32 high bits and csize on 32 low bits.
             metadata = ((uint64_t)csize << 32) | ((uint64_t)fsize);
             state = FileTransferState::FILETRANSFERSTATE_ONGOING;
+            BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
+            BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, std::vector<char>{});
+            session_p->WriteFileChunk(fChunk, 0); // we don't send any data
             LogTrace("[FileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
             return;
         }

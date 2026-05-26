@@ -287,6 +287,7 @@ public:
     BVStatus HandleResolvedServices(std::unique_ptr<std::any> dp) override;
     BVStatus HandleServiceDeregistration(std::unique_ptr<std::any>) override;
     BVStatus HandleMessageIncoming(std::unique_ptr<std::any>) override;
+    BVStatus HandleFileTransferBegin(std::unique_ptr<std::any>) override;
     // -------------------------------------------------------
 
     BVStatus ReadMessages(void);

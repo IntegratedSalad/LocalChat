@@ -104,12 +104,12 @@ private:
         {
             LogTrace("[BVTCPSession (id:{})]: Received another file chunk...", 
                 this->sessionData_p->sessionID);
-            OnReceiveChunkSent();
+            // OnReceiveChunkSent();
         } else if (header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END)
         {
             LogTrace("[BVTCPSession (id:{})]: Received last file chunk... (file transfer end).", 
                 this->sessionData_p->sessionID);
-            OnReceiveFileTransferEnd();
+            // OnReceiveFileTransferEnd();
             return;
         }
         else

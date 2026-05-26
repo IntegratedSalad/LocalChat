@@ -243,8 +243,14 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
         this->sessionData_p->csize,
         this->sessionData_p->fsize);
 
-    // TODO: Open file.
+    // TODO: Open file via App!.
 
+    manager_p->PutMessageIntoAppMailbox(
+        BVMessage(
+            BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN,
+            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
+                this->sessionData_p->fsize)))
+        ));
 
     StartReadingChunks(this->sessionData_p->csize);
 }
