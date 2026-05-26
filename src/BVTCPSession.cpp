@@ -7,14 +7,14 @@ sessionData_p(_sessionData_p),
 ioContext(_ioContext)
 {
     this->sessionData_p->alive = true;
-
-    // maybe make new fileReadBuf??? and this should be ONLY for messages?
     this->sessionData_p->readBuf = std::make_unique<char[]>(MESSAGE_FRAME_SIZE_BYTES);
+
+    constexpr uint8_t ONE_BYTE = 1;
+    this->sessionData_p->fileReadBuf = std::make_unique<char[]>(ONE_BYTE);
+    std::memset(this->sessionData_p->fileReadBuf.get(), 0, ONE_BYTE);
+
     this->ClearReadBuffer();
     this->ClearWriteBuffer();
-    // async read
-    // maybe read 138 bytes
-    // this->StartReadingFrames();
 }
 
 void BVTCPSession::Start(void)
@@ -149,7 +149,6 @@ void BVTCPSession::OnReceiveConfirmEstablished(void)
 void BVTCPSession::OnReceiveChatMessageFrame(void)
 {
     BVTCPMessageHeader header = GetMsgHeader();
-
     if (header.msgType != static_cast<uint8_t>(
             BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_CHATMESSAGE))
     {
@@ -206,6 +205,14 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
             OnReceiveChatMessageFrame();
             break;
         }
+        case BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN:
+        {
+            LogTrace(
+                "Session [{}]: Received BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN",
+            this->GetSessionData()->sessionID);
+            OnReceiveFileTransferBegin();
+            break;
+        }
         default:
         {
             LogWarn(
@@ -215,4 +222,29 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
         }
     }
     return false;
+}
+
+void BVTCPSession::OnReceiveFileTransferBegin(void)
+{
+    BVTCPFileHeader header = GetFileHeader();
+    if (header.msgType != static_cast<uint8_t>(
+            BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN))
+    {
+        LogError("Session [{}]: OnReceiveChatMessageFrame called for wrong msgType={}",
+                 this->GetSessionData()->sessionID,
+                 static_cast<int>(header.msgType));
+        return;
+    }
+    const uint64_t metadata = header.metadata;
+    this->sessionData_p->csize = (metadata & 0xFFFFFFFF00000000) >> 32;
+    this->sessionData_p->fsize = (uint32_t)(metadata & 0x0000000FFFFFFFFF);
+    LogTrace("[BVTCPSession ({})]: Got OnReceiveFileTransferBegin. Chunk size: {} File size: {}", 
+        this->GetSessionData()->sessionID,
+        this->sessionData_p->csize,
+        this->sessionData_p->fsize);
+
+    // TODO: Open file.
+
+
+    StartReadingChunks(this->sessionData_p->csize);
 }

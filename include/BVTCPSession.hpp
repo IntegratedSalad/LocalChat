@@ -64,7 +64,7 @@ private:
         {
             LogError("Session [{}]: Error in ReadSomeCallback callback: {}, {}",  
                 this->GetSessionData()->sessionID, ec.value(), ec.message());
-                return;
+            return;
         }
         this->sessionData_p->totalBytesRead += bytes_transferred;
         if (this->sessionData_p->totalBytesRead == MAX_MESSAGE_SIZE_BYTES)
@@ -79,12 +79,47 @@ private:
         );
     }
 
-    // TODO: WriteFileChunkCallback - function largely the same, but with set file buffer
-    //                               for that I think we need a file buffer that can be resizable
+    void ReadFileChunkCallback(const boost::system::error_code& ec,
+                               std::size_t bytes_transferred)
+    {
+        if (ec)
+        {
+            LogError("Session [{}]: Error in ReadFileChunkCallback callback: {}, {}",  
+                this->GetSessionData()->sessionID, ec.value(), ec.message());
+            
+            LogDebug("Read buffer: {} Read buffer is a nullpointer: {} Bytes read: {} Bytes transferred: {} Address in nodeData: {} Endpoint address: {} State: {}", 
+                this->sessionData_p->fileReadBuf.get(), this->sessionData_p->fileReadBuf == nullptr, this->sessionData_p->totalBytesRead, bytes_transferred, 
+                    this->sessionData_p->nodeData.address.to_string(), this->sessionData_p->nodeData.ep.address().to_string(), static_cast<int>(this->state));
+            LogDebug("Chunk size: {} File size: {}", this->sessionData_p->csize, this->sessionData_p->fsize);
+            return;
+        }
+        this->sessionData_p->totalBytesRead += bytes_transferred;
+        LogTrace("Session [{}]: Read file chunk of size: {}.", this->sessionData_p->sessionID, bytes_transferred);
+        LogTrace("Session [{}]: Total {} out of expected {}.", 
+            this->sessionData_p->sessionID, 
+            this->sessionData_p->totalBytesRead, 
+            this->sessionData_p->fsize);
+        BVTCPMessageHeader header = GetMsgHeader();
+        if (header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT)
+        {
+            LogTrace("[BVTCPSession (id:{})]: Received another file chunk...", 
+                this->sessionData_p->sessionID);
+            OnReceiveChunkSent();
+        } else if (header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END)
+        {
+            LogTrace("[BVTCPSession (id:{})]: Received last file chunk... (file transfer end).", 
+                this->sessionData_p->sessionID);
+            OnReceiveFileTransferEnd();
+            return;
+        }
+        else
+        {
+            LogError("[BVTCPSession (id:{})]: Received unrecognized msgType while receiving file chunks...",  
+                this->sessionData_p->sessionID);
+        }
+        StartReadingChunks(this->sessionData_p->csize);
+    }
 
-    // void WriteFileChunkCallback()
-
-    // Can also receive files?
     void ReadMessageFrameCallback(const boost::system::error_code& ec,
                                   std::size_t bytes_transferred)
     {
@@ -143,22 +178,6 @@ private:
                 ClearReadBuffer();
             }
             return;
-        } else
-        {
-            this->sessionData_p->totalBytesRead = 0;
-            BVTCPMessageHeader header = GetMsgHeader();
-            if (header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN ||
-                header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT ||
-                header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END)
-            {
-                // OnReceiveFileChunk(header);
-                LogTrace("[BVTCPSession (id:{})]: Received a file chunk.", 
-                    this->sessionData_p->sessionID);
-            } else
-            {
-                LogError("[BVTCPSession (id:{})]: Received more bytes than standard frame but it isn't a file chunk.",  
-                    this->sessionData_p->sessionID);
-            }
         }
         boost::asio::async_read(*this->sessionData_p->sock, 
             boost::asio::buffer(this->sessionData_p->readBuf.get() + this->sessionData_p->totalBytesRead,
@@ -174,11 +193,23 @@ private:
                   std::bind(&BVTCPSession::ReadMessageFrameCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
     }
 
+    void StartReadingChunks(const uint32_t csize)
+    {
+        this->sessionData_p->fileReadBuf.reset();
+        this->sessionData_p->fileReadBuf = std::make_unique<char[]>(csize);
+        std::memset(this->sessionData_p->readBuf.get(), 0, csize);
+        this->sessionData_p->totalBytesRead = 0;
+        boost::asio::async_read(*this->sessionData_p->sock, 
+            boost::asio::buffer(this->sessionData_p->fileReadBuf.get() + this->sessionData_p->totalBytesRead,
+                this->sessionData_p->csize - this->sessionData_p->totalBytesRead), 
+                  std::bind(&BVTCPSession::ReadFileChunkCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+    }
+
     /*
         Problem:
         We're always reading MESSAGE_FRAME_SIZE_BYTES, and deciding what to do with the frame.
         Maybe reset new buffer UPON receiving FILETRANSFERSTATE_FIRST_CHUNK.
-        Do NOT send any file data with FILETRANSFERSTATE_FIRST_CHUNK.
+        Do NOT send any file data with FILETRANSFERSTATE_FIRST_CHUNK. <- not necessarily true
         1. Send fsize and csize with it as normal frame (socket has job async_read with MESSAGE_FRAME_SIZE_BYTES)
            (open file etc...)
         2. Socket receives MESSAGE_FRAME_SIZE_BYTES and allocates sessionData_p->fileReadBuf = [...](CSIZE)
@@ -187,7 +218,6 @@ private:
            (close file etc...)
     */
     // TODO?
-    // void StartReadingChunks(void) ...
 
     void WriteFileChunkCallback(const boost::system::error_code& ec,
                                 std::size_t bytes_transferred)
@@ -249,6 +279,17 @@ private:
         return header;
     }
 
+    BVTCPFileHeader GetFileHeader(void)
+    {
+        BVTCPFileHeader header{};
+        const char* buf = this->sessionData_p->readBuf.get();
+        std::memcpy(&header.chunkSize, buf, sizeof(header.chunkSize)); // 0..3 4 bytes
+        std::memcpy(&header.timestamp, buf + 4, sizeof(header.timestamp)); // 4..11 8 bytes
+        header.msgType = static_cast<uint8_t>(buf[12]);
+        std::memcpy(&header.metadata, buf + 13, sizeof(header.metadata));
+        return header;
+    }
+
 public:
     BVTCPSession(std::shared_ptr<BVTCPNodeConnectionSessionData> _sessionData_p,
                  boost::asio::io_context& _ioContext);
@@ -299,6 +340,7 @@ public:
     void OnReceiveChatMessageFrame(void);
     // Returns true if we have to return early.
     bool OnReceiveStandardFrame(void);
+    void OnReceiveFileTransferBegin(void);
     // void OnReceiveNodeGoodbyeFrame(void);
     // Upon receiving chat message,
     // call BVTCPConnectionManager function

@@ -28,6 +28,7 @@ static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_
 #define FILE_CHUNK_SIZE_BYTES_1KB      1024
 #define FILE_CHUNK_SIZE_BYTES_512B      512
 #define MIN_FILE_CHUNK_SIZE_BYTES_256B  256
+static_assert((MAX_FILE_CHUNK_SIZE_BYTES_1MB) < UINT32_MAX);
 
 // redundant?
 #define FILE_SIZE_BYTES_1KB             1000
@@ -44,7 +45,8 @@ static_assert((PAYLOAD_SIZE_BYTES) + (HEADER_SIZE_BYTES) == (MESSAGE_FRAME_SIZE_
 #define FILE_SIZE_BYTES_500MB           500000000
 #define FILE_SIZE_BYTES_1GB             1000000000
 #define FILE_SIZE_BYTES_2GB             2000000000 
-// redundant?
+static_assert((FILE_SIZE_BYTES_2GB) < UINT32_MAX);
+static_assert((((MAX_FILE_CHUNK_SIZE_BYTES_1MB) + (FILE_SIZE_BYTES_2GB))) < UINT32_MAX);
 
 using NodeID = uint8_t;
 using SessionID = uint16_t;
@@ -156,14 +158,14 @@ struct BVTCPMessageHeader
 
 struct BVTCPFileHeader
 {
-    uint32_t chunkSize;
+    uint32_t chunkSize; // we do not need it now!!!
     uint64_t timestamp;
     uint8_t  msgType;
-    uint32_t metadata;
+    uint64_t metadata;
 };
 constexpr std::size_t FILE_HEADER_SIZE_BYTES =
-    sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint32_t); // 17
-static_assert(FILE_HEADER_SIZE_BYTES == 17);
+    sizeof(uint32_t) + sizeof(uint64_t) + sizeof(uint8_t) + sizeof(uint64_t);
+static_assert(FILE_HEADER_SIZE_BYTES == 21);
 
 // template<typename BufferArray>
 // struct BVTCPFileChunk
@@ -267,9 +269,14 @@ struct BVTCPNodeConnectionSessionData
     // It is enough that it's one write buffer and read buffer per session.
     // We will not send instantenously a file and message or two or more messages at once
     // or two or more files at once
+    // Messages
     std::string writeBuf;
     std::unique_ptr<char[]> readBuf;
-    
+    // Files
+    std::unique_ptr<char[]> fileReadBuf;
+    uint32_t                fsize;
+    uint32_t                csize;
+    // All
     std::size_t totalBytesWritten;
     std::size_t totalBytesRead;
 
