@@ -195,7 +195,7 @@ private:
 
     void StartReadingChunks(const uint32_t csize)
     {
-        LogDebug("START READING CHUNKS CALLED")
+        LogDebug("START READING CHUNKS CALLED");
         boost::asio::async_read(*this->sessionData_p->sock, 
             boost::asio::buffer(this->sessionData_p->fileReadBuf.get() + this->sessionData_p->totalBytesRead,
                 this->sessionData_p->csize - this->sessionData_p->totalBytesRead), 
