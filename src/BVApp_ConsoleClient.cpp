@@ -585,7 +585,7 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
     LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {}\nFrom: {} Name: {}",
         fsize, csize, fdataStr, serviceName, fname);
 
-    const std::filesystem::path rootdir = std::filesystem::current_path() / "..";
+    const std::filesystem::path rootdir = std::filesystem::current_path();
     try
     {
         const std::filesystem::path dirpath  = rootdir / "data" / serviceName;
