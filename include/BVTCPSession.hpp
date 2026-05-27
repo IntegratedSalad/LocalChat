@@ -99,7 +99,7 @@ private:
             this->sessionData_p->sessionID, 
             this->sessionData_p->totalBytesRead, 
             this->sessionData_p->fsize);
-        BVTCPMessageHeader header = GetMsgHeader();
+        BVTCPFileHeader header = GetFileHeader(this->sessionData_p->fileReadBuf.get());
         if (header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT)
         {
             LogTrace("[BVTCPSession (id:{})]: Received another file chunk...", 

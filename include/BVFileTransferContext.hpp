@@ -9,7 +9,7 @@
 #include "BVTCPSession.hpp"
 #include "BVLoggable.hpp"
 
-#define WAIT_FOR_BUFFER_CHANGE_MS 1500
+#define WAIT_FOR_BUFFER_CHANGE_MS 3000
 
 // File transfer is always outgoing?
 // What will the context be for receiving a message?
@@ -74,8 +74,10 @@ private:
             LogTrace("[BVFileTransferContext]: File name: {}", fname);
             LogDebug("[BVFileTransferContext]: Metadata raw: {}", metadata);
             LogTrace("[BVFileTransferContext]: Waiting for buffer change...");
+            std::cout << "Waiting for the receiving peer..." << std::endl;
             std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_BUFFER_CHANGE_MS));
             LogTrace("[BVFileTransferContext]: Continuing...");
+            std::cout << "Continuing..." << std::endl;
             return;
         }
         std::vector<char> dataToTransferBuffer(csize);
@@ -95,6 +97,7 @@ private:
                     msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT;
                     state = FileTransferState::FILETRANSFERSTATE_ONGOING;
                     LogTrace("[BVFileTransferContext]: Sent FILE_TRANSFER_CHUNK_SENT of size: {}", csize);
+                    std::cout << "Continuing..." << std::endl;
                 }
             } 
             if (state == FileTransferState::FILETRANSFERSTATE_LAST_CHUNK)
@@ -102,6 +105,7 @@ private:
                 msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END;
                 state = FileTransferState::FILETRANSFERSTATE_ONGOING;
                 LogTrace("[BVFileTransferContext]: Sent FILETRANSFERSTATE_FILE_TRANSFER_END of size: {}", csize);
+                std::cout << "Sent!..." << std::endl;
                 isRunning = false;
             }
             BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
