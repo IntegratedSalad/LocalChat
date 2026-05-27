@@ -226,7 +226,7 @@ bool BVTCPSession::OnReceiveStandardFrame(void)
                 "Session [{}]: Received BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN",
             this->GetSessionData()->sessionID);
             OnReceiveFileTransferBegin();
-            break;
+            return true; // DO NOT APPEND A JOB THAT READS INTO MSG BUFFER!
         }
         default:
         {
@@ -266,11 +266,11 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
                 this->sessionData_p->fsize, payload)))
         ));
     
-    this->sessionData_p->sock->cancel(); // cancel all operations -> we will be reading chunks from fileReadBuf
+    // this->sessionData_p->sock->cancel(); // cancel all operations -> we will be reading chunks from fileReadBuf
     ClearReadBuffer();
-    this->sessionData_p->fileReadBuf.reset();
-    this->sessionData_p->fileReadBuf = std::make_unique<char[]>(this->sessionData_p->csize);
-    std::memset(this->sessionData_p->fileReadBuf.get(), 0, this->sessionData_p->csize);
+    // this->sessionData_p->fileReadBuf.reset();
+    this->sessionData_p->fileReadBuf = std::make_unique<char[]>(this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
+    std::memset(this->sessionData_p->fileReadBuf.get(), 0, this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
     this->sessionData_p->totalBytesRead = 0;
-    StartReadingChunks(this->sessionData_p->csize);
+    StartReadingChunks(this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
 }
