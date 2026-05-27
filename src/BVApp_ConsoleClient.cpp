@@ -595,7 +595,7 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
             LogTrace("[BVApp_ConsoleClient]: Directory already exists: {}", dirpath.string());
         } else
         {
-            if (std::filesystem::create_directory(rootdir / "data" / serviceName))
+            if (std::filesystem::create_directories(rootdir / "data" / serviceName))
             {
                 LogTrace("[BVApp_ConsoleClient]: Directory created at: ", rootdir.string());
                 if (std::filesystem::is_regular_file(filepath))
