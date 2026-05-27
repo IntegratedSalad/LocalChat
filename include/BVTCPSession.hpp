@@ -203,6 +203,11 @@ private:
     void StartReadingChunks(const uint32_t csize)
     {
         LogDebug("START READING CHUNKS CALLED");
+        LogDebug("StartReadingFilePacket: requested={}, csize={}, headerSize={}, totalBytesRead={}",
+            this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES,
+            this->sessionData_p->csize,
+            FILE_HEADER_SIZE_BYTES,
+            this->sessionData_p->totalBytesRead);
         boost::asio::async_read(*this->sessionData_p->sock, 
             boost::asio::buffer(this->sessionData_p->fileReadBuf.get() + this->sessionData_p->totalBytesRead,
                 csize),
@@ -411,6 +416,12 @@ public:
                 payloadBytes
             );
         }
+        LogDebug("SEND header bytes: chunkSize={}, msgType={}, frameSize={}, payloadBytes={}, byte12={}",
+            chunkSize,
+            static_cast<int>(chunk.header.msgType),
+            frameSize,
+            payloadBytes,
+            static_cast<int>(static_cast<unsigned char>(buf[12])));
         auto self = shared_from_this();
         boost::asio::async_write(
             *this->sessionData_p->sock,

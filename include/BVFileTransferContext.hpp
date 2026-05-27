@@ -52,6 +52,9 @@ private:
     // The best architecture is to wait for confirmation from the other host that it received
     // BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN
     // We can also wait for fixed time amount
+
+    // BUG: Writing/reading mangled data:
+    // The issue might be with ordering...
     void TransferNextChunk(void)
     {
         uint8_t msgType;
@@ -110,6 +113,7 @@ private:
             }
             BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
             BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, dataToTransferBuffer);
+            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_BUFFER_CHANGE_MS));
             session_p->WriteFileChunk(fChunk, csize);
             bytesSent += bytesRead;  
         } else
