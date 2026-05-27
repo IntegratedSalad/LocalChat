@@ -9,6 +9,8 @@
 #include "BVTCPSession.hpp"
 #include "BVLoggable.hpp"
 
+#define WAIT_FOR_BUFFER_CHANGE_MS 1500
+
 // File transfer is always outgoing?
 // What will the context be for receiving a message?
 // Just handling it in app
@@ -44,8 +46,12 @@ private:
 
     std::thread worker_thread;
 
-    // Important: when we are sending a file, we cannot send messages!!!
-    // TODO: File name (with extension)!!!
+    // I think we will need to wait before transmitting another chunk...
+    // Because we are still writing to the readBuf of the receiving session, and this is not a buffer
+    // that is resized to fit chunks.
+    // The best architecture is to wait for confirmation from the other host that it received
+    // BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN
+    // We can also wait for fixed time amount
     void TransferNextChunk(void)
     {
         uint8_t msgType;
@@ -67,6 +73,9 @@ private:
             LogTrace("[BVFileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
             LogTrace("[BVFileTransferContext]: File name: {}", fname);
             LogDebug("[BVFileTransferContext]: Metadata raw: {}", metadata);
+            LogTrace("[BVFileTransferContext]: Waiting for buffer change...");
+            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_BUFFER_CHANGE_MS));
+            LogTrace("[BVFileTransferContext]: Continuing...");
             return;
         }
         std::vector<char> dataToTransferBuffer(csize);
