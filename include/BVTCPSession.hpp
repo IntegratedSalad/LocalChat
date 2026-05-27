@@ -123,7 +123,7 @@ private:
                 header.msgType, header.timestamp, header.chunkSize, header.metadata);
         }
         this->sessionData_p->totalBytesRead = 0;
-        std::memset(this->sessionData_p->fileReadBuf.get(), 0, packetSize);
+        std::memset(this->sessionData_p->fileReadBuf.get(), 0, this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
         StartReadingChunks(this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
     }
 
