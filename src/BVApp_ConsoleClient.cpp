@@ -577,14 +577,46 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
     const std::vector<char> fdata  = res.fdata; // service name and filename!
     const std::string fdataStr{fdata.begin(), fdata.end()};
     const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
-    const std::string fname       = fdataStr.substr(fdataStr.find("|"));
+    const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
 
     // TODO: Parse fdata, create a context/something for the incoming file.
     //       Create directory under the service name and open file with the name provided.
 
-    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {} From: {} Name: {}",
+    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {}\nFrom: {} Name: {}",
         fsize, csize, fdataStr, serviceName, fname);
 
+    const std::filesystem::path rootdir = std::filesystem::current_path() / "..";
+    try
+    {
+        const std::filesystem::path dirpath  = rootdir / "data" / serviceName;
+        const std::filesystem::path filepath = dirpath / fname;
+        if (std::filesystem::is_directory(dirpath))
+        {
+            LogTrace("[BVApp_ConsoleClient]: Directory already exists: {}", dirpath.string());
+        } else
+        {
+            if (std::filesystem::create_directory(rootdir / "data" / serviceName))
+            {
+                LogTrace("[BVApp_ConsoleClient]: Directory created at: ", rootdir.string());
+                if (std::filesystem::is_regular_file(filepath))
+                {
+                    LogTrace("[BVApp_ConsoleClient]: File already exists: {}", filepath.string());
+                } else
+                {
+                    std::ofstream incomingFile(filepath, std::ios::binary | std::ios::out);
+                    LogTrace("[BVApp_ConsoleClient]: Created file at: {}", filepath.string());
+                }
+            } else
+            {
+                LogError("[BVApp_ConsoleClient]: Directory not created.");
+            }
+        }
+    }
+    catch(const std::exception& e)
+    {
+        LogError("[BVApp_ConsoleClient]: Error while creating directory and/or file: {}", e.what());
+        return BVStatus::BVSTATUS_NOK;
+    }
     return BVStatus::BVSTATUS_OK;
 }
 
