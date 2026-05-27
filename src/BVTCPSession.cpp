@@ -265,6 +265,11 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
             std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
                 this->sessionData_p->fsize, payload)))
         ));
-
+    
+    this->sessionData_p->sock->cancel(); // cancel all operations -> we will be reading chunks from fileReadBuf
+    this->sessionData_p->fileReadBuf.reset();
+    this->sessionData_p->fileReadBuf = std::make_unique<char[]>(this->sessionData_p->csize);
+    std::memset(this->sessionData_p->readBuf.get(), 0, this->sessionData_p->csize);
+    this->sessionData_p->totalBytesRead = 0;
     StartReadingChunks(this->sessionData_p->csize);
 }

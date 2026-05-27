@@ -195,10 +195,6 @@ private:
 
     void StartReadingChunks(const uint32_t csize)
     {
-        this->sessionData_p->fileReadBuf.reset();
-        this->sessionData_p->fileReadBuf = std::make_unique<char[]>(csize);
-        std::memset(this->sessionData_p->readBuf.get(), 0, csize);
-        this->sessionData_p->totalBytesRead = 0;
         boost::asio::async_read(*this->sessionData_p->sock, 
             boost::asio::buffer(this->sessionData_p->fileReadBuf.get() + this->sessionData_p->totalBytesRead,
                 this->sessionData_p->csize - this->sessionData_p->totalBytesRead), 
