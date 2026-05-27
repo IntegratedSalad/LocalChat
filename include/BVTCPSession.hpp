@@ -95,7 +95,7 @@ private:
         }
         this->sessionData_p->totalBytesRead += bytes_transferred;
         LogTrace("Session [{}]: Read file chunk of size: {}.", this->sessionData_p->sessionID, bytes_transferred);
-        LogTrace("Session [{}]: Total {} out of expected {}.", 
+        LogTrace("Session [{}]: Total {} out of expected {}.",  // this should be changed. We're not saving yet information of file progress
             this->sessionData_p->sessionID, 
             this->sessionData_p->totalBytesRead, 
             this->sessionData_p->fsize);
@@ -202,16 +202,49 @@ private:
 
     void StartReadingChunks(const uint32_t csize)
     {
-        LogDebug("START READING CHUNKS CALLED");
-        LogDebug("StartReadingFilePacket: requested={}, csize={}, headerSize={}, totalBytesRead={}",
-            this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES,
+        LogDebug("START READING FILE PACKET CALLED");
+        LogDebug("StartReadingFilePacket: requested={}, payloadSize={}, headerSize={}, totalBytesRead={}",
+            csize,
             this->sessionData_p->csize,
             FILE_HEADER_SIZE_BYTES,
             this->sessionData_p->totalBytesRead);
-        boost::asio::async_read(*this->sessionData_p->sock, 
-            boost::asio::buffer(this->sessionData_p->fileReadBuf.get() + this->sessionData_p->totalBytesRead,
-                csize),
-                  std::bind(&BVTCPSession::ReadFileChunkCallback, shared_from_this(), std::placeholders::_1, std::placeholders::_2));
+
+        if (!this->sessionData_p->fileReadBuf)
+        {
+            LogError("fileReadBuf is null");
+            return;
+        }
+
+        if (this->sessionData_p->totalBytesRead > csize)
+        {
+            LogError("totalBytesRead={} exceeds packetSize={}",
+                this->sessionData_p->totalBytesRead,
+                csize);
+            return;
+        }
+
+        const std::size_t remaining =
+            csize - this->sessionData_p->totalBytesRead;
+
+        if (remaining == 0)
+        {
+            LogWarn("No remaining bytes to read for file packet");
+            return;
+        }
+
+        boost::asio::async_read(
+            *this->sessionData_p->sock,
+            boost::asio::buffer(
+                this->sessionData_p->fileReadBuf.get() + this->sessionData_p->totalBytesRead,
+                remaining
+            ),
+            std::bind(
+                &BVTCPSession::ReadFileChunkCallback,
+                shared_from_this(),
+                std::placeholders::_1,
+                std::placeholders::_2
+            )
+        );
     }
 
     /*
