@@ -111,9 +111,9 @@ private:
                 this->sessionData_p->sessionID);
             OnReceiveFileTransferEnd();
             ClearFileBuffer();
-            StartReadingFrames();
             this->ClearReadBuffer();
             this->sessionData_p->totalBytesRead = 0;
+            StartReadingFrames();
             return;
         }
         else
