@@ -118,9 +118,9 @@ private:
         {
             LogError("[BVTCPSession (id:{})]: Received unrecognized msgType while receiving file chunks...",  
                 this->sessionData_p->sessionID);
-            LogDebug("Read buffer: {} Read buffer is a nullpointer: {} Bytes read: {} Bytes transferred: {} Address in nodeData: {} Endpoint address: {} State: {}",
-            this->sessionData_p->fileReadBuf.get(), this->sessionData_p->fileReadBuf == nullptr, this->sessionData_p->totalBytesRead, bytes_transferred,
-                this->sessionData_p->nodeData.address.to_string(), this->sessionData_p->nodeData.ep.address().to_string(), static_cast<int>(this->state));
+            // LogDebug("Read buffer: {} Read buffer is a nullpointer: {} Bytes read: {} Bytes transferred: {} Address in nodeData: {} Endpoint address: {} State: {}",
+            // this->sessionData_p->fileReadBuf.get(), this->sessionData_p->fileReadBuf == nullptr, this->sessionData_p->totalBytesRead, bytes_transferred,
+            //     this->sessionData_p->nodeData.address.to_string(), this->sessionData_p->nodeData.ep.address().to_string(), static_cast<int>(this->state));
             LogDebug("Header: msgType: {} timestamp: {} chunksize: {} metadata: {}",
                 header.msgType, header.timestamp, header.chunkSize, header.metadata);
         }
