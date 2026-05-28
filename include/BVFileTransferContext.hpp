@@ -72,7 +72,17 @@ private:
             BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
             BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, ftBeginPayload);
             // Payload: Servicename|Filename\0 (with extension)
-            session_p->WriteFileChunk(fChunk, ftBeginPayload.size());
+            /*
+                BUG: Writing/reading mangled data SOLUTION.
+                Okay - we were writing less than 138 bytes to the socket,
+                but receiving end (readBuf on another host) read 138 bytes (expected message frame size).
+                This was ok when receiving BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN,
+                but when receiving another message, the stream was shifted 138-payload bytes, past
+                the next data, which was actually past the whole header.
+                This is why we couldn't parse the chunk header.
+                Below difference HAS to be greater or equal than ftBeginPayload.size().
+            */
+            session_p->WriteFileChunk(fChunk, MESSAGE_FRAME_SIZE_BYTES - FILE_HEADER_SIZE_BYTES);
             LogTrace("[BVFileTransferContext]: Sent FILE_TRANSFER_BEGIN of size: {}", csize);
             LogTrace("[BVFileTransferContext]: File name: {}", fname);
             LogDebug("[BVFileTransferContext]: Metadata raw: {}", metadata);

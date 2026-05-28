@@ -409,7 +409,8 @@ public:
         this->sessionData_p->totalBytesWritten = 0;
         constexpr std::size_t headerSize = FILE_HEADER_SIZE_BYTES;
 
-        if (payloadBytes > chunk.payload.size())
+        if (payloadBytes > chunk.payload.size() && 
+            chunk.header.msgType != BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN)
         {
             LogError("Session [{}]: WriteFileChunk: payloadBytes={} but vector size={}",
                 this->sessionData_p->sessionID,
