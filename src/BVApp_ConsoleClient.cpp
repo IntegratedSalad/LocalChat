@@ -583,6 +583,17 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
     const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
     const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
 
+    // TODO: We have to save this somehow and correlate incoming chunks!
+    // Maybe in BVTCPConnectionManager - find serviceName data and save file.
+    // Or we just receive one file at a time...
+    // We do not send the file name and service name in the other chunks...
+    // Other chunks aren't able to be correlated with the file!!!!
+    // Or - we send a key that is a correlation key (e.g. instead of chunkSize)
+    // We correlate serviceName/filename with a 32 bit correlation key.
+    // We save it in the BVFileTransferContext. (it can be the ftcid of the file transfer context!)
+    // And we save it to the console client/BVTCPConnectionManager class as a map.
+    // Then, we only have to lookup a correlation key in order to retrieve path.
+
     LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} From: {} Name: {}",
         fsize, csize, serviceName, fname);
 

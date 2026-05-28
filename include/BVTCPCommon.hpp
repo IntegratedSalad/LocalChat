@@ -151,7 +151,7 @@ struct BVNode // BVNodeData?
 
 struct BVTCPFileHeader
 {
-    uint32_t chunkSize; // we do not need it now!!!
+    uint32_t chunkSize; // TODO: change to correlation key.
     uint64_t timestamp;
     uint8_t  msgType;
     uint64_t metadata;
@@ -172,6 +172,7 @@ struct BVTCPFileData
     uint32_t                csize;
     uint32_t                fsize;
     std::vector<char>       fdata;
+    // TODO: add timestamp and correlation key
 
     BVTCPFileData() = default;
     BVTCPFileData(const uint32_t _csize,
