@@ -9,7 +9,7 @@
 #include "BVTCPSession.hpp"
 #include "BVLoggable.hpp"
 
-#define WAIT_FOR_BUFFER_CHANGE_MS 3000
+#define WAIT_FOR_SENDING_MS 500
 
 // File transfer is always outgoing?
 // What will the context be for receiving a message?
@@ -53,8 +53,7 @@ private:
     // BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN
     // We can also wait for fixed time amount
 
-    // BUG: Writing/reading mangled data:
-    // The issue might be with ordering...
+    // I think that issue with ordering/timing still persists.
     void TransferNextChunk(void)
     {
         uint8_t msgType;
@@ -78,7 +77,8 @@ private:
                 but receiving end (readBuf on another host) read 138 bytes (expected message frame size).
                 This was ok when receiving BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN,
                 but when receiving another message, the stream was shifted 138-payload bytes, past
-                the next data, which was actually past the whole header.
+                the next data, which was actually past the whole header 
+                (receiving end didn't read enough and waited for remaining X bytes up to 138 to complete async_read).
                 This is why we couldn't parse the chunk header.
                 Below difference HAS to be greater or equal than ftBeginPayload.size().
             */
@@ -87,10 +87,10 @@ private:
             LogTrace("[BVFileTransferContext]: File name: {}", fname);
             LogDebug("[BVFileTransferContext]: Metadata raw: {}", metadata);
             LogTrace("[BVFileTransferContext]: Waiting for buffer change...");
-            std::cout << "Waiting for the receiving peer..." << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_BUFFER_CHANGE_MS));
-            LogTrace("[BVFileTransferContext]: Continuing...");
-            std::cout << "Continuing..." << std::endl;
+            // std::cout << "Waiting for the receiving peer..." << std::endl;
+            // std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_BUFFER_CHANGE_MS));
+            // LogTrace("[BVFileTransferContext]: Continuing...");
+            // std::cout << "Continuing..." << std::endl;
             return;
         }
         std::vector<char> dataToTransferBuffer(csize);
@@ -110,7 +110,7 @@ private:
                     msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT;
                     state = FileTransferState::FILETRANSFERSTATE_ONGOING;
                     LogTrace("[BVFileTransferContext]: Sent FILE_TRANSFER_CHUNK_SENT of size: {}", csize);
-                    std::cout << "Continuing..." << std::endl;
+                    std::cout << "Sending..." << std::endl;
                 }
             } 
             if (state == FileTransferState::FILETRANSFERSTATE_LAST_CHUNK)
@@ -123,7 +123,8 @@ private:
             }
             BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
             BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, dataToTransferBuffer);
-            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_BUFFER_CHANGE_MS));
+            // This shouldn't be the solution but for now it will suffice.
+            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_SENDING_MS));
             session_p->WriteFileChunk(fChunk, csize);
             bytesSent += bytesRead;  
         } else
