@@ -204,8 +204,7 @@ private:
 
     void StartReadingChunks(const uint32_t csize)
     {
-        LogDebug("START READING FILE PACKET CALLED");
-        LogDebug("StartReadingFilePacket: requested={}, payloadSize={}, headerSize={}, totalBytesRead={}",
+        LogDebug("StartReadingChunks: requested={}, payloadSize={}, headerSize={}, totalBytesRead={}",
             csize,
             this->sessionData_p->csize,
             FILE_HEADER_SIZE_BYTES,

@@ -277,8 +277,8 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
 
 void BVTCPSession::OnReceiveFileChunkSent(void)
 {
-    BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->readBuf.get());
-    std::vector<char> payload = GetFileData(this->sessionData_p->readBuf.get());
+    BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->fileReadBuf.get());
+    std::vector<char> payload = GetFileData(this->sessionData_p->fileReadBuf.get());
     if (header.msgType != static_cast<uint8_t>(
             BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT))
     {
@@ -305,8 +305,8 @@ void BVTCPSession::OnReceiveFileChunkSent(void)
 
 void BVTCPSession::OnReceiveFileTransferEnd(void)
 {
-    BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->readBuf.get());
-    std::vector<char> payload = GetFileData(this->sessionData_p->readBuf.get());
+    BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->fileReadBuf.get());
+    std::vector<char> payload = GetFileData(this->sessionData_p->fileReadBuf.get());
     if (header.msgType != static_cast<uint8_t>(
             BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END))
     {
