@@ -287,9 +287,6 @@ void BVTCPSession::OnReceiveFileChunkSent(void)
                  static_cast<int>(header.msgType));
         return;
     }
-    const uint64_t metadata = header.metadata;
-    this->sessionData_p->csize = (metadata & 0xFFFFFFFF00000000) >> 32;
-    this->sessionData_p->fsize = (uint32_t)(metadata & 0x0000000FFFFFFFFF);
     LogTrace("[BVTCPSession ({})]: Got OnReceiveFileChunkSent. Chunk size: {} File size: {}", 
         this->GetSessionData()->sessionID,
         this->sessionData_p->csize,
@@ -315,9 +312,6 @@ void BVTCPSession::OnReceiveFileTransferEnd(void)
                  static_cast<int>(header.msgType));
         return;
     }
-    const uint64_t metadata = header.metadata;
-    this->sessionData_p->csize = (metadata & 0xFFFFFFFF00000000) >> 32;
-    this->sessionData_p->fsize = (uint32_t)(metadata & 0x0000000FFFFFFFFF);
     LogTrace("[BVTCPSession ({})]: Got OnReceiveFileTransferEnd. Chunk size: {} File size: {}", 
         this->GetSessionData()->sessionID,
         this->sessionData_p->csize,
