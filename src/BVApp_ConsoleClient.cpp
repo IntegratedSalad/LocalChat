@@ -610,6 +610,7 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
             } else
             {
                 LogError("[BVApp_ConsoleClient]: Directory not created.");
+                return BVStatus::BVSTATUS_FATAL_ERROR;
             }
         }
     }
@@ -649,9 +650,29 @@ BVStatus BVApp_ConsoleClient::HandleFileChunkSent(std::unique_ptr<std::any> dp)
     const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
     const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
 
-    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {}\nFrom: {} Name: {}",
-        fsize, csize, fdataStr, serviceName, fname);
+    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} From: {} Name: {}",
+        fsize, csize, serviceName, fname);
 
+    const std::filesystem::path rootdir = std::filesystem::current_path();
+    try
+    {
+        const std::filesystem::path dirpath  = rootdir / "data" / serviceName;
+        const std::filesystem::path filepath = dirpath / fname;
+        std::ofstream incomingFile(filepath, std::ios::binary | std::ios::app);
+        if (!incomingFile)
+        {
+            LogError("Couldn't open an out stream for: {}", filepath.string());
+            return BVStatus::BVSTATUS_FATAL_ERROR;
+        }
+        LogTrace("[BVApp_ConsoleClient]: Opened file to appending at: {}", filepath.string());
+        incomingFile.write(fdata.data(), static_cast<std::streamsize>(fdata.size()));
+    }
+    catch(const std::exception& e)
+    {
+        LogError("[BVApp_ConsoleClient]: Error while writing to file: {}", e.what());
+        return BVStatus::BVSTATUS_NOK;
+    }
+    std::cout << "File transmission in progress..." << std::endl;
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -683,10 +704,28 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferEnd(std::unique_ptr<std::any> dp
     const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
     const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
 
-    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {}\nFrom: {} Name: {}",
-        fsize, csize, fdataStr, serviceName, fname);
-
-
+    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} From: {} Name: {}",
+        fsize, csize, serviceName, fname);
+        const std::filesystem::path rootdir = std::filesystem::current_path();
+    try
+    {
+        const std::filesystem::path dirpath  = rootdir / "data" / serviceName;
+        const std::filesystem::path filepath = dirpath / fname;
+        std::ofstream incomingFile(filepath, std::ios::binary | std::ios::app);
+        if (!incomingFile)
+        {
+            LogError("Couldn't open an out stream for: {}", filepath.string());
+            return BVStatus::BVSTATUS_FATAL_ERROR;
+        }
+        LogTrace("[BVApp_ConsoleClient]: Opened file to appending at: {}", filepath.string());
+        incomingFile.write(fdata.data(), static_cast<std::streamsize>(fdata.size()));
+    }
+    catch(const std::exception& e)
+    {
+        LogError("[BVApp_ConsoleClient]: Error while writing to file: {}", e.what());
+        return BVStatus::BVSTATUS_NOK;
+    }
+    std::cout << "File saved: " << fname << std::endl;
     return BVStatus::BVSTATUS_OK;
 }
 
