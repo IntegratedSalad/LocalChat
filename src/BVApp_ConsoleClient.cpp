@@ -772,6 +772,8 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferEnd(std::unique_ptr<std::any> dp
     // Delete data at correlationKey
     fileTransferData.erase(correlationKey);
     // GetConnectionManager -> remove fileTransferContext
+    // But we have to send it to another host...
+    // TODO: There should be 
 
     return BVStatus::BVSTATUS_OK;
 }

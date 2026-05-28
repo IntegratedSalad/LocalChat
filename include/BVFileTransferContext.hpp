@@ -38,6 +38,10 @@ private:
     
     std::shared_ptr<BVTCPSession> session_p;
     MailboxGetter mailbox_F; // this will directly send messages to app. But for what?
+    // Maybe instead of sending a message, just include a function that triggers the 
+    // RemoveFileTransferContext from manager..
+    // Or don't save the BVFileTransferContext in the memory as unique_ptr in a map.
+    // but, it won't be cancellable then.
 
     FileTransferState state = FileTransferState::FILETRANSFERSTATE_FIRST_CHUNK;
     std::uint32_t csize; // chunk size

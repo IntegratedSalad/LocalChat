@@ -75,7 +75,7 @@ private:
 
     // File transfer context map.
     // It means that only one file per session can be sent at the same time
-    std::map<SessionID, std::unique_ptr<BVFileTransferContext>> fileTransferContext_m;
+    std::map<uint32_t, std::unique_ptr<BVFileTransferContext>> fileTransferContext_m;
 
     NodeID GetNodeIDByServiceName(const std::string& _serviceName, BVStatus& status_out)
     {
@@ -460,26 +460,39 @@ public:
     BVStatus InitiateFileTransferWithSession(const SessionID& sid, 
                                              std::filesystem::path& _fpath)
     {
-        static uint16_t ftcid = 0;
+        static uint32_t ftcid = 0;
         BVStatus status = BVStatus::BVSTATUS_OK;
-        auto it = fileTransferContext_m.find(sid);
-        if (it == fileTransferContext_m.end())
-        {
-            // TODO: Add to map.
-            std::unique_ptr<BVFileTransferContext> ftcp = 
-                std::make_unique<BVFileTransferContext>(sessions_m.at(sid), _fpath, ftcid, mailbox_F);
-            ftcp->SetLogger(GetLogger());
-            fileTransferContext_m.emplace(sid, std::move(ftcp));
-            ftcid += 1;
-            LogTrace("[BVTCPConnectionManager::InitiateFileTransferWithSession] Initiated file transfer with session: id: {}", 
-                      sid);
-        } else
-        {
-            status = BVStatus::BVSTATUS_NOK;
-            LogTrace("[BVTCPConnectionManager::InitiateFileTransferWithSession] File transfer with session id: {} already ongoing", 
-                      sid);
-        }
+        // We can calso not clear the FileTransferContext... if it's just a couple of bytes.
+        // Best design would be to send the message with the correlationKey to this host when the other
+        // receives FileTransferEnd and remove it. Let's just leave it at ftcid in the std::map for now...
+        // We can also just send correlationKey, key to this map as SessionID.
+        std::unique_ptr<BVFileTransferContext> ftcp = 
+            std::make_unique<BVFileTransferContext>(sessions_m.at(sid), _fpath, ftcid, mailbox_F);
+        ftcp->SetLogger(GetLogger());
+        RemoveFileTransferContext(ftcid);
+        fileTransferContext_m.emplace(ftcid, std::move(ftcp));
+        ftcid += 1;
+        LogTrace("[BVTCPConnectionManager::InitiateFileTransferWithSession]: Initiated file transfer with session: id: {}", 
+                    sid);
+        LogDebug("[BVTCPConnectionManager::InitiateFileTransferWithSession]: Size of this session: {}", 
+            sizeof(*fileTransferContext_m.at(ftcid)));
         return status;
+    }
+
+    // Remove after file transfer ended.
+    BVStatus RemoveFileTransferContext(const uint32_t correlationKey)
+    {
+        try
+        {
+            fileTransferContext_m.erase(correlationKey);
+            LogTrace("Removed file transfer context (session) associated with correlation key: {}", correlationKey);
+        }
+        catch(const std::out_of_range& ex)
+        {
+            LogError("Couldn't find the correlated data for this file transfer!");
+            return BVStatus::BVSTATUS_NOK;
+        }
+        return BVStatus::BVSTATUS_OK;
     }
 
     ~BVTCPConnectionManager();
