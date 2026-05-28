@@ -165,9 +165,8 @@ public:
     BVStatus HandleServiceDeregistration(std::unique_ptr<std::any>) override {return BVStatus::BVSTATUS_OK;}
     BVStatus HandleMessageIncoming(std::unique_ptr<std::any>) override {return BVStatus::BVSTATUS_OK;}
     BVStatus HandleFileTransferBegin(std::unique_ptr<std::any>) override {return BVStatus::BVSTATUS_OK;}
-
-    // void HandleServicesDiscoveredUpdateEvent(void) override;
-    // void HandleUserKeyboardInput(void) override;
+    BVStatus HandleFileChunkSent(std::unique_ptr<std::any>) override {return BVStatus::BVSTATUS_OK;}
+    BVStatus HandleFileTransferEnd(std::unique_ptr<std::any>) override {return BVStatus::BVSTATUS_OK;}
 
     BVStatus OnStart(std::unique_ptr<std::any>) override;
     BVStatus OnResume(std::unique_ptr<std::any>) override;

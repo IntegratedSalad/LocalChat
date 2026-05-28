@@ -9,7 +9,7 @@
 #include "BVTCPSession.hpp"
 #include "BVLoggable.hpp"
 
-#define WAIT_FOR_SENDING_MS 500
+#define WAIT_FOR_SENDING_MS 400
 
 // File transfer is always outgoing?
 // What will the context be for receiving a message?
@@ -78,7 +78,8 @@ private:
                 This was ok when receiving BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN,
                 but when receiving another message, the stream was shifted 138-payload bytes, past
                 the next data, which was actually past the whole header 
-                (receiving end didn't read enough and waited for remaining X bytes up to 138 to complete async_read).
+                (receiving end didn't receive enough and waited for remaining X bytes up to 138 to complete async_read).
+                So when receiving FILE_TRANSFER_BEGIN, the other host read header of the next packet (thus shifting the stream).
                 This is why we couldn't parse the chunk header.
                 Below difference HAS to be greater or equal than ftBeginPayload.size().
             */
@@ -87,10 +88,8 @@ private:
             LogTrace("[BVFileTransferContext]: File name: {}", fname);
             LogDebug("[BVFileTransferContext]: Metadata raw: {}", metadata);
             LogTrace("[BVFileTransferContext]: Waiting for buffer change...");
-            // std::cout << "Waiting for the receiving peer..." << std::endl;
-            // std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_BUFFER_CHANGE_MS));
-            // LogTrace("[BVFileTransferContext]: Continuing...");
-            // std::cout << "Continuing..." << std::endl;
+            std::cout << std::endl;
+            std::cout << "Starting file transfer of " << fname << "..." << std::endl;
             return;
         }
         std::vector<char> dataToTransferBuffer(csize);
@@ -147,19 +146,19 @@ private:
             csize = FILE_CHUNK_SIZE_BYTES_512B;
         } else if (fsize > FILE_SIZE_BYTES_8KB && fsize < FILE_SIZE_BYTES_64KB)
         {
-            csize = FILE_CHUNK_SIZE_BYTES_1KB;
+            csize = FILE_CHUNK_SIZE_BYTES_4KB;
         } else if (fsize > FILE_SIZE_BYTES_64KB && fsize < FILE_SIZE_BYTES_256KB)
         {
-            csize = FILE_CHUNK_SIZE_BYTES_4KB;
+            csize = FILE_CHUNK_SIZE_BYTES_32KB;
         } else if (fsize > FILE_SIZE_BYTES_256KB && fsize < FILE_SIZE_BYTES_1MB)
         {
-            csize = FILE_CHUNK_SIZE_BYTES_16KB;
+            csize = FILE_CHUNK_SIZE_BYTES_64KB;
         } else if (fsize > FILE_SIZE_BYTES_1MB && fsize < FILE_SIZE_BYTES_5MB)
         {
-            csize = FILE_CHUNK_SIZE_BYTES_64KB;
+            csize = FILE_CHUNK_SIZE_BYTES_512KB;
         } else
         {
-            csize = FILE_CHUNK_SIZE_BYTES_512KB;
+            csize = MAX_FILE_CHUNK_SIZE_BYTES_1MB;
         }
         // } else if (fsize > ) TODO: OTHER CASES
         LogTrace("[BVFileTransferContext]: Chosen chunk size: {}", csize);

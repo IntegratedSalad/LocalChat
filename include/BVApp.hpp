@@ -140,6 +140,8 @@ public:
     virtual BVStatus HandleServiceDeregistration(std::unique_ptr<std::any>) = 0;
     virtual BVStatus HandleMessageIncoming(std::unique_ptr<std::any>) = 0;
     virtual BVStatus HandleFileTransferBegin(std::unique_ptr<std::any>) = 0;
+    virtual BVStatus HandleFileChunkSent(std::unique_ptr<std::any>) = 0;
+    virtual BVStatus HandleFileTransferEnd(std::unique_ptr<std::any>) = 0;
 
     // Message from Nodes (Peers/Hosts) handlers
 

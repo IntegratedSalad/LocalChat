@@ -183,6 +183,10 @@ int main(int argc, char** argv)
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING);
     BVStatus subStatusAppFileTransferBegin =
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN);
+    BVStatus subStatusAppFileChunkSent =
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT);
+    BVStatus subStatusAppFileTransferEnd =
+        broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_END);
     if (subStatusDiscoveryRequestStart    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestPause    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestResume   != BVStatus::BVSTATUS_OK ||
@@ -195,7 +199,10 @@ int main(int argc, char** argv)
         subStatusAppRequestTerminate      != BVStatus::BVSTATUS_OK ||
         subStatusAppServiceDeregistered   != BVStatus::BVSTATUS_OK ||
         subStatusAppMessageIncoming       != BVStatus::BVSTATUS_OK ||
-        subStatusAppFileTransferBegin     != BVStatus::BVSTATUS_OK)
+        subStatusAppFileTransferBegin     != BVStatus::BVSTATUS_OK ||
+        subStatusAppFileChunkSent         != BVStatus::BVSTATUS_OK ||
+        subStatusAppFileTransferEnd       != BVStatus::BVSTATUS_OK
+    )
     {
         std::cerr << "Fatal error: Broker couldn't subscribe to a crucial event" << std::endl;
         exit(-1);

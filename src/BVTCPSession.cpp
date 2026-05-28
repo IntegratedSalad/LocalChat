@@ -246,7 +246,7 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
     if (header.msgType != static_cast<uint8_t>(
             BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN))
     {
-        LogError("Session [{}]: OnReceiveChatMessageFrame called for wrong msgType={}",
+        LogError("Session [{}]: OnReceiveFileTransferBegin called for wrong msgType={}",
                  this->GetSessionData()->sessionID,
                  static_cast<int>(header.msgType));
         return;
@@ -273,4 +273,60 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
     std::memset(this->sessionData_p->fileReadBuf.get(), 0, this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
     this->sessionData_p->totalBytesRead = 0;
     StartReadingChunks(this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
+}
+
+void BVTCPSession::OnReceiveFileChunkSent(void)
+{
+    BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->readBuf.get());
+    std::vector<char> payload = GetFileData(this->sessionData_p->readBuf.get());
+    if (header.msgType != static_cast<uint8_t>(
+            BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT))
+    {
+        LogError("Session [{}]: OnReceiveFileChunkSent called for wrong msgType={}",
+                 this->GetSessionData()->sessionID,
+                 static_cast<int>(header.msgType));
+        return;
+    }
+    const uint64_t metadata = header.metadata;
+    this->sessionData_p->csize = (metadata & 0xFFFFFFFF00000000) >> 32;
+    this->sessionData_p->fsize = (uint32_t)(metadata & 0x0000000FFFFFFFFF);
+    LogTrace("[BVTCPSession ({})]: Got OnReceiveFileChunkSent. Chunk size: {} File size: {}", 
+        this->GetSessionData()->sessionID,
+        this->sessionData_p->csize,
+        this->sessionData_p->fsize);
+
+    manager_p->PutMessageIntoAppMailbox(
+        BVMessage(
+            BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT,
+            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
+                this->sessionData_p->fsize, payload)))
+        ));
+}
+
+void BVTCPSession::OnReceiveFileTransferEnd(void)
+{
+    BVTCPFileHeader   header = GetFileHeader(this->sessionData_p->readBuf.get());
+    std::vector<char> payload = GetFileData(this->sessionData_p->readBuf.get());
+    if (header.msgType != static_cast<uint8_t>(
+            BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END))
+    {
+        LogError("Session [{}]: OnReceiveChatMessageFrame called for wrong msgType={}",
+                 this->GetSessionData()->sessionID,
+                 static_cast<int>(header.msgType));
+        return;
+    }
+    const uint64_t metadata = header.metadata;
+    this->sessionData_p->csize = (metadata & 0xFFFFFFFF00000000) >> 32;
+    this->sessionData_p->fsize = (uint32_t)(metadata & 0x0000000FFFFFFFFF);
+    LogTrace("[BVTCPSession ({})]: Got OnReceiveFileTransferEnd. Chunk size: {} File size: {}", 
+        this->GetSessionData()->sessionID,
+        this->sessionData_p->csize,
+        this->sessionData_p->fsize);
+
+    manager_p->PutMessageIntoAppMailbox(
+        BVMessage(
+            BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_END,
+            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
+                this->sessionData_p->fsize, payload)))
+        )); 
 }

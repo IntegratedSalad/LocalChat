@@ -288,6 +288,8 @@ public:
     BVStatus HandleServiceDeregistration(std::unique_ptr<std::any>) override;
     BVStatus HandleMessageIncoming(std::unique_ptr<std::any>) override;
     BVStatus HandleFileTransferBegin(std::unique_ptr<std::any>) override;
+    BVStatus HandleFileChunkSent(std::unique_ptr<std::any>) override;
+    BVStatus HandleFileTransferEnd(std::unique_ptr<std::any>) override;
     // -------------------------------------------------------
 
     BVStatus ReadMessages(void);

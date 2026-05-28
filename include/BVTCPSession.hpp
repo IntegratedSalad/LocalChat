@@ -104,12 +104,14 @@ private:
         {
             LogTrace("[BVTCPSession (id:{})]: Received another file chunk...", 
                 this->sessionData_p->sessionID);
-            // OnReceiveChunkSent();
+            OnReceiveFileChunkSent();
         } else if (header.msgType == BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END)
         {
             LogTrace("[BVTCPSession (id:{})]: Received last file chunk... (file transfer end).", 
                 this->sessionData_p->sessionID);
-            // OnReceiveFileTransferEnd();
+            OnReceiveFileTransferEnd();
+            ClearFileBuffer();
+            StartReadingFrames();
             return;
         }
         else
@@ -392,6 +394,8 @@ public:
     // Returns true if we have to return early.
     bool OnReceiveStandardFrame(void);
     void OnReceiveFileTransferBegin(void);
+    void OnReceiveFileChunkSent(void);
+    void OnReceiveFileTransferEnd(void);
     // void OnReceiveNodeGoodbyeFrame(void);
     // Upon receiving chat message,
     // call BVTCPConnectionManager function
@@ -583,6 +587,13 @@ public:
         this->sessionData_p->writeBuf.clear();
         this->sessionData_p->totalBytesWritten = 0;
         this->sessionData_p->writeBuf.assign(MESSAGE_FRAME_SIZE_BYTES, '\0');
+    }
+
+    void ClearFileBuffer(void)
+    {
+        constexpr uint8_t ONE_BYTE = 1;
+        this->sessionData_p->fileReadBuf = std::make_unique<char[]>(ONE_BYTE);
+        std::memset(this->sessionData_p->fileReadBuf.get(), 0, ONE_BYTE);
     }
 
     void Close(void)

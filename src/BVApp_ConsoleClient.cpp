@@ -19,6 +19,10 @@ BVComponent(_outMbx, _inMbx)
                      std::bind(&BVApp_ConsoleClient::HandleMessageIncoming, this, std::placeholders::_1));
     RegisterCallback(BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN,
                      std::bind(&BVApp_ConsoleClient::HandleFileTransferBegin, this, std::placeholders::_1));
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT,
+                     std::bind(&BVApp_ConsoleClient::HandleFileChunkSent, this, std::placeholders::_1));
+    RegisterCallback(BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_END,
+                     std::bind(&BVApp_ConsoleClient::HandleFileTransferEnd, this, std::placeholders::_1));
 
     // Set getter that returns a correct pointer to Apps inMailBox
     this->GetConnectionManager().SetMailboxGetterF(
@@ -617,6 +621,18 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
         LogError("[BVApp_ConsoleClient]: Error while creating directory and/or file: {}", e.what());
         return BVStatus::BVSTATUS_NOK;
     }
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVApp_ConsoleClient::HandleFileChunkSent(std::unique_ptr<std::any> dp)
+{
+    LogTrace("[BVApp_ConsoleClient]: Received HandleFileChunkSent");
+    return BVStatus::BVSTATUS_OK;
+}
+
+BVStatus BVApp_ConsoleClient::HandleFileTransferEnd(std::unique_ptr<std::any> dp)
+{
+    LogTrace("[BVApp_ConsoleClient]: Received HandleFileTransferEnd");
     return BVStatus::BVSTATUS_OK;
 }
 
