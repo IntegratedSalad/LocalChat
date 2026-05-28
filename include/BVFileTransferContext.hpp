@@ -56,6 +56,9 @@ private:
     // The best architecture is to wait for confirmation from the other host that it received
     // BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN
     // We can also wait for fixed time amount
+    // There's a bug when "larger" files (hundreds of KB) are not sent properly.
+    // We are sending proper amount of chunks, but it seems that data is not transfered/copierd
+    // in time. E.g. 32KBs are sent, but not saved/transferred.
 
     // I think that issue with ordering/timing still persists.
     void TransferNextChunk(void)

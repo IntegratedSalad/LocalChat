@@ -112,6 +112,7 @@ private:
             OnReceiveFileTransferEnd();
             ClearFileBuffer();
             this->ClearReadBuffer();
+            this->sessionData_p->readBuf = std::make_unique<char[]>(MESSAGE_FRAME_SIZE_BYTES);
             this->sessionData_p->totalBytesRead = 0;
             StartReadingFrames();
             return;
