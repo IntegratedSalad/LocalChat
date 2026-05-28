@@ -583,9 +583,6 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
     const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
     const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
 
-    // TODO: Parse fdata, create a context/something for the incoming file.
-    //       Create directory under the service name and open file with the name provided.
-
     LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {}\nFrom: {} Name: {}",
         fsize, csize, fdataStr, serviceName, fname);
 
@@ -627,12 +624,69 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
 BVStatus BVApp_ConsoleClient::HandleFileChunkSent(std::unique_ptr<std::any> dp)
 {
     LogTrace("[BVApp_ConsoleClient]: Received HandleFileChunkSent");
+    if (dp == nullptr)
+    {
+        LogError("[BVApp_ConsoleClient]: Error - HandleFileChunkSent, data pointer is null!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    BVTCPFileData res;
+    try
+    {
+        res = std::any_cast<BVTCPFileData>(*dp);
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT callback. "
+                    << e.what() << std::endl;
+        LogError("[BVApp_ConsoleClient]: Bad cast in HandleFileChunkSent! Error details: {}", e.what());
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+
+    const uint32_t    csize  = res.csize;  
+    const uint32_t    fsize  = res.fsize;
+    const std::vector<char> fdata  = res.fdata; // service name and filename!
+    const std::string fdataStr{fdata.begin(), fdata.end()};
+    const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
+    const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
+
+    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {}\nFrom: {} Name: {}",
+        fsize, csize, fdataStr, serviceName, fname);
+
     return BVStatus::BVSTATUS_OK;
 }
 
 BVStatus BVApp_ConsoleClient::HandleFileTransferEnd(std::unique_ptr<std::any> dp)
 {
     LogTrace("[BVApp_ConsoleClient]: Received HandleFileTransferEnd");
+    if (dp == nullptr)
+    {
+        LogError("[BVApp_ConsoleClient]: Error - HandleFileTransferEnd, data pointer is null!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+    BVTCPFileData res;
+    try
+    {
+        res = std::any_cast<BVTCPFileData>(*dp);
+    }
+    catch(const std::bad_any_cast& e)
+    {
+        std::cerr << "Bad cast in BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_END callback. "
+                    << e.what() << std::endl;
+        LogError("[BVApp_ConsoleClient]: Bad cast in HandleFileTransferEnd! Error details: {}", e.what());
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
+
+    const uint32_t    csize  = res.csize;  
+    const uint32_t    fsize  = res.fsize;
+    const std::vector<char> fdata  = res.fdata; // service name and filename!
+    const std::string fdataStr{fdata.begin(), fdata.end()};
+    const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
+    const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
+
+    LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} Payload: {}\nFrom: {} Name: {}",
+        fsize, csize, fdataStr, serviceName, fname);
+
+
     return BVStatus::BVSTATUS_OK;
 }
 
