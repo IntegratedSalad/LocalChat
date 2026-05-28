@@ -33,7 +33,7 @@ class BVFileTransferContext : public BVLoggable
 private:
     std::fstream fhandle;
     const std::uint32_t  fsize;
-    const uint16_t       ftcid; // id of the BVFileTransferContext
+    const uint32_t       ftcid; // id of the BVFileTransferContext
     const std::string    fname;
     
     std::shared_ptr<BVTCPSession> session_p;
@@ -66,9 +66,10 @@ private:
             ftBeginPayload.push_back('\0'); // information for session where to stop processing
             msgType = BVTCPMessageType::BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN;
             // We put fsize on 32 high bits and csize on 32 low bits.
+            // Chunk size is saved as chunk size of the session
             metadata = ((uint64_t)csize << 32) | ((uint64_t)fsize);
             state = FileTransferState::FILETRANSFERSTATE_ONGOING;
-            BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
+            BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, ftcid, metadata); 
             BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, ftBeginPayload);
             // Payload: Servicename|Filename\0 (with extension)
             /*
@@ -120,7 +121,7 @@ private:
                 std::cout << "Sent!..." << std::endl;
                 isRunning = false;
             }
-            BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, csize, metadata); 
+            BVTCPFileHeader fChunkHeader = ConstructFileHeader(msgType, ftcid, metadata); 
             BVTCPFileChunk  fChunk       = ConstructFileChunk(fChunkHeader, dataToTransferBuffer);
             // This shouldn't be the solution but for now it will suffice.
             std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_SENDING_MS));
@@ -166,9 +167,9 @@ private:
     
 public:
     BVFileTransferContext(std::shared_ptr<BVTCPSession> _session_p,
-                        std::filesystem::path& _fpath,
-                        const uint16_t _ftcid,
-                        MailboxGetter _mailbox_F) :
+                          std::filesystem::path& _fpath,
+                          const uint32_t _ftcid,
+                          MailboxGetter _mailbox_F) :
     session_p(_session_p),
     fsize(std::filesystem::file_size(_fpath)),
     fname(std::filesystem::path(_fpath).filename()),
@@ -214,6 +215,7 @@ public:
 
         // send message that file transfer has been cancelled.
     }
+
     ~BVFileTransferContext()
     {
         LogTrace("[BVFileTransferContext]: FTContext id: {} dies.", ftcid);

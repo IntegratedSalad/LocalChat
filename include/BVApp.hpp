@@ -59,7 +59,10 @@ protected:
     // Find IP
     virtual BVNode ResolveServiceToEndpoint(const std::string& hosttarget, const std::string& serviceName, const int port) = 0;
 
-    // File utilities
+    // File utilities and data
+
+    //   correlationKey           serviceName    filename
+    std::map<uint32_t, std::tuple<std::string, std::string>> fileTransferData;
 
 public:
     BVApp(boost::asio::io_context& _ioContext,

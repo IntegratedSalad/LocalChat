@@ -576,8 +576,9 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    const uint32_t    csize  = res.csize;  
-    const uint32_t    fsize  = res.fsize;
+    const uint32_t    correlationKey = res.correlationKey;
+    const uint32_t    csize          = res.csize;  
+    const uint32_t    fsize          = res.fsize;
     const std::vector<char> fdata  = res.fdata; // service name and filename!
     const std::string fdataStr{fdata.begin(), fdata.end()};
     const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
@@ -630,6 +631,9 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferBegin(std::unique_ptr<std::any> 
         LogError("[BVApp_ConsoleClient]: Error while creating directory and/or file: {}", e.what());
         return BVStatus::BVSTATUS_NOK;
     }
+
+    // Register serviceName and fileName at the correlationKey.
+    fileTransferData[correlationKey] = std::make_tuple(serviceName, fname);
     return BVStatus::BVSTATUS_OK;
 }
 
@@ -654,13 +658,26 @@ BVStatus BVApp_ConsoleClient::HandleFileChunkSent(std::unique_ptr<std::any> dp)
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    const uint32_t    csize  = res.csize;  
-    const uint32_t    fsize  = res.fsize;
-    const std::vector<char> fdata  = res.fdata; // service name and filename!
+    const uint32_t    correlationKey = res.correlationKey;
+    const uint32_t    csize          = res.csize;  
+    const uint32_t    fsize          = res.fsize;
+    const std::vector<char> fdata    = res.fdata; // service name and filename!
     const std::string fdataStr{fdata.begin(), fdata.end()};
-    const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
-    const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
 
+    // Get servicename and fname:
+    std::string serviceName;
+    std::string fname;
+    try
+    {
+        std::tuple<std::string, std::string> fdata_t = fileTransferData.at(correlationKey);
+        serviceName = std::get<0>(fdata_t);
+        fname       = std::get<1>(fdata_t);
+    }
+    catch(const std::out_of_range& ex)
+    {
+        LogError("Couldn't find the correlated data for this file transfer!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
     LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} From: {} Name: {}",
         fsize, csize, serviceName, fname);
 
@@ -708,12 +725,26 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferEnd(std::unique_ptr<std::any> dp
         return BVStatus::BVSTATUS_FATAL_ERROR;
     }
 
-    const uint32_t    csize  = res.csize;  
-    const uint32_t    fsize  = res.fsize;
-    const std::vector<char> fdata  = res.fdata; // service name and filename!
+    const uint32_t    correlationKey = res.correlationKey;
+    const uint32_t    csize          = res.csize;  
+    const uint32_t    fsize          = res.fsize;
+    const std::vector<char> fdata    = res.fdata; // service name and filename!
     const std::string fdataStr{fdata.begin(), fdata.end()};
-    const std::string serviceName = fdataStr.substr(0, fdataStr.find('|'));
-    const std::string fname       = fdataStr.substr(fdataStr.find("|")+1);
+
+    // Get servicename and fname:
+    std::string serviceName;
+    std::string fname;
+    try
+    {
+        std::tuple<std::string, std::string> fdata_t = fileTransferData.at(correlationKey);
+        serviceName = std::get<0>(fdata_t);
+        fname       = std::get<1>(fdata_t);
+    }
+    catch(const std::out_of_range& ex)
+    {
+        LogError("Couldn't find the correlated data for this file transfer!");
+        return BVStatus::BVSTATUS_FATAL_ERROR;
+    }
 
     LogTrace("[BVApp_ConsoleClient]: File size: {} Chunk size: {} From: {} Name: {}",
         fsize, csize, serviceName, fname);
@@ -737,6 +768,11 @@ BVStatus BVApp_ConsoleClient::HandleFileTransferEnd(std::unique_ptr<std::any> dp
         return BVStatus::BVSTATUS_NOK;
     }
     std::cout << "File saved: " << fname << std::endl;
+
+    // Delete data at correlationKey
+    fileTransferData.erase(correlationKey);
+    // GetConnectionManager -> remove fileTransferContext
+
     return BVStatus::BVSTATUS_OK;
 }
 

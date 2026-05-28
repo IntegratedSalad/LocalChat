@@ -151,7 +151,7 @@ struct BVNode // BVNodeData?
 
 struct BVTCPFileHeader
 {
-    uint32_t chunkSize; // TODO: change to correlation key.
+    uint32_t correlationKey;
     uint64_t timestamp;
     uint8_t  msgType;
     uint64_t metadata;
@@ -169,22 +169,27 @@ struct BVTCPFileChunk
 // This is a structure that is used to represent file received - used when sending data to App.
 struct BVTCPFileData
 {
+    uint32_t                correlationKey;
     uint32_t                csize;
     uint32_t                fsize;
     std::vector<char>       fdata;
     // TODO: add timestamp and correlation key
 
     BVTCPFileData() = default;
-    BVTCPFileData(const uint32_t _csize,
+    BVTCPFileData(const uint32_t _correlationKey,
+                  const uint32_t _csize,
                   const uint32_t _fsize,
                   std::vector<char> _fdata) :
+    correlationKey(_correlationKey),
     csize(_csize),
     fsize(_fsize),
     fdata(_fdata)
     {
     }
-    BVTCPFileData(const uint32_t _csize,
+    BVTCPFileData(const uint32_t _correlationKey, 
+                  const uint32_t _csize,
                   const uint32_t _fsize) :
+    correlationKey(_correlationKey),
     csize(_csize),
     fsize(_fsize)
     {
@@ -312,7 +317,7 @@ struct BVTCPNodeConnectionSessionData
 };
 
 inline BVTCPFileHeader ConstructFileHeader(const uint8_t msgType, 
-                                           const uint32_t csize,
+                                           const uint32_t correlationKey,
                                            const uint64_t metadata)
 {
     BVTCPFileHeader header;
@@ -321,7 +326,7 @@ inline BVTCPFileHeader ConstructFileHeader(const uint8_t msgType,
             std::chrono::system_clock::now().time_since_epoch());
     header.timestamp = ts.count();
     header.msgType = msgType;
-    header.chunkSize = csize;
+    header.correlationKey = correlationKey;
     header.metadata = metadata;
     return header;
 }

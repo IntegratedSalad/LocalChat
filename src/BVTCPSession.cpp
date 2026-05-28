@@ -251,7 +251,9 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
                  static_cast<int>(header.msgType));
         return;
     }
+    const uint32_t correlationKey = header.correlationKey;
     const uint64_t metadata = header.metadata;
+    // Here we save chunk size from metadata
     this->sessionData_p->csize = (metadata & 0xFFFFFFFF00000000) >> 32;
     this->sessionData_p->fsize = (uint32_t)(metadata & 0x0000000FFFFFFFFF);
     LogTrace("[BVTCPSession ({})]: Got OnReceiveFileTransferBegin. Chunk size: {} File size: {}", 
@@ -262,13 +264,11 @@ void BVTCPSession::OnReceiveFileTransferBegin(void)
     manager_p->PutMessageIntoAppMailbox(
         BVMessage(
             BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN,
-            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
+            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(correlationKey, this->sessionData_p->csize, 
                 this->sessionData_p->fsize, payload)))
         ));
     
-    // this->sessionData_p->sock->cancel(); // cancel all operations -> we will be reading chunks from fileReadBuf
     ClearReadBuffer();
-    // this->sessionData_p->fileReadBuf.reset();
     this->sessionData_p->fileReadBuf = std::make_unique<char[]>(this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
     std::memset(this->sessionData_p->fileReadBuf.get(), 0, this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
     this->sessionData_p->totalBytesRead = 0;
@@ -292,10 +292,11 @@ void BVTCPSession::OnReceiveFileChunkSent(void)
         this->sessionData_p->csize,
         this->sessionData_p->fsize);
 
+    const uint32_t correlationKey = header.correlationKey;
     manager_p->PutMessageIntoAppMailbox(
         BVMessage(
             BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT,
-            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
+            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(correlationKey, this->sessionData_p->csize, 
                 this->sessionData_p->fsize, payload)))
         ));
 }
@@ -317,10 +318,11 @@ void BVTCPSession::OnReceiveFileTransferEnd(void)
         this->sessionData_p->csize,
         this->sessionData_p->fsize);
 
+    const uint32_t correlationKey = header.correlationKey;
     manager_p->PutMessageIntoAppMailbox(
         BVMessage(
             BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_END,
-            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(this->sessionData_p->csize, 
+            std::make_unique<std::any>(std::make_any<BVTCPFileData>(BVTCPFileData(correlationKey, this->sessionData_p->csize, 
                 this->sessionData_p->fsize, payload)))
         )); 
 }

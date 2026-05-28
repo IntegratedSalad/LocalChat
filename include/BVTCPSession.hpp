@@ -121,8 +121,8 @@ private:
             // LogDebug("Read buffer: {} Read buffer is a nullpointer: {} Bytes read: {} Bytes transferred: {} Address in nodeData: {} Endpoint address: {} State: {}",
             // this->sessionData_p->fileReadBuf.get(), this->sessionData_p->fileReadBuf == nullptr, this->sessionData_p->totalBytesRead, bytes_transferred,
             //     this->sessionData_p->nodeData.address.to_string(), this->sessionData_p->nodeData.ep.address().to_string(), static_cast<int>(this->state));
-            LogDebug("Header: msgType: {} timestamp: {} chunksize: {} metadata: {}",
-                header.msgType, header.timestamp, header.chunkSize, header.metadata);
+            LogDebug("Header: msgType: {} timestamp: {} correlationKey: {} metadata: {}",
+                header.msgType, header.timestamp, header.correlationKey, header.metadata);
         }
         this->sessionData_p->totalBytesRead = 0;
         std::memset(this->sessionData_p->fileReadBuf.get(), 0, this->sessionData_p->csize + FILE_HEADER_SIZE_BYTES);
@@ -325,7 +325,7 @@ private:
     BVTCPFileHeader GetFileHeader(const char* buf)
     {
         BVTCPFileHeader header{};
-        std::memcpy(&header.chunkSize, buf, sizeof(header.chunkSize)); // 0..3 4 bytes
+        std::memcpy(&header.correlationKey, buf, sizeof(header.correlationKey)); // 0..3 4 bytes
         std::memcpy(&header.timestamp, buf + 4, sizeof(header.timestamp)); // 4..11 8 bytes
         header.msgType = static_cast<uint8_t>(buf[12]);
         std::memcpy(&header.metadata, buf + 13, sizeof(header.metadata));
@@ -435,8 +435,8 @@ public:
         std::size_t offset = 0;
         const uint32_t chunkSize = static_cast<uint32_t>(payloadBytes);
 
-        std::memcpy(buf + offset, &chunkSize, sizeof(chunkSize));
-        offset += sizeof(chunkSize);
+        std::memcpy(buf + offset, &chunk.header.correlationKey, sizeof(chunk.header.correlationKey));
+        offset += sizeof(chunk.header.correlationKey);
         std::memcpy(buf + offset, &chunk.header.timestamp, sizeof(chunk.header.timestamp));
         offset += sizeof(chunk.header.timestamp);
         std::memcpy(buf + offset, &chunk.header.msgType, sizeof(chunk.header.msgType));
@@ -453,8 +453,8 @@ public:
                 payloadBytes
             );
         }
-        LogDebug("SEND header bytes: chunkSize={}, msgType={}, frameSize={}, payloadBytes={}, byte12={}",
-            chunkSize,
+        LogDebug("SEND header bytes: correlationKey={}, msgType={}, frameSize={}, payloadBytes={}, byte12={}",
+            chunk.header.correlationKey,
             static_cast<int>(chunk.header.msgType),
             frameSize,
             payloadBytes,
