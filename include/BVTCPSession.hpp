@@ -335,6 +335,8 @@ private:
         return header;
     }
 
+    // BUG: This is wrong, as this will stop at first \0.
+    // Other files than text will contain many null characters!
     std::vector<char> GetFileData(char* buf)
     {
         std::vector<char> d_v;
@@ -343,6 +345,18 @@ private:
             d_v.push_back(*c);
         }
         return d_v;
+    }
+    
+    std::vector<char> GetFileData(char* buf, const std::size_t csize)
+    {
+        std::vector<char> d_v;
+        std::size_t i=0;
+        for (char* c = buf + FILE_HEADER_SIZE_BYTES; i < csize; c++)
+        {
+            d_v.push_back(*c);
+            i++;
+        }
+        return d_v; 
     }
 
 public:
