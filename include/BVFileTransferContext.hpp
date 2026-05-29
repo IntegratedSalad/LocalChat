@@ -9,6 +9,7 @@
 #include "BVTCPSession.hpp"
 #include "BVLoggable.hpp"
 
+// This works between 100ms-500ms
 #define WAIT_FOR_SENDING_MS 400
 
 // File transfer is always outgoing?
