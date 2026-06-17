@@ -15,10 +15,15 @@ loop not isPaused
 
     deactivate DiscoveryWT
     Broker -> App                   : //BVEVENTTYPE_APP_PUBLISHED_SERVICE//
-    App -> App                      : Update state
-    App -> Broker               : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
-    Broker -> DiscoveryMbx      : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
-    DiscoveryMbx -> DiscoveryWT : Pause browsing
+    App -> Broker                   : //BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE//
+    Broker -> DiscoveryMbx          : //BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE//
+    DiscoveryWT -> DiscoveryWT : Resolve
+    DiscoveryWT -> Broker           : //BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED//
+    Broker -> App                   : //BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED//
+    App -> App                      : Update state (create TCP connection etc.)
+    App -> Broker                   : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
+    Broker -> DiscoveryMbx          : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
+    DiscoveryMbx -> DiscoveryWT     : Pause browsing
 
 else isPaused
     DiscoveryWT -> DiscoveryWT : wait/sleep

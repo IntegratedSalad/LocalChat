@@ -1,0 +1,44 @@
+@startuml FileTransferProtocol
+title BV File Transfer Protocol Used in LocalChat
+
+participant "Sender"   as Sender
+participant "Receiver" as Receiver
+
+' activate ReceiverSession
+' activate SenderSession
+
+' deactivate ReceiverSession
+' deactivate SenderSession
+
+activate Sender
+Sender -> Sender : Prepare
+deactivate Sender
+Sender -> Receiver : //BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_BEGIN//
+note right of Receiver
+Here, we send 138 bytes of data as 
+a regular message.
+We pack chunk size (csize) and
+file size (fsize) into 64 bits of metadata field
+We do NOT send any file data here.
+end note
+activate Receiver
+Receiver -> Receiver : Create file etc...
+deactivate Receiver
+
+Sender -> Receiver : //BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_CHUNK_SENT//
+note right of Receiver
+Here we send actual file data
+end note
+activate Receiver
+Receiver -> Receiver : Append to the file...
+deactivate Receiver
+
+Sender -> Receiver : //BVSESSIONREGULARMESSAGETYPE_FILE_TRANSFER_END//
+activate Receiver
+Receiver -> Receiver : Append last bytes.
+deactivate Receiver
+
+activate Sender
+Sender -> Sender : Deallocate buffer and other tasks.
+deactivate Sender
+@enduml

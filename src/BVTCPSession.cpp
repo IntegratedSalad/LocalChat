@@ -180,7 +180,6 @@ void BVTCPSession::OnReceiveChatMessageFrame(void)
     StartReadingFrames();
 }
 
-// TODO: Change that to void - always returns false
 bool BVTCPSession::OnReceiveStandardFrame(void)
 {
     // Parse

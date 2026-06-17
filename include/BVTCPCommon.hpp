@@ -7,7 +7,7 @@
 #include "const.h"
 
 // Pure text (ASCII) messages
-#define MAX_MESSAGE_SIZE_BYTES   256
+#define MAX_MESSAGE_SIZE_BYTES   256 // <- this is probably a mistake. Use PAYLOAD_SIZE_BYTES instead of this
 #define MESSAGE_FRAME_SIZE_BYTES 138
 #define HEADER_SIZE_BYTES        10
 #define PAYLOAD_SIZE_BYTES       128

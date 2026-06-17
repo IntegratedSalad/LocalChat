@@ -1,0 +1,29 @@
+@startuml ConnectionProtocol
+title Connection Acceptation Sequence
+
+participant "TCP Session" as SenderSession
+participant "Remote TCP Session" as ReceiverSession
+
+' activate ReceiverSession
+' activate SenderSession
+ReceiverSession --> SenderSession: Connect
+SenderSession -> ReceiverSession: //BVSESSIONCONTROLMESSAGETYPE_HELLO//
+note right of ReceiverSession
+We will check if this connection wasn't initiated 
+in the other way, meaning:
+TCP Session hasn't performed connect op. with the Remote TCP Session
+end note
+ReceiverSession -> SenderSession: //BVSESSIONCONTROLMESSAGETYPE_HELLOBACK//
+activate SenderSession
+alt IsSessionAlreadyPresent is true
+    SenderSession -> SenderSession : Close session with remote host
+else IsSessionAlreadyPresent is false
+    SenderSession -> SenderSession : Initiate session with remote host (save it in active sessions)
+    SenderSession -> ReceiverSession: //BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED//
+end
+ReceiverSession -> ReceiverSession : Change state to BVSESSIONSTATE_ESTABLISHED
+
+deactivate ReceiverSession
+deactivate SenderSession
+
+@enduml

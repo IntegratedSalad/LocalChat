@@ -1,0 +1,13 @@
+@startuml ConnectionProtocol
+title Connection Initiation Sequence
+
+participant "TCP Session" as SenderSession
+participant "Remote TCP Session" as ReceiverSession
+
+' activate ReceiverSession
+' activate SenderSession
+
+deactivate ReceiverSession
+deactivate SenderSession
+
+@enduml
