@@ -365,54 +365,81 @@ public:
 
     void HandleSessionIdentification(const std::string& serviceName, std::shared_ptr<BVTCPSession> caller)
     {
+        const auto establishIncomingSession =
+            [this, &serviceName, caller]()
+            {
+                caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
+                {
+                    std::lock_guard<std::mutex> l(session_m_mutex);
+                    // Set nodeData - this is not set when accepting!
+                    StartCommunicationSessionWithNode(caller->GetSessionData()->nodeData.id, caller->GetSessionData()->inMailbox_p);
+                    caller->GetSessionData()->nodeData.serviceName = serviceName;
+                    this->sessions_m[caller->GetSessionData()->sessionID] = caller;
+                    // We do not need an IP address of this service! We already have the socket!
+                    caller->GetSessionData()->nodeData.address = caller->GetSessionData()->sock->remote_endpoint().address();
+                    caller->GetSessionData()->nodeData.ep = caller->GetSessionData()->sock->remote_endpoint();
+                    service_sessionid_m[serviceName] = caller->GetSessionID();
+                    nodesM[serviceName] = caller->GetSessionData()->nodeData;
+                    LogTrace("BVTCPConnectionManager: Sending BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED...");
+                    BVTCPMessageHeader header = ConstructMessageHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED);
+                    BVTCPMessage<std::array<char, 128>> confirmEstablishedMessage = ConstructMessage(header, std::array<char,128>()); // empty payload
+                    caller->WriteMessageFrame(confirmEstablishedMessage);
+                }
+                LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}",
+                    caller->GetSessionData()->nodeData.serviceName, caller->GetSessionData()->nodeData.address.to_string());
+
+                LogTrace("BVTCPConnectionManager: Current sessions:");
+                {
+                    std::lock_guard<std::mutex> l(session_m_mutex);
+                    int sidx = 0;
+                    for (const auto& [k,v] : this->sessions_m)
+                    {
+                        LogTrace("Session {} : ID: {}, service: {}", sidx, v->GetSessionData()->sessionID, v->GetSessionData()->nodeData.serviceName);
+                        sidx++;
+                    }
+                }
+                caller->RequestReadingFrames();
+            };
+
         if (!IsSessionAlreadyPresent(serviceName))
         {
             // This session is not a duplicate - we accepted it, it wasn't added (we didn't know who it was)
             // Now we know - we can add it, didn't connect to it before.
             // We need to also send a message so that the other side knows
             // that they're ok and can change their state to BVSESSIONSTATE_ESTABLISHED
-            caller->SetState(BVSessionState::BVSESSIONSTATE_ESTABLISHED);
-            {
-                std::lock_guard<std::mutex> l(session_m_mutex);
-                // Set nodeData - this is not set when accepting!
-                StartCommunicationSessionWithNode(caller->GetSessionData()->nodeData.id, caller->GetSessionData()->inMailbox_p);
-                caller->GetSessionData()->nodeData.serviceName = serviceName;
-                this->sessions_m[caller->GetSessionData()->sessionID] = caller;
-                // We do not need an IP address of this service! We already have the socket!
-                caller->GetSessionData()->nodeData.address = caller->GetSessionData()->sock->remote_endpoint().address();
-                caller->GetSessionData()->nodeData.ep = caller->GetSessionData()->sock->remote_endpoint();
-                service_sessionid_m[serviceName] = caller->GetSessionID();
-                AddNodeToNodesM(serviceName, caller->GetSessionData()->nodeData);
-                LogTrace("BVTCPConnectionManager: Sending BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED...");
-                BVTCPMessageHeader header = ConstructMessageHeader(BVTCPMessageType::BVSESSIONCONTROLMESSAGETYPE_CONFIRM_ESTABLISHED);
-                BVTCPMessage<std::array<char, 128>> confirmEstablishedMessage = ConstructMessage(header, std::array<char,128>()); // empty payload
-                caller->WriteMessageFrame(confirmEstablishedMessage);
-            }
-            LogTrace("BVTCPConnectionManager: Established connection with node: {} Address: {}",
-                caller->GetSessionData()->nodeData.serviceName, caller->GetSessionData()->nodeData.address.to_string());
-
-            // When we now have serviceName, we have to get the ip address with that service name
-            // Although that's weird, because we should already have their IP.
-            // We have their IP when we connect, but when we accept, we do not.
-            // We should get that IP From app, or the node should send it themselves.
-            // The session with which we talk, is the session to US.
-            LogTrace("BVTCPConnectionManager: Current sessions:");
-            {
-                std::lock_guard<std::mutex> l(session_m_mutex);
-                int sidx = 0;
-                for (const auto& [k,v] : this->sessions_m)
-                {
-                    LogTrace("Session {} : ID: {}, service: {}", sidx, v->GetSessionData()->sessionID, v->GetSessionData()->nodeData.serviceName);
-                    sidx++;
-                }
-            }
-            caller->RequestReadingFrames();
+            establishIncomingSession();
         } else
         {
             // This session is a duplicate - we might've accepted and connected at the same time.
-            // Now we know who it is; we have this peer as a session, so we can close this one.
-            LogTrace("BVTCPConnectionManager: Found duplicate session for {}. Closing.", caller->GetSessionData()->nodeData.serviceName);
-            caller->Close(); // close the duplicate session
+            // Deterministically keep only one side's outgoing connection for each peer pair.
+            // Otherwise both machines can keep their outgoing sockets while closing the peer's accepted socket.
+            const std::string thisServiceName = thisMachineHostData.serviceName;
+            const bool keepExistingSession = thisServiceName < serviceName;
+            if (keepExistingSession)
+            {
+                LogTrace("BVTCPConnectionManager: Found duplicate session for {}. Keeping existing session and closing incoming duplicate.",
+                         serviceName);
+                caller->Close();
+                return;
+            }
+
+            LogTrace("BVTCPConnectionManager: Found duplicate session for {}. Replacing existing session with incoming duplicate.",
+                     serviceName);
+            {
+                std::lock_guard<std::mutex> l(session_m_mutex);
+                auto sidIt = service_sessionid_m.find(serviceName);
+                if (sidIt != service_sessionid_m.end())
+                {
+                    auto sessIt = sessions_m.find(sidIt->second);
+                    if (sessIt != sessions_m.end())
+                    {
+                        sessIt->second->Close();
+                        sessions_m.erase(sessIt);
+                    }
+                    service_sessionid_m.erase(sidIt);
+                }
+            }
+            establishIncomingSession();
         }
     }
 
