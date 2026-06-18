@@ -16,6 +16,8 @@ find_package(Threads REQUIRED)
 find_package(wxWidgets REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
+option(BV_BUILD_GUI "Build wxWidgets GUI, instead of Console Client" OFF)
+
 if(NOT TARGET spdlog)
     find_package(spdlog REQUIRED)
 endif()
@@ -25,12 +27,22 @@ add_subdirectory(tests)
 add_library(linked_list STATIC ${CMAKE_SOURCE_DIR}/src/linked_list.c ${CMAKE_SOURCE_DIR}/include/linked_list.h)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
+
+if (BV_BUILD_GUI)
+add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVApp_GUIClient.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
+						 ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
+						 src/BVTCPSession.cpp
+)
+else()
 add_executable(LocalChat ${CMAKE_SOURCE_DIR}/src/main.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVApp_ConsoleClient.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVBroker.cpp
 						 ${CMAKE_SOURCE_DIR}/src/BVTCPConnectionManager.cpp
 						 src/BVTCPSession.cpp
 )
+endif()
 
 if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
@@ -58,7 +70,8 @@ endif()
 
 target_compile_definitions(
   LocalChat 
-  PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE)
+  PRIVATE SPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
+  PRIVATE BV_BUILD_GUI=$<BOOL:${BV_BUILD_GUI}>)
 
 if (APPLE)
 	add_library(BVService_Bonjour STATIC ${CMAKE_SOURCE_DIR}/src/BVService_Bonjour.cpp)

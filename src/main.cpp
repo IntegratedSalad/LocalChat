@@ -22,7 +22,11 @@
 #include "BVService_Avahi.hpp"
 #include "BVDiscovery_Avahi.hpp"
 #endif
+#if BV_BUILD_GUI
+#include "BVApp_GUIClient.hpp"
+#else
 #include "BVApp_ConsoleClient.hpp"
+#endif
 
 int main(int argc, char** argv)
 {
@@ -121,7 +125,7 @@ int main(int argc, char** argv)
 #if __APPLE__
     // Create a discovery object, that periodically performs DNS-SD functionality.
     std::shared_ptr<const BVService_Bonjour> service_p = // TODO: Redundant, remove!
-        std::make_shared<const BVService_Bonjour>(service);
+        std::shared_ptr<const BVService_Bonjour>(&service, [](const BVService_Bonjour*) {});
     BVDiscovery_Bonjour discovery{thisMachineServiceData,
                                   ioContext,
                                   std::make_shared<threadsafe_queue<BVMessage>>(),
@@ -137,6 +141,17 @@ int main(int argc, char** argv)
                                 std::make_shared<threadsafe_queue<BVMessage>>(),
                                 std::make_shared<threadsafe_queue<BVMessage>>()};
 #endif
+#if BV_BUILD_GUI
+    BVApp_GUIClient guiClient{thisMachineServiceData,
+                              std::make_shared<threadsafe_queue<BVMessage>>(),
+                              std::make_shared<threadsafe_queue<BVMessage>>(),
+                              ioContext};
+    guiClient.SetCommandLineArguments(argc, argv);
+    guiClient.SetLogger(fileLogger);
+    guiClient.GetConnectionManager().SetLogger(fileLogger);
+    // we Start Accepting Connections here, after setting the logger.
+    guiClient.GetConnectionManager().StartAcceptingConnections();
+#else
     BVApp_ConsoleClient consoleClient{thisMachineServiceData,
                                       std::make_shared<threadsafe_queue<BVMessage>>(),
                                       std::make_shared<threadsafe_queue<BVMessage>>(),
@@ -145,10 +160,14 @@ int main(int argc, char** argv)
     consoleClient.GetConnectionManager().SetLogger(fileLogger);
     // we Start Accepting Connections here, after setting the logger.
     consoleClient.GetConnectionManager().StartAcceptingConnections();
-
+#endif 
     // Broker setup
     BVStatus attachStatusDiscovery = broker.Attach(discovery);
+#if BV_BUILD_GUI
+    BVStatus attachStatusApp = broker.Attach(guiClient);
+#else
     BVStatus attachStatusApp = broker.Attach(consoleClient);
+#endif
     if (attachStatusDiscovery != BVStatus::BVSTATUS_OK ||
         attachStatusApp       != BVStatus::BVSTATUS_OK)
     {
@@ -170,6 +189,25 @@ int main(int argc, char** argv)
         broker.Subscribe(discovery.GetSubscriberId(),  BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESTART);
     BVStatus subStatusDiscoveryRequestResolve = 
         broker.Subscribe(discovery.GetSubscriberId(), BVEventType::BVEVENTTYPE_DISCOVERY_REQUEST_RESOLVE);
+#if BV_BUILD_GUI
+    BVStatus subStatusAppRequestRestart = 
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE);
+    BVStatus subStatusAppServiceResolved = 
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED);
+    // this is needed to exit listening on mailbox!
+    BVStatus subStatusAppRequestTerminate = 
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_TERMINATE_ALL);
+    BVStatus subStatusAppServiceDeregistered = 
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_DEREGISTERED_SERVICE);
+    BVStatus subStatusAppMessageIncoming =
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_MESSAGE_INCOMING);
+    BVStatus subStatusAppFileTransferBegin =
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_BEGIN);
+    BVStatus subStatusAppFileChunkSent =
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT);
+    BVStatus subStatusAppFileTransferEnd =
+        broker.Subscribe(guiClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_END);
+#else
     BVStatus subStatusAppRequestRestart = 
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_PUBLISHED_SERVICE);
     BVStatus subStatusAppServiceResolved = 
@@ -187,6 +225,7 @@ int main(int argc, char** argv)
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_CHUNK_SENT);
     BVStatus subStatusAppFileTransferEnd =
         broker.Subscribe(consoleClient.GetSubscriberId(), BVEventType::BVEVENTTYPE_APP_FILE_TRANSFER_END);
+#endif
     if (subStatusDiscoveryRequestStart    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestPause    != BVStatus::BVSTATUS_OK ||
         subStatusDiscoveryRequestResume   != BVStatus::BVSTATUS_OK ||
@@ -211,20 +250,34 @@ int main(int argc, char** argv)
     broker.LaunchWorkerThread();
     discovery.StartListeningOnMailbox();
     discovery.LaunchWorkingThread();
+#if BV_BUILD_GUI
+    guiClient.StartListeningOnMailbox();
+    guiClient.LaunchIOThread();
+    guiClient.Run(); // wxWidgets must stay on the main thread.
+#else
     consoleClient.StartListeningOnMailbox();
     consoleClient.LaunchIOThread();
     consoleClient.Run(); // this is our app worker thread (main thread)
-
+#endif
     // Join all
     discovery.TryJoinMailBoxThread();
     discovery.TryJoinWorkerThread();
+#if BV_BUILD_GUI
+    guiClient.TryJoinMailBoxThread();
+    guiClient.TryJoinIOThread();
+#else
     consoleClient.TryJoinMailBoxThread();
     consoleClient.TryJoinIOThread();
+#endif
     broker.TryJoinWorkerThread();
 
     // Detach
     BVStatus dDiscoveryStatus = broker.Detach(discovery.GetSubscriberId());
+#if BV_BUILD_GUI
+    BVStatus dAppStatus = broker.Detach(guiClient.GetSubscriberId());
+#else
     BVStatus dAppStatus = broker.Detach(consoleClient.GetSubscriberId());
+#endif
     if (dDiscoveryStatus != BVStatus::BVSTATUS_OK || dAppStatus != BVStatus::BVSTATUS_OK)
     {
         std::cerr << "Fatal error: Broker couldn't detach all components..." << std::endl;

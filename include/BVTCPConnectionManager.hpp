@@ -76,6 +76,7 @@ private:
     // File transfer context map.
     // It means that only one file per session can be sent at the same time
     std::map<uint32_t, std::unique_ptr<BVFileTransferContext>> fileTransferContext_m;
+    std::function<void(const std::string&)> fileTransferFinished_F;
 
     NodeID GetNodeIDByServiceName(const std::string& _serviceName, BVStatus& status_out)
     {
@@ -453,6 +454,11 @@ public:
     {
         this->mailbox_F = std::move(f);
     }
+
+    void SetFileTransferFinishedCallback(std::function<void(const std::string&)> f)
+    {
+        this->fileTransferFinished_F = std::move(f);
+    }
     
     // File utilities
 
@@ -467,7 +473,7 @@ public:
         // receives FileTransferEnd and remove it. Let's just leave it at ftcid in the std::map for now...
         // We can also just send correlationKey, key to this map as SessionID.
         std::unique_ptr<BVFileTransferContext> ftcp = 
-            std::make_unique<BVFileTransferContext>(sessions_m.at(sid), _fpath, ftcid, mailbox_F);
+            std::make_unique<BVFileTransferContext>(sessions_m.at(sid), _fpath, ftcid, mailbox_F, fileTransferFinished_F);
         ftcp->SetLogger(GetLogger());
         RemoveFileTransferContext(ftcid);
         fileTransferContext_m.emplace(ftcid, std::move(ftcp));

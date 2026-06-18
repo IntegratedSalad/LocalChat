@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <atomic>
+#include <functional>
 #include <boost/asio.hpp>
 #include "BVTCPCommon.hpp"
 #include "BVTCPSession.hpp"
@@ -39,6 +40,7 @@ private:
     
     std::shared_ptr<BVTCPSession> session_p;
     MailboxGetter mailbox_F; // this will directly send messages to app. But for what?
+    std::function<void(const std::string&)> onTransferFinished_F;
     // Maybe instead of sending a message, just include a function that triggers the 
     // RemoveFileTransferContext from manager..
     // Or don't save the BVFileTransferContext in the memory as unique_ptr in a map.
@@ -135,6 +137,10 @@ private:
             std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_SENDING_MS));
             session_p->WriteFileChunk(fChunk, csize);
             bytesSent += bytesRead;  
+            if (!isRunning && onTransferFinished_F)
+            {
+                onTransferFinished_F(fname);
+            }
         } else
         {
             isRunning = false;
@@ -177,12 +183,14 @@ public:
     BVFileTransferContext(std::shared_ptr<BVTCPSession> _session_p,
                           std::filesystem::path& _fpath,
                           const uint32_t _ftcid,
-                          MailboxGetter _mailbox_F) :
+                          MailboxGetter _mailbox_F,
+                          std::function<void(const std::string&)> _onTransferFinished_F = {}) :
     session_p(_session_p),
     fsize(std::filesystem::file_size(_fpath)),
     fname(std::filesystem::path(_fpath).filename()),
     ftcid(_ftcid),
-    mailbox_F(_mailbox_F)
+    mailbox_F(_mailbox_F),
+    onTransferFinished_F(std::move(_onTransferFinished_F))
     {
         // 1. Get file size
         // 2. Determine chunk size

@@ -31,31 +31,31 @@
 },
 {
   "directory": "/Users/dev/Documents/GitHub/LocalChat",
-  "command": "/usr/bin/c++ -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/main.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/main.cpp",
+  "command": "/usr/bin/c++ -DBV_BUILD_GUI=1 -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/main.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/main.cpp",
   "file": "/Users/dev/Documents/GitHub/LocalChat/src/main.cpp",
   "output": "CMakeFiles/LocalChat.dir/src/main.cpp.o"
 },
 {
   "directory": "/Users/dev/Documents/GitHub/LocalChat",
-  "command": "/usr/bin/c++ -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVApp_ConsoleClient.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVApp_ConsoleClient.cpp",
-  "file": "/Users/dev/Documents/GitHub/LocalChat/src/BVApp_ConsoleClient.cpp",
-  "output": "CMakeFiles/LocalChat.dir/src/BVApp_ConsoleClient.cpp.o"
+  "command": "/usr/bin/c++ -DBV_BUILD_GUI=1 -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVApp_GUIClient.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVApp_GUIClient.cpp",
+  "file": "/Users/dev/Documents/GitHub/LocalChat/src/BVApp_GUIClient.cpp",
+  "output": "CMakeFiles/LocalChat.dir/src/BVApp_GUIClient.cpp.o"
 },
 {
   "directory": "/Users/dev/Documents/GitHub/LocalChat",
-  "command": "/usr/bin/c++ -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVBroker.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVBroker.cpp",
+  "command": "/usr/bin/c++ -DBV_BUILD_GUI=1 -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVBroker.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVBroker.cpp",
   "file": "/Users/dev/Documents/GitHub/LocalChat/src/BVBroker.cpp",
   "output": "CMakeFiles/LocalChat.dir/src/BVBroker.cpp.o"
 },
 {
   "directory": "/Users/dev/Documents/GitHub/LocalChat",
-  "command": "/usr/bin/c++ -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVTCPConnectionManager.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVTCPConnectionManager.cpp",
+  "command": "/usr/bin/c++ -DBV_BUILD_GUI=1 -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVTCPConnectionManager.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVTCPConnectionManager.cpp",
   "file": "/Users/dev/Documents/GitHub/LocalChat/src/BVTCPConnectionManager.cpp",
   "output": "CMakeFiles/LocalChat.dir/src/BVTCPConnectionManager.cpp.o"
 },
 {
   "directory": "/Users/dev/Documents/GitHub/LocalChat",
-  "command": "/usr/bin/c++ -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVTCPSession.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVTCPSession.cpp",
+  "command": "/usr/bin/c++ -DBV_BUILD_GUI=1 -DFMT_SHARED -DRESOLUTION_POLICY_HARD_FAIL -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_COMPILED_LIB -DSPDLOG_FMT_EXTERNAL -DSPDLOG_SHARED_LIB -DWXUSINGDLL -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX_COCOA__ -D__WXOSX__ -DwxDEBUG_LEVEL=0 -I/Users/dev/Documents/GitHub/LocalChat/include -isystem /opt/homebrew/include -isystem /opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.3 -isystem /opt/homebrew/include/wx-3.3  -Wall -Wextra -g -O0 -std=gnu++17 -arch arm64 -o CMakeFiles/LocalChat.dir/src/BVTCPSession.cpp.o -c /Users/dev/Documents/GitHub/LocalChat/src/BVTCPSession.cpp",
   "file": "/Users/dev/Documents/GitHub/LocalChat/src/BVTCPSession.cpp",
   "output": "CMakeFiles/LocalChat.dir/src/BVTCPSession.cpp.o"
 },
