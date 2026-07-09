@@ -1,0 +1,83 @@
+@startuml LocalChat_Message_Subscription_Vertical
+' Vertical, slide-friendly version:
+' Component A at the top, Broker in the middle, Component B at the bottom.
+' BVMessage is shown separately on the left.
+
+top to bottom direction
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam componentStyle rectangle
+skinparam defaultFontSize 15
+skinparam titleFontSize 20
+skinparam packageTitleFontSize 16
+skinparam nodesep 140
+skinparam ranksep 70
+skinparam padding 7
+skinparam ArrowThickness 1.2
+
+hide stereotype
+
+title LocalChat - Message Passing - Subscribing
+
+' ------------------------------------------------------------
+' Message structure, shown separately
+' ------------------------------------------------------------
+rectangle "BVMessage\n--\nBVEventType event_t\nstd::unique_ptr<std::any> data_p" as BVMessage #FFF2CC
+
+rectangle "Map\n--\nα: [ID 1]\n..." as Map #FFF2CC
+
+' ------------------------------------------------------------
+' Component A - publisher
+' ------------------------------------------------------------
+rectangle "Component A ID: 0" as ComponentA {
+  queue "InMailBox" as A_In
+  queue "OutMailBox" as A_Out
+
+  A_In -[hidden]right- A_Out
+}
+
+' ------------------------------------------------------------
+' Broker
+' ------------------------------------------------------------
+rectangle "Broker" as Broker #EEF3FF
+
+' ------------------------------------------------------------
+' Component B - subscriber
+' ------------------------------------------------------------
+rectangle "Component B ID: 1" as ComponentB {
+  queue "InMailBox" as B_In
+  queue "OutMailBox" as B_Out
+
+  B_In -[hidden]right- B_Out
+  B_In -left-> "Invoke callback for event_t(α) with data_p"
+}
+
+' ------------------------------------------------------------
+' Layout constraints
+' ------------------------------------------------------------
+BVMessage -[hidden]right- ComponentA
+ComponentA -[hidden]down- Broker
+Broker -[hidden]down- ComponentB
+
+A_Out -[hidden]down- Broker
+Broker -[hidden]down- B_In
+
+' ------------------------------------------------------------
+' Subscription setup
+' ------------------------------------------------------------
+ComponentB ..> Broker : subscribe(event_t(α))
+Broker -[dotted]left-> Map
+
+' ------------------------------------------------------------
+' Message publishing
+' ------------------------------------------------------------
+A_Out -down-> Broker : BVMessage(event_t(α), ..)
+A_Out -down-> Broker : BVMessage(event_t(β), ..)
+
+' ------------------------------------------------------------
+' Broker routing result
+' ------------------------------------------------------------
+Broker -[dotted]down-> B_In : route(BVMessage(event_t(α), ..))
+
+@enduml

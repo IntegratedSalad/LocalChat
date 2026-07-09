@@ -1,6 +1,6 @@
 @startuml Discovery State Diagram
 
-participant DiscoveryMailboxThread    as DiscoveryMbx
+participant DiscoveryInMailboxThread    as DiscoveryMbx
 participant DiscoveryWorkerThread     as DiscoveryWT
 participant Broker                    as Broker
 participant App                       as App
@@ -21,6 +21,10 @@ loop not isPaused
     DiscoveryWT -> Broker           : //BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED//
     Broker -> App                   : //BVEVENTTYPE_APP_DISCOVERY_SERVICE_RESOLVED//
     App -> App                      : Update state (create TCP connection etc.)
+    DiscoveryWT -> DiscoveryWT      : Service disconnected
+    DiscoveryWT -> Broker           : //BVEVENTTYPE_APP_DEREGISTERED_SERVICE//
+    Broker      -> App              : //BVEVENTTYPE_APP_DEREGISTERED_SERVICE//
+    App -> App                      : Update state (UI and data)
     App -> Broker                   : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
     Broker -> DiscoveryMbx          : //BVEVENTTYPE_DISCOVERY_REQUEST_PAUSE//
     DiscoveryMbx -> DiscoveryWT     : Pause browsing

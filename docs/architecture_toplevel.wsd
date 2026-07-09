@@ -1,47 +1,89 @@
-@startuml Top-level Architecture View
-skinparam componentStyle uml2
-left to right direction
+@startuml Top_Level_Architecture_View_v3
+' Top-level architecture view with explicit publish/subscribe event topics.
+' Layout goal:
+' - Discovery on the left
+' - App on the right
+' - Broker in the center
+' - DiscoveryEvents above Broker
+' - AppEvents below Broker
+' - TCPManager below App, as a direct non-Broker path
 
-' Components
-component "Broker" as Broker
+skinparam componentStyle uml2
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontSize 15
+skinparam titleFontSize 20
+skinparam packageTitleFontSize 16
+skinparam nodesep 90
+skinparam ranksep 85
+skinparam padding 12
+skinparam ArrowThickness 1.2
+
+hide stereotype
+
+title LocalChat - Message Passing Architecture Overview
+
+' --- Styles for non-component elements ---
+skinparam rectangle<<router>> {
+  BackgroundColor #EEF3FF
+  BorderColor #2F5597
+}
+
+skinparam rectangle<<direct>> {
+  BackgroundColor #F8F8F8
+  BorderColor #555555
+}
+
+skinparam artifact<<data>> {
+  BackgroundColor #FFF2CC
+  BorderColor #7F6000
+}
+
+' --- Main components ---
 component "Discovery" as Discovery
 component "App" as App
-component "Service" as Service
 
-' Message Topics (Interfaces)
+' --- Event topics ---
 interface "DiscoveryEvents" as DiscoveryEvents
 interface "AppEvents" as AppEvents
 
-' Broker provides all topics
-Broker -- DiscoveryEvents
-Broker -- AppEvents
+' --- Non-component elements ---
+rectangle "Broker\nmessage router" as Broker <<router>>
+rectangle "TCPManager\nManages network traffic" as TCPManager <<direct>> #line.dashed
+artifact "Service Data\nhostname\nregtype\ndomain\nport" as Service <<data>>
 
-' Publishers
-Discovery ..> DiscoveryEvents : publish
-App ..> AppEvents : publish
+' --- Layout constraints ---
+Discovery -[hidden]right- Broker
+Broker -[hidden]right- App
 
-' Subscribers
-App ..> DiscoveryEvents : subscribe
-Discovery ..> AppEvents : subscribe
+DiscoveryEvents -[hidden]down- Broker
+Broker -[hidden]down- AppEvents
 
-' Notes
-note right of Broker
-Central message router.
-No component communicates directly.
-Each subscription means receiving certain
-event types.
-end note
+Discovery -[hidden]down- Service
+App -[hidden]down- TCPManager
 
-note bottom of AppEvents
-Each event comes as a message
-containing event type and data.
-end note
+' --- Broker owns/provides event topics ---
+Broker -up- DiscoveryEvents
+Broker -down- AppEvents
 
-note right of Service
-Service is not a component, however 
-it is used to register the service
-and get Service data:
-hostname, regtype, domain and port
+' --- DiscoveryEvents topic ---
+Discovery -up-> DiscoveryEvents : publish
+DiscoveryEvents <-- App : subscribe
+
+' --- AppEvents topic ---
+App -down-> AppEvents : publish
+AppEvents <-- Discovery : subscribe
+
+' --- Direct communication path, intentionally not via Broker ---
+App <..> TCPManager
+
+' --- Service registration data ---
+Discovery <.. Service : Browses for service instances
+
+note bottom of TCPManager
+Messages not routed through broker:
+direct communication.
 end note
 
 @enduml

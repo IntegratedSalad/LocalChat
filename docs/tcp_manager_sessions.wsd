@@ -1,0 +1,39 @@
+@startuml TCPManager_TCPSessions_Simple
+' Presentation-friendly overview of TCPManager and TCPSessions.
+
+skinparam shadowing false
+skinparam linetype ortho
+skinparam componentStyle rectangle
+skinparam defaultFontSize 18
+skinparam titleFontSize 22
+skinparam packageTitleFontSize 18
+skinparam nodesep 140
+skinparam ranksep 70
+skinparam padding 12
+skinparam ArrowThickness 1.4
+hide stereotype
+
+top to bottom direction
+
+title TCP Session Management
+
+rectangle "App" as App {
+    rectangle "TCPManager" as Manager #EEF3FF
+    
+    rectangle "N × FileTransferContext\n--\nManages file transfer" as FTContext #aeffae
+
+    rectangle "N × TCPSession\n--\nperforms async read/write" as Sessions
+
+    queue "App InMailBox" as Queue
+
+    file "TCP socket" as Sockets
+}
+
+Manager -down-> Sessions : establish/close
+Sessions -right-> Queue : push
+Manager -[dotted]right-> Queue : share (pointer)
+Sessions -down-> Sockets : read/write
+Manager -down-> FTContext : create
+FTContext -[dotted]-> Sessions : Uses
+
+@enduml

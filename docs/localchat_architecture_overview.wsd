@@ -1,0 +1,122 @@
+@startuml LocalChat_Conceptual_Architecture
+' General conceptual overview of LocalChat discovery and connection architecture.
+' This diagram intentionally hides implementation details and focuses on DNS-SD/mDNS ideas.
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+title LocalChat - conceptual architecture overview
+
+node "Host A\nLocalChat node" as HostA {
+  component "LocalChat App" as AppA
+  component "Service Registration\nDNS-SD" as RegA
+  component "Service Browsing\nDNS-SD" as BrowseA
+  component "TCP Data Exchange\npeer-to-peer" as TcpA
+  database "Local hostname\nHostA.local" as NameA
+
+  AppA --> RegA : registers service
+  AppA --> BrowseA : searches for peers
+  AppA --> TcpA : starts sessions
+  RegA ..> NameA : service target host
+}
+
+node "Host B\nLocalChat node" as HostB {
+  component "LocalChat App" as AppB
+  component "Service Registration\nDNS-SD" as RegB
+  component "Service Browsing\nDNS-SD" as BrowseB
+  component "TCP Data Exchange\npeer-to-peer" as TcpB
+  database "Local hostname\nHostB.local" as NameB
+
+  AppB --> RegB : registers service
+  AppB --> BrowseB : searches for peers
+  AppB --> TcpB : starts sessions
+  RegB ..> NameB : service target host
+}
+
+cloud "Local network\nmulticast domain" as LAN {
+  component "mDNS multicast\nUDP 5353" as MDNS
+  component "DNS-SD records\nPTR / SRV / TXT" as DNSSD
+  component "mDNS address records\nA / AAAA" as Addr
+}
+
+component "Local mDNS/DNS-SD daemon\nmDNSResponder / Avahi" as DaemonA
+component "Local mDNS/DNS-SD daemon\nmDNSResponder / Avahi" as DaemonB
+
+RegA --> DaemonA : register service instance
+BrowseA --> DaemonA : browse / resolve peers
+RegB --> DaemonB : register service instance
+BrowseB --> DaemonB : browse / resolve peers
+
+DaemonA <--> MDNS : multicast queries/responses
+DaemonB <--> MDNS : multicast queries/responses
+MDNS --> DNSSD : advertises service presence
+MDNS --> Addr : resolves hostnames to IPs
+
+TcpA <--> TcpB : direct TCP connection\nafter discovery and resolution
+
+note bottom of LAN
+DNS-SD describes available services on the LAN.
+mDNS transports the queries/responses and resolves .local hostnames to IP addresses.
+After discovery, LocalChat data is exchanged directly between hosts over TCP.
+end note
+
+@enduml
+
+@startuml LocalChat_Discovery_And_Resolution_Flow
+' Sequence-level view of the same idea.
+
+skinparam shadowing false
+hide footbox
+
+title LocalChat - DNS-SD browsing and mDNS resolution flow
+
+box "Host A" #LightBlue
+participant "LocalChat App A" as AppA
+participant "DNS-SD API A" as APIA
+participant "mDNS/DNS-SD daemon A\nmDNSResponder / Avahi" as DaemonA
+end box
+
+participant "Local network\nmulticast mDNS\nUDP 5353" as LAN
+
+box "Host B" #LightGreen
+participant "mDNS/DNS-SD daemon B\nmDNSResponder / Avahi" as DaemonB
+participant "DNS-SD API B" as APIB
+participant "LocalChat App B" as AppB
+end box
+
+== Service registration ==
+AppA -> APIA : Register service instance\n"HostA._localchat._tcp.local"\nport + optional TXT metadata
+APIA -> DaemonA : Pass registration to local daemon
+DaemonA -> LAN : Announce / answer for DNS-SD records\nPTR, SRV, TXT
+note right of DaemonA
+The service instance points to a target hostname,
+for example HostA.local, and a TCP port.
+end note
+
+== Browsing discovers the service ==
+AppB -> APIB : Browse for service type\n"_localchat._tcp.local"
+APIB -> DaemonB : Start DNS-SD browse operation
+DaemonB -> LAN : mDNS query:\nWho offers _localchat._tcp.local?
+LAN --> DaemonB : Response:\nHostA._localchat._tcp.local exists
+DaemonB --> APIB : Service discovered\ninstance + type + domain
+APIB --> AppB : Notify application about Host A
+
+== Resolving gets endpoint information ==
+AppB -> APIB : Resolve discovered service instance
+APIB -> DaemonB : Resolve via DNS-SD/mDNS
+DaemonB -> LAN : Query SRV/TXT for service\nand A/AAAA for target hostname
+LAN --> DaemonB : SRV: target hostname + port\nTXT: metadata\nA/AAAA: IP address
+DaemonB --> APIB : Resolved endpoint
+APIB --> AppB : IP address + port + metadata
+
+== Direct data exchange ==
+AppB -> AppA : Open direct TCP connection\nto resolved IP:port
+AppA <--> AppB : Exchange LocalChat messages/files\nwithout a central server
+
+note over AppA, AppB
+The daemon participates only in discovery and name/address resolution.
+The actual LocalChat communication is peer-to-peer over TCP.
+end note
+
+@enduml
